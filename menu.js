@@ -3,6 +3,104 @@ const categoryTabs = document.getElementById('category-tabs');
 const searchInput = document.getElementById('menu-search');
 const mainHeader = document.getElementById('main-header');
 
+// Cart State
+let cart = [];
+const cartFab = document.getElementById('cart-fab');
+const cartCount = document.getElementById('cart-count');
+const cartDrawer = document.getElementById('cart-drawer');
+const cartItemsContainer = document.getElementById('cart-items');
+const cartTotalLabel = document.getElementById('cart-total');
+const checkoutBtn = document.getElementById('checkout-btn');
+const closeCartBtn = document.getElementById('close-cart');
+const orderModal = document.getElementById('order-modal');
+const closeOrderModalBtn = document.getElementById('close-order-modal');
+
+// Cart Interactions
+cartFab.onclick = () => cartDrawer.classList.toggle('hidden');
+closeCartBtn.onclick = () => cartDrawer.classList.add('hidden');
+closeOrderModalBtn.onclick = () => orderModal.classList.add('hidden');
+
+function addToCart(item, size, price) {
+    cart.push({ ...item, selectedSize: size, selectedPrice: price });
+    updateCartUI();
+    showCartFAB();
+}
+
+function removeFromCart(index) {
+    cart.splice(index, 1);
+    updateCartUI();
+    if (cart.length === 0) cartDrawer.classList.add('hidden');
+}
+
+function updateCartUI() {
+    cartCount.textContent = cart.length;
+    cartItemsContainer.innerHTML = '';
+    
+    let total = 0;
+    cart.forEach((item, index) => {
+        total += item.selectedPrice;
+        const div = document.createElement('div');
+        div.className = 'cart-item';
+        div.innerHTML = `
+            <div class="cart-item-info">
+                <h4>${item.name}</h4>
+                <p>${item.selectedSize}</p>
+            </div>
+            <div class="cart-item-right">
+                <span class="cart-item-price">₱${item.selectedPrice.toFixed(0)}</span>
+                <button class="remove-item" onclick="removeFromCart(${index})">×</button>
+            </div>
+        `;
+        cartItemsContainer.appendChild(div);
+    });
+    
+    cartTotalLabel.textContent = `₱${total.toFixed(0)}`;
+    
+    if (cart.length > 0) {
+        cartFab.classList.remove('hidden');
+    } else {
+        cartFab.classList.add('hidden');
+    }
+}
+
+function showCartFAB() {
+    cartFab.classList.remove('hidden');
+    cartFab.style.transform = 'scale(1.2)';
+    setTimeout(() => cartFab.style.transform = 'scale(1)', 200);
+}
+
+checkoutBtn.onclick = async () => {
+    if (cart.length === 0) return;
+    
+    const orderData = {
+        items: cart,
+        total: cart.reduce((sum, item) => sum + item.selectedPrice, 0),
+        status: 'pending',
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    
+    checkoutBtn.disabled = true;
+    checkoutBtn.textContent = 'Processing...';
+    
+    try {
+        if (typeof db !== 'undefined') {
+            await db.collection('orders').add(orderData);
+            cart = [];
+            updateCartUI();
+            cartDrawer.classList.add('hidden');
+            orderModal.classList.remove('hidden');
+        } else {
+            alert('Order system currently offline. Please order at the counter.');
+        }
+    } catch (error) {
+        console.error("Order error:", error);
+        alert('Something went wrong. Please try again.');
+    } finally {
+        checkoutBtn.disabled = false;
+        checkoutBtn.textContent = 'Place Order';
+    }
+};
+
 let allItems = [];
 let currentCategory = 'All';
 let searchTerm = '';
@@ -90,23 +188,33 @@ function renderItems(items) {
         
         // Handle both single price and multiple sizes
         let priceHtml = '';
+        let addBtnHtml = '';
+
         if (item.prices && Object.keys(item.prices).length > 0) {
+            const sizes = Object.entries(item.prices);
             priceHtml = `
                 <div class="price-grid">
-                    ${Object.entries(item.prices).map(([size, price]) => `
+                    ${sizes.map(([size, price], i) => `
                         <div class="price-item">
-                            <span class="size-label">${size}</span>
-                            <span class="price-value">₱${typeof price === 'number' ? price.toFixed(0) : price}</span>
+                            <label class="size-selector">
+                                <input type="radio" name="size-${item.id}" value="${size}" data-price="${price}" ${i === 0 ? 'checked' : ''}>
+                                <span class="size-pill">
+                                    <span class="size-label">${size}</span>
+                                    <span class="price-value">₱${price.toFixed(0)}</span>
+                                </span>
+                            </label>
                         </div>
                     `).join('')}
                 </div>
             `;
+            addBtnHtml = `<button class="add-to-cart-btn" onclick="handleAddToCart('${item.id}')">Add to Order</button>`;
         } else {
             priceHtml = `
                 <div class="price-single">
                     <span class="price-value">₱${typeof item.price === 'number' ? item.price.toFixed(0) : item.price}</span>
                 </div>
             `;
+            addBtnHtml = `<button class="add-to-cart-btn" onclick="addToCart({id: '${item.id}', name: '${item.name}'}, 'Standard', ${item.price})">Add to Order</button>`;
         }
 
         card.innerHTML = `
@@ -127,11 +235,24 @@ function renderItems(items) {
                 </div>
                 <p class="card-desc">${item.description || 'Crafted with premium ingredients for the perfect sip.'}</p>
                 ${priceHtml}
+                ${!isSoldOut ? addBtnHtml : ''}
             </div>
         `;
         menuGrid.appendChild(card);
     });
 }
+
+// Global handler for complex add to cart
+window.handleAddToCart = (itemId) => {
+    const selectedRadio = document.querySelector(`input[name="size-${itemId}"]:checked`);
+    if (selectedRadio) {
+        const item = allItems.find(i => i.id === itemId);
+        const size = selectedRadio.value;
+        const price = parseFloat(selectedRadio.dataset.price);
+        addToCart(item, size, price);
+    }
+};
+window.removeFromCart = removeFromCart; // Expose to global scope
 
 // Initialize with local data immediately to prevent "Brewing..." hang
 if (typeof initialMenuData !== 'undefined') {

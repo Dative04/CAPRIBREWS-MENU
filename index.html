@@ -42,6 +42,39 @@
             </div>
         </main>
 
+        <!-- Floating Cart Button -->
+        <button id="cart-fab" class="cart-fab hidden">
+            <span class="cart-icon">🛒</span>
+            <span id="cart-count" class="cart-count">0</span>
+        </button>
+
+        <!-- Cart Drawer -->
+        <div id="cart-drawer" class="cart-drawer hidden">
+            <div class="cart-header">
+                <h2>Your Order</h2>
+                <button id="close-cart" class="close-btn">×</button>
+            </div>
+            <div id="cart-items" class="cart-items">
+                <!-- Cart items will be injected here -->
+            </div>
+            <div class="cart-footer">
+                <div class="total-row">
+                    <span>Total</span>
+                    <span id="cart-total">₱0.00</span>
+                </div>
+                <button id="checkout-btn" class="checkout-btn">Place Order</button>
+            </div>
+        </div>
+
+        <!-- Order Confirmation Modal -->
+        <div id="order-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Order Received!</h2>
+                <p>Your order has been sent to the barista. Please proceed to the counter for payment.</p>
+                <button id="close-order-modal" class="btn-primary">Got it!</button>
+            </div>
+        </div>
+
         <footer class="minimal-footer">
             <img src="https://i.imgur.com/F022t03.png" alt="Capibrews Signature" class="footer-sig">
             <p>&copy; 2024 Capibrews Specialty Coffee</p>

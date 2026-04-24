@@ -95,6 +95,16 @@ body {
     color: var(--accent);
 }
 
+.badge {
+    background: #e63946;
+    color: white;
+    font-size: 0.7em;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 5px;
+    font-weight: 700;
+}
+
 .admin-main {
     flex-grow: 1;
     background: var(--bg);
@@ -285,6 +295,79 @@ body {
     padding: 6px 12px;
     border-radius: 4px;
     font-size: 0.85em;
+}
+
+/* Orders UI */
+.orders-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.order-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+}
+
+.order-card.pending { border-left: 5px solid #ffc107; }
+.order-card.completed { border-left: 5px solid var(--accent); opacity: 0.6; }
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    font-size: 0.9em;
+    color: var(--text-dim);
+}
+
+.order-items {
+    flex-grow: 1;
+    margin-bottom: 15px;
+}
+
+.order-item-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.95em;
+}
+
+.order-total {
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+}
+
+.order-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.complete-order-btn {
+    flex-grow: 1;
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.delete-order-btn {
+    background: none;
+    border: 1px solid #ff4d4d;
+    color: #ff4d4d;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
 }
 
 /* Grid */

@@ -7,6 +7,11 @@ const adminGrid = document.getElementById('admin-grid');
 const statCount = document.getElementById('stat-count');
 const statCats = document.getElementById('stat-cats');
 
+// Orders State
+let allOrders = [];
+const ordersContainer = document.getElementById('orders-container');
+const newOrderBadge = document.getElementById('new-order-badge');
+
 // Sidebar Drawer Logic
 const adminSidebar = document.getElementById('admin-sidebar');
 const openSidebarBtn = document.getElementById('open-sidebar');
@@ -39,6 +44,7 @@ firebase.auth().onAuthStateChanged(user => {
         adminScreen.classList.remove('hidden');
         adminSidebar.classList.remove('hidden'); // Ensure sidebar shows
         loadAdminData();
+        loadOrdersData();
     } else {
         loginScreen.classList.remove('hidden');
         adminScreen.classList.add('hidden');
@@ -147,12 +153,90 @@ addItemForm.addEventListener('submit', async (e) => {
 });
 
 function loadAdminData() {
-    db.collection('items').orderBy('order', 'desc').onSnapshot(snapshot => {
+    db.collection('items').orderBy('order', 'asc').onSnapshot(snapshot => {
         currentItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         updateStats(currentItems);
         renderAdminGrid(currentItems);
     });
 }
+
+function loadOrdersData() {
+    db.collection('orders').orderBy('timestamp', 'desc').limit(50).onSnapshot(snapshot => {
+        const prevCount = allOrders.length;
+        allOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        if (allOrders.length > prevCount && prevCount !== 0) {
+            newOrderBadge.classList.remove('hidden');
+            showToast('New order received!');
+        }
+        
+        updateStats(currentItems);
+        renderOrdersGrid(allOrders);
+    });
+}
+
+function renderOrdersGrid(orders) {
+    ordersContainer.innerHTML = '';
+    
+    if (orders.length === 0) {
+        ordersContainer.innerHTML = '<p class="loading">No orders yet today.</p>';
+        return;
+    }
+    
+    orders.forEach(order => {
+        const date = order.timestamp ? new Date(order.timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now';
+        const card = document.createElement('div');
+        card.className = `order-card ${order.status}`;
+        
+        const itemsHtml = order.items.map(item => `
+            <div class="order-item-row">
+                <span>${item.name} (${item.selectedSize})</span>
+                <span>₱${item.selectedPrice}</span>
+            </div>
+        `).join('');
+
+        card.innerHTML = `
+            <div class="order-header">
+                <span>Order #${order.id.slice(-4).toUpperCase()}</span>
+                <span>${date}</span>
+            </div>
+            <div class="order-items">
+                ${itemsHtml}
+            </div>
+            <div class="order-total">
+                <span>Total</span>
+                <span>₱${order.total}</span>
+            </div>
+            <div class="order-actions">
+                ${order.status === 'pending' ? `
+                    <button class="complete-order-btn" onclick="updateOrderStatus('${order.id}', 'completed')">Done</button>
+                ` : ''}
+                <button class="delete-order-btn" onclick="deleteOrder('${order.id}')">×</button>
+            </div>
+        `;
+        ordersContainer.appendChild(card);
+    });
+}
+
+window.updateOrderStatus = async (id, status) => {
+    try {
+        await db.collection('orders').doc(id).update({ status: status });
+        showToast('Order updated');
+    } catch (error) {
+        showToast('Failed to update order');
+    }
+};
+
+window.deleteOrder = async (id) => {
+    if (confirm('Delete this order record?')) {
+        try {
+            await db.collection('orders').doc(id).delete();
+            showToast('Order removed');
+        } catch (error) {
+            showToast('Failed to remove order');
+        }
+    }
+};
 
 // Data Seeding Utility (Run once)
 window.seedMenuData = async () => {
@@ -200,6 +284,10 @@ window.switchView = (viewId) => {
 
     if (viewId === 'price-manager') {
         renderPriceManager(currentItems);
+    }
+
+    if (viewId === 'orders') {
+        newOrderBadge.classList.add('hidden');
     }
 
     if (window.innerWidth <= 768) {
@@ -250,6 +338,7 @@ function renderPriceManager(items) {
 }
 
 window.updateItemPrice = async (id, btn) => {
+    if (!confirm('Save changes to this item\'s price?')) return;
     const row = btn.closest('tr');
     const inputs = row.querySelectorAll('.price-input-small');
     const updates = {};
@@ -302,10 +391,13 @@ function updateStats(items) {
     const totalCount = items.length;
     const categories = new Set(items.map(i => i.category)).size;
     const activeCount = items.filter(i => i.available !== false).length;
+    const pendingOrders = allOrders.filter(o => o.status === 'pending').length;
 
     document.getElementById('stat-count').textContent = totalCount;
     document.getElementById('stat-cats').textContent = categories;
     document.getElementById('stat-active').textContent = activeCount;
+    const statOrders = document.getElementById('stat-orders');
+    if (statOrders) statOrders.textContent = pendingOrders;
 }
 
 function renderAdminGrid(items) {

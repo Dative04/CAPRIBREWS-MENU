@@ -20,6 +20,7 @@
             </div>
             <nav class="sidebar-nav">
                 <button class="nav-item active" data-view="dashboard">Dashboard</button>
+                <button class="nav-item" data-view="orders">Orders <span id="new-order-badge" class="badge hidden">!</span></button>
                 <button class="nav-item" data-view="inventory">Inventory</button>
                 <button class="nav-item" data-view="price-manager">Price Manager</button>
                 <button class="nav-item" onclick="seedMenuData()">Seed Data</button>
@@ -73,6 +74,10 @@
                             <div class="stat-card">
                                 <span class="stat-label">Active Items</span>
                                 <span class="stat-value" id="stat-active">0</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-label">Pending Orders</span>
+                                <span class="stat-value" id="stat-orders">0</span>
                             </div>
                         </div>
 
@@ -128,6 +133,17 @@
                                     <!-- Price rows will be injected here -->
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+
+                    <!-- Orders View -->
+                    <div id="orders-view" class="view-section hidden">
+                        <div class="view-header">
+                            <h2>Active Orders</h2>
+                            <p>Manage incoming orders from customers.</p>
+                        </div>
+                        <div id="orders-container" class="orders-grid">
+                            <p class="loading">Waiting for orders...</p>
                         </div>
                     </div>
                 </div>
