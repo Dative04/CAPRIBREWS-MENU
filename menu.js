@@ -20,7 +20,21 @@ const summaryTotalLabel = document.getElementById('summary-total');
 // Cart Interactions
 cartFab.onclick = () => cartDrawer.classList.toggle('hidden');
 closeCartBtn.onclick = () => cartDrawer.classList.add('hidden');
-closeOrderModalBtn.onclick = () => orderModal.classList.add('hidden');
+
+// FIXED: Use a more robust close logic for the order modal
+const closeOrderModal = () => {
+    console.log("Closing order modal...");
+    orderModal.classList.add('hidden');
+    orderModal.style.display = 'none'; // Force hide inline
+    // Force a scroll to top to refresh the view
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+closeOrderModalBtn.addEventListener('click', closeOrderModal);
+// Also close if clicking the backdrop
+orderModal.addEventListener('click', (e) => {
+    if (e.target === orderModal) closeOrderModal();
+});
 
 function addToCart(item, size, price) {
     cart.push({ ...item, selectedSize: size, selectedPrice: price });
@@ -105,6 +119,7 @@ checkoutBtn.onclick = async () => {
             updateCartUI();
             cartDrawer.classList.add('hidden');
             orderModal.classList.remove('hidden');
+            orderModal.style.display = 'flex'; // Force show as flex
         } else {
             alert('Order system currently offline. Please order at the counter.');
         }

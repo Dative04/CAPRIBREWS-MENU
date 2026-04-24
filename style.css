@@ -497,11 +497,15 @@ body {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.6);
-    display: flex;
+    display: none; /* Changed from default flex to none */
     align-items: center;
     justify-content: center;
     z-index: 4000;
     backdrop-filter: blur(5px);
+}
+
+.modal:not(.hidden) {
+    display: flex;
 }
 
 .modal-content {
