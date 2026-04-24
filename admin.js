@@ -37,10 +37,12 @@ firebase.auth().onAuthStateChanged(user => {
     if (user) {
         loginScreen.classList.add('hidden');
         adminScreen.classList.remove('hidden');
+        adminSidebar.classList.remove('hidden'); // Ensure sidebar shows
         loadAdminData();
     } else {
         loginScreen.classList.remove('hidden');
         adminScreen.classList.add('hidden');
+        adminSidebar.classList.add('hidden'); // Hide sidebar on login
     }
 });
 
@@ -48,10 +50,16 @@ loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    const submitBtn = e.target.querySelector('button');
+    submitBtn.textContent = 'Authenticating...';
+    submitBtn.disabled = true;
+
     try {
         await firebase.auth().signInWithEmailAndPassword(email, password);
     } catch (error) {
         loginError.textContent = 'Access Denied: Invalid Credentials';
+        submitBtn.textContent = 'Login';
+        submitBtn.disabled = false;
     }
 });
 
@@ -171,10 +179,56 @@ window.seedMenuData = async () => {
     }
 };
 
+// View Switching Logic
+const navItems = document.querySelectorAll('.nav-item');
+const viewSections = document.querySelectorAll('.view-section');
+
+window.switchView = (viewId) => {
+    viewSections.forEach(section => {
+        section.classList.add('hidden');
+        if (section.id === `${viewId}-view`) {
+            section.classList.remove('hidden');
+        }
+    });
+
+    navItems.forEach(item => {
+        item.classList.remove('active');
+        if (item.getAttribute('data-view') === viewId) {
+            item.classList.add('active');
+        }
+    });
+
+    if (window.innerWidth <= 768) {
+        adminSidebar.classList.remove('open');
+    }
+};
+
+navItems.forEach(item => {
+    item.addEventListener('click', () => {
+        const view = item.getAttribute('data-view');
+        if (view) switchView(view);
+    });
+});
+
+// Admin Search Logic
+const adminSearchInput = document.getElementById('admin-search');
+adminSearchInput?.addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase();
+    const filtered = currentItems.filter(item => 
+        item.name.toLowerCase().includes(term) || 
+        item.category.toLowerCase().includes(term)
+    );
+    renderAdminGrid(filtered);
+});
+
 function updateStats(items) {
-    statCount.textContent = items.length;
-    const categories = new Set(items.map(i => i.category));
-    statCats.textContent = categories.size;
+    const totalCount = items.length;
+    const categories = new Set(items.map(i => i.category)).size;
+    const activeCount = items.filter(i => i.available !== false).length;
+
+    document.getElementById('stat-count').textContent = totalCount;
+    document.getElementById('stat-cats').textContent = categories;
+    document.getElementById('stat-active').textContent = activeCount;
 }
 
 function renderAdminGrid(items) {
