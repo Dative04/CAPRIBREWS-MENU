@@ -11,39 +11,57 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 </head>
 <body>
-    <div id="login-screen">
-        <div class="login-box">
-            <img src="https://i.imgur.com/F022t03.png" alt="Capibrews Logo" class="login-logo">
-            <h1>Admin Login</h1>
-            <form id="login-form">
-                <input type="email" id="email" placeholder="Email" required>
-                <input type="password" id="password" placeholder="Password" required>
-                <button type="submit">Login</button>
-            </form>
-            <p id="login-error" class="error"></p>
-        </div>
-    </div>
-
-    <div id="admin-screen" class="hidden">
-        <header class="admin-header">
-            <img src="https://i.imgur.com/F022t03.png" alt="Capibrews Logo" class="logo">
-            <h1>Control Panel</h1>
-            <div class="header-right">
-                <button onclick="seedMenuData()" class="btn-secondary" style="font-size: 0.8em; opacity: 0.6;">Seed Data</button>
-                <button id="show-add-modal" class="add-btn">+ New Item</button>
-                <button id="logout-btn">Logout</button>
+    <div class="admin-layout">
+        <!-- Collapsible Sidebar -->
+        <aside class="admin-sidebar" id="admin-sidebar">
+            <div class="sidebar-header">
+                <img src="https://i.imgur.com/F022t03.png" alt="Capibrews Logo" class="logo">
+                <button id="close-sidebar" class="mobile-only">×</button>
             </div>
-        </header>
-
-        <main id="admin-container">
-            <!-- Stats Summary -->
-            <div class="stats-row">
-                <div class="stat-pill">Items: <span id="stat-count">0</span></div>
-                <div class="stat-pill">Categories: <span id="stat-cats">0</span></div>
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-view="inventory">Edit Menu</button>
+                <button class="nav-item" id="price-manager-btn">Price Manager</button>
+                <button class="nav-item" onclick="seedMenuData()">Seed Data</button>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="logout-btn" class="btn-secondary">Logout</button>
             </div>
-            
-            <div id="admin-grid" class="admin-item-grid">
-                <p class="loading">Fetching your inventory...</p>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <header class="admin-top-bar">
+                <button id="open-sidebar" class="mobile-only">☰</button>
+                <h1>Control Panel</h1>
+                <div class="top-bar-right">
+                    <button id="show-add-modal" class="add-btn">+ New Item</button>
+                </div>
+            </header>
+
+            <div id="admin-container">
+                <div id="login-screen">
+                    <div class="login-box">
+                        <img src="https://i.imgur.com/F022t03.png" alt="Capibrews Logo" class="login-logo">
+                        <h1>Admin Login</h1>
+                        <form id="login-form">
+                            <input type="email" id="email" placeholder="Email" required>
+                            <input type="password" id="password" placeholder="Password" required>
+                            <button type="submit">Login</button>
+                        </form>
+                        <p id="login-error" class="error"></p>
+                    </div>
+                </div>
+
+                <div id="admin-screen" class="hidden">
+                    <div class="stats-row">
+                        <div class="stat-pill">Items: <span id="stat-count">0</span></div>
+                        <div class="stat-pill">Categories: <span id="stat-cats">0</span></div>
+                    </div>
+                    
+                    <div id="admin-grid" class="admin-item-grid">
+                        <p class="loading">Fetching your inventory...</p>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
