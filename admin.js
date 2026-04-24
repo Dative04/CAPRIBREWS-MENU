@@ -3,6 +3,7 @@ const adminScreen = document.getElementById('admin-screen');
 const loginForm = document.getElementById('login-form');
 const loginError = document.getElementById('login-error');
 const logoutBtn = document.getElementById('logout-btn');
+const restoreDbBtn = document.getElementById('restore-db-btn');
 const adminGrid = document.getElementById('admin-grid');
 const statCount = document.getElementById('stat-count');
 const statCats = document.getElementById('stat-cats');
@@ -42,6 +43,79 @@ loginForm.addEventListener('submit', async (e) => {
 });
 
 logoutBtn.addEventListener('click', () => firebase.auth().signOut());
+
+restoreDbBtn.addEventListener('click', async () => {
+    if (!confirm('This will add all 50+ items from your menu images. Continue?')) return;
+    
+    const menuData = [
+        { name: "MANGO GRAHAM", category: "MILKSHAKES", prices: { "16OZ": 119, "22OZ": 129 } },
+        { name: "MANGO DELIGHTS", category: "MILKSHAKES", prices: { "16OZ": 119, "22OZ": 129 } },
+        { name: "MANGO OREO", category: "MILKSHAKES", prices: { "16OZ": 119, "22OZ": 129 } },
+        { name: "UBE CHEESECAKE", category: "MILKSHAKES", prices: { "16OZ": 119, "22OZ": 129 } },
+        { name: "CHOCOLATE COOKIES", category: "MILKSHAKES", prices: { "16OZ": 119, "22OZ": 129 } },
+        { name: "CHOCO VOLCANO", category: "MILKSHAKES", prices: { "16OZ": 119, "22OZ": 129 } },
+        { name: "MANGO CHEESECAKE", category: "PREMIUM MILKSHAKES", prices: { "16OZ": 159, "22OZ": 169 } },
+        { name: "ESPRESSO CHIPS", category: "PREMIUM MILKSHAKES", prices: { "16OZ": 159, "22OZ": 169 } },
+        { name: "CAPPUCCINO", category: "PREMIUM MILKSHAKES", prices: { "16OZ": 159, "22OZ": 169 } },
+        { name: "CAFÉ MOCHA", category: "PREMIUM MILKSHAKES", prices: { "16OZ": 159, "22OZ": 169 } },
+        { name: "CAFÉ CARAMEL", category: "PREMIUM MILKSHAKES", prices: { "16OZ": 159, "22OZ": 169 } },
+        { name: "CAFÉ MATCHA", category: "PREMIUM MILKSHAKES", prices: { "16OZ": 159, "22OZ": 169 } },
+        { name: "SALTED CARAMEL", category: "PREMIUM MILKSHAKES", prices: { "16OZ": 159, "22OZ": 169 } },
+        { name: "MATCHA STRAWBERRY", category: "PREMIUM MILKSHAKES", prices: { "16OZ": 159, "22OZ": 169 } },
+        { name: "MATCHA CLOUDY", category: "PREMIUM MILKSHAKES", prices: { "16OZ": 159, "22OZ": 169 } },
+        { name: "CAPRI BLACK", category: "COFFEE SELECTION", prices: { "8OZ": 79, "12OZ": 89, "16OZ": 99 } },
+        { name: "CAFÉ LATTE", category: "COFFEE SELECTION", prices: { "8OZ": 89, "12OZ": 99, "16OZ": 109 } },
+        { name: "CAPPUCCINO", category: "COFFEE SELECTION", prices: { "8OZ": 89, "12OZ": 99, "16OZ": 109 } },
+        { name: "CARAMEL MACCHIATO", category: "COFFEE SELECTION", prices: { "8OZ": 89, "12OZ": 99, "16OZ": 109 } },
+        { name: "SALTED CARAMEL", category: "COFFEE SELECTION", prices: { "8OZ": 89, "12OZ": 99, "16OZ": 109 } },
+        { name: "WHITE CHOCOLATE", category: "COFFEE SELECTION", prices: { "8OZ": 89, "12OZ": 99, "16OZ": 109 } },
+        { name: "DARK MOCHA", category: "COFFEE SELECTION", prices: { "8OZ": 89, "12OZ": 99, "16OZ": 109 } },
+        { name: "VANILLA LATTE", category: "COFFEE SELECTION", prices: { "8OZ": 89, "12OZ": 99, "16OZ": 109 } },
+        { name: "UBE COFFEE HAZE", category: "COFFEE SELECTION", prices: { "8OZ": 89, "12OZ": 99, "16OZ": 109 } },
+        { name: "ESPRESSO CHIPS", category: "FRAPPE", prices: { "16OZ": 129, "22OZ": 139 } },
+        { name: "CHOCO CRUNCH", category: "FRAPPE", prices: { "16OZ": 139, "22OZ": 149 } },
+        { name: "DOUBLE FUDGE", category: "FRAPPE", prices: { "16OZ": 139, "22OZ": 149 } },
+        { name: "STRAWBERRY", category: "FRAPPE", prices: { "16OZ": 139, "22OZ": 149 } },
+        { name: "MATCHA", category: "FRAPPE", prices: { "16OZ": 149, "22OZ": 159 } },
+        { name: "MATCHA STRAWBERRY", category: "FRAPPE", prices: { "16OZ": 159, "22OZ": 169 } },
+        { name: "CHOCO STRAWBERRY", category: "FRAPPE", prices: { "16OZ": 159, "22OZ": 169 } },
+        { name: "CHOCO VOLCANO", category: "SIGNATURE TWISTS", price: 129 },
+        { name: "MILO OREO LATTE", category: "SIGNATURE TWISTS", price: 129 },
+        { name: "MATCHA MILK FOAM", category: "SIGNATURE TWISTS", price: 139 },
+        { name: "GREEN APPLE", category: "SODA BLENDS", prices: { "16OZ": 39, "22OZ": 49 } },
+        { name: "KIWI", category: "SODA BLENDS", prices: { "16OZ": 39, "22OZ": 49 } },
+        { name: "MANGO", category: "SODA BLENDS", prices: { "16OZ": 39, "22OZ": 49 } },
+        { name: "STRAWBERRY", category: "SODA BLENDS", prices: { "16OZ": 39, "22OZ": 49 } },
+        { name: "GRAPES", category: "SODA BLENDS", prices: { "16OZ": 39, "22OZ": 49 } },
+        { name: "LEMON", category: "SODA BLENDS", prices: { "16OZ": 39, "22OZ": 49 } },
+        { name: "CUCUMBER LEMONADE", category: "SIGNATURE FRUIT INFUSIONS", price: 129 },
+        { name: "YAKULT HONEY LEMONADE", category: "SIGNATURE FRUIT INFUSIONS", price: 129 },
+        { name: "FRIES", category: "SAVORY BITES", prices: { "SOLO": 59, "SHARING": 89 } },
+        { name: "NACHOS", category: "SAVORY BITES", prices: { "SOLO": 79, "SHARING": 129 } },
+        { name: "HAM", category: "CLUB SANDWICHES", price: 129 },
+        { name: "BACON", category: "CLUB SANDWICHES", price: 129 },
+        { name: "TUNA", category: "CLUB SANDWICHES", price: 129 },
+        { name: "Classic", category: "CAPRI BURGER", price: 69 },
+        { name: "Country", category: "CAPRI BURGER", price: 99 },
+        { name: "Quarter Pounder", category: "CAPRI BURGER", price: 139 }
+    ];
+
+    restoreDbBtn.disabled = true;
+    restoreDbBtn.textContent = 'Uploading...';
+
+    for (const item of menuData) {
+        try {
+            item.available = true;
+            item.order = Date.now();
+            await db.collection('items').add(item);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+    
+    restoreDbBtn.textContent = '✅ Restore Complete';
+    showToast('All menu items restored!');
+});
 
 // Modal Logic
 showAddModalBtn.addEventListener('click', () => addModal.classList.remove('hidden'));
