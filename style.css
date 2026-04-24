@@ -1,0 +1,242 @@
+:root {
+    --bg: #0a0a0a;
+    --card-bg: #141414;
+    --accent: #4CAF50;
+    --text-main: #ffffff;
+    --text-dim: #a0a0a0;
+    --border: #262626;
+    --radius: 12px;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg);
+    color: var(--text-main);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+.app-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Header & Tabs */
+.main-header {
+    padding: 40px 0 20px;
+    position: sticky;
+    top: 0;
+    background-color: var(--bg);
+    z-index: 100;
+}
+
+.header-content {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.brand-logo {
+    width: 80px;
+    height: auto;
+    margin-bottom: 15px;
+}
+
+.tagline {
+    color: var(--text-dim);
+    font-size: 0.95em;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.category-tabs {
+    display: flex;
+    overflow-x: auto;
+    gap: 12px;
+    padding: 10px 0;
+    scrollbar-width: none;
+    border-bottom: 1px solid var(--border);
+}
+
+.category-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.tab-btn {
+    white-space: nowrap;
+    padding: 10px 20px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text-dim);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tab-btn.active {
+    background: var(--text-main);
+    color: var(--bg);
+    border-color: var(--text-main);
+}
+
+/* Menu Grid */
+.menu-view {
+    padding: 30px 0;
+}
+
+.item-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+}
+
+/* Card Styling */
+.menu-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    transition: transform 0.2s;
+}
+
+.menu-card:active {
+    transform: scale(0.98);
+}
+
+.card-img-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: #1a1a1a;
+}
+
+.card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.5s;
+}
+
+.card-img.loaded {
+    opacity: 1;
+}
+
+.sold-out-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+}
+
+.sold-out-tag {
+    background: #ff4d4d;
+    color: white;
+    padding: 6px 16px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.8em;
+    letter-spacing: 1px;
+}
+
+.card-content {
+    padding: 20px;
+}
+
+.card-title {
+    font-size: 1.1em;
+    font-weight: 700;
+    margin: 0 0 8px;
+}
+
+.card-desc {
+    color: var(--text-dim);
+    font-size: 0.85em;
+    margin-bottom: 16px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-price {
+    font-weight: 700;
+    font-size: 1.1em;
+}
+
+.dietary-icons {
+    display: flex;
+    gap: 6px;
+}
+
+.dietary-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.v-dot { background: #4CAF50; } /* Vegan */
+.gf-dot { background: #FFC107; } /* GF */
+
+/* Loading State */
+.loading-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 0;
+    color: var(--text-dim);
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border);
+    border-top: 3px solid var(--text-main);
+    border-radius: 50%;
+    margin: 0 auto 15px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Footer */
+.minimal-footer {
+    padding: 60px 0;
+    text-align: center;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+}
+
+.footer-sig {
+    width: 120px;
+    margin-bottom: 10px;
+    opacity: 0.5;
+}
+
+.minimal-footer p {
+    color: var(--text-dim);
+    font-size: 0.8em;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 480px) {
+    .item-grid {
+        grid-template-columns: 1fr;
+    }
+    .main-header {
+        padding-top: 20px;
+    }
+}
