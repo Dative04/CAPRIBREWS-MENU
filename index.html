@@ -69,9 +69,17 @@
         <!-- Order Confirmation Modal -->
         <div id="order-modal" class="modal hidden">
             <div class="modal-content">
-                <h2>Order Received!</h2>
-                <p>Your order has been sent to the barista. Please proceed to the counter for payment.</p>
-                <button id="close-order-modal" class="btn-primary">Got it!</button>
+                <div class="success-icon">✓</div>
+                <h2>Order Sent!</h2>
+                <div id="order-summary-list" class="order-summary-list">
+                    <!-- Summary items will be injected here -->
+                </div>
+                <div class="order-total-row">
+                    <span>Total Amount</span>
+                    <span id="summary-total">₱0.00</span>
+                </div>
+                <p class="instruction-text">Please proceed to the counter and show this screen to pay and collect your order.</p>
+                <button id="close-order-modal" class="btn-primary">Back to Menu</button>
             </div>
         </div>
 

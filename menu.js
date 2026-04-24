@@ -14,6 +14,8 @@ const checkoutBtn = document.getElementById('checkout-btn');
 const closeCartBtn = document.getElementById('close-cart');
 const orderModal = document.getElementById('order-modal');
 const closeOrderModalBtn = document.getElementById('close-order-modal');
+const orderSummaryList = document.getElementById('order-summary-list');
+const summaryTotalLabel = document.getElementById('summary-total');
 
 // Cart Interactions
 cartFab.onclick = () => cartDrawer.classList.toggle('hidden');
@@ -72,9 +74,12 @@ function showCartFAB() {
 checkoutBtn.onclick = async () => {
     if (cart.length === 0) return;
     
+    const currentCart = [...cart]; // Copy for summary
+    const total = currentCart.reduce((sum, item) => sum + item.selectedPrice, 0);
+    
     const orderData = {
-        items: cart,
-        total: cart.reduce((sum, item) => sum + item.selectedPrice, 0),
+        items: currentCart,
+        total: total,
         status: 'pending',
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
     };
@@ -85,6 +90,17 @@ checkoutBtn.onclick = async () => {
     try {
         if (typeof db !== 'undefined') {
             await db.collection('orders').add(orderData);
+            
+            // Show Summary in Modal
+            orderSummaryList.innerHTML = currentCart.map(item => `
+                <div class="summary-item">
+                    <span>${item.name} (${item.selectedSize})</span>
+                    <span>₱${item.selectedPrice.toFixed(0)}</span>
+                </div>
+            `).join('');
+            summaryTotalLabel.textContent = `₱${total.toFixed(0)}`;
+            
+            // Reset Cart
             cart = [];
             updateCartUI();
             cartDrawer.classList.add('hidden');

@@ -184,34 +184,49 @@ function renderOrdersGrid(orders) {
     }
     
     orders.forEach(order => {
-        const date = order.timestamp ? new Date(order.timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now';
+        const timestamp = order.timestamp ? new Date(order.timestamp.seconds * 1000) : new Date();
+        const timeStr = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const dateStr = timestamp.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        
         const card = document.createElement('div');
         card.className = `order-card ${order.status}`;
         
         const itemsHtml = order.items.map(item => `
             <div class="order-item-row">
-                <span>${item.name} (${item.selectedSize})</span>
-                <span>₱${item.selectedPrice}</span>
+                <div class="item-detail">
+                    <span class="item-qty">1×</span>
+                    <span class="item-name">${item.name}</span>
+                    <span class="item-size-tag">${item.selectedSize}</span>
+                </div>
+                <span class="item-price">₱${item.selectedPrice.toFixed(0)}</span>
             </div>
         `).join('');
 
         card.innerHTML = `
             <div class="order-header">
-                <span>Order #${order.id.slice(-4).toUpperCase()}</span>
-                <span>${date}</span>
+                <div class="order-id-group">
+                    <span class="order-label">ORDER</span>
+                    <span class="order-id">#${order.id.slice(-4).toUpperCase()}</span>
+                </div>
+                <div class="order-time-group">
+                    <span class="order-time">${timeStr}</span>
+                    <span class="order-date">${dateStr}</span>
+                </div>
             </div>
             <div class="order-items">
                 ${itemsHtml}
             </div>
             <div class="order-total">
-                <span>Total</span>
-                <span>₱${order.total}</span>
+                <span>Total Amount</span>
+                <span class="total-value">₱${order.total.toFixed(0)}</span>
             </div>
             <div class="order-actions">
                 ${order.status === 'pending' ? `
-                    <button class="complete-order-btn" onclick="updateOrderStatus('${order.id}', 'completed')">Done</button>
-                ` : ''}
-                <button class="delete-order-btn" onclick="deleteOrder('${order.id}')">×</button>
+                    <button class="complete-order-btn" onclick="updateOrderStatus('${order.id}', 'completed')">Mark as Done</button>
+                ` : `
+                    <span class="status-badge completed">Completed</span>
+                `}
+                <button class="delete-order-btn" onclick="deleteOrder('${order.id}')" title="Delete Record">×</button>
             </div>
         `;
         ordersContainer.appendChild(card);
