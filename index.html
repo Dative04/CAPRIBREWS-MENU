@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capibrews Menu</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <header>
+        <img src="https://i.imgur.com/F022t03.png" alt="Capibrews Logo" class="logo">
+        <h1>THE CONCEPT MENU</h1>
+        <h2>(BUILD-YOUR-OWN)</h2>
+        <p>Feeling Adventurous? Ask our barista for their 'Daily Whim' or tell us your favorite flavors, and we'll craft a drink just for you!</p>
+    </header>
+
+    <main id="menu-container">
+        <p class="loading">Loading menu...</p>
+    </main>
+
+    <footer>
+        <img src="https://i.imgur.com/F022t03.png" alt="Capibrews Signature" class="signature">
+    </footer>
+
+    <script src="firebase-config.js"></script>
+    <script src="menu.js"></script>
+</body>
+</html>
