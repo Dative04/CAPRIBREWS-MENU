@@ -1,0 +1,92 @@
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f8f8;
+    color: #333;
+}
+
+header {
+    text-align: center;
+    padding: 20px;
+    background-color: #fff;
+    border-bottom: 1px solid #eee;
+}
+
+.logo {
+    width: 100px; /* Adjust as needed */
+    margin-bottom: 10px;
+}
+
+h1 {
+    color: #4CAF50; /* Green color from the image */
+    font-size: 2.5em;
+    margin-bottom: 5px;
+}
+
+h2 {
+    color: #666;
+    font-size: 1.2em;
+    margin-bottom: 15px;
+}
+
+p {
+    color: #555;
+    line-height: 1.5;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+main {
+    padding: 20px;
+    max-width: 800px;
+    margin: 20px auto;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.menu-category {
+    margin-bottom: 30px;
+}
+
+.menu-category h3 {
+    color: #4CAF50; /* Green color from the image */
+    font-size: 1.8em;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.menu-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px dashed #eee;
+}
+
+.menu-item:last-child {
+    border-bottom: none;
+}
+
+.item-name {
+    font-weight: bold;
+    flex-grow: 1;
+}
+
+.item-price {
+    margin-left: 20px;
+    white-space: nowrap;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: 30px;
+    background-color: #fff;
+    border-top: 1px solid #eee;
+}
+
+.signature {
+    width: 150px; /* Adjust as needed */
+}
