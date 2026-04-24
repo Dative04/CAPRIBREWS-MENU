@@ -223,6 +223,70 @@ body {
     border: 1px solid var(--border);
 }
 
+/* Price Manager Table */
+.price-table-container {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin-top: 20px;
+    box-shadow: var(--shadow);
+}
+
+.price-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.price-table th, .price-table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.price-table th {
+    background: var(--bg);
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-dim);
+}
+
+.price-table tr:last-child td {
+    border-bottom: none;
+}
+
+.price-input-small {
+    width: 80px;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.price-edit-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.price-edit-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.85em;
+    color: var(--text-dim);
+}
+
+.save-price-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.85em;
+}
+
 /* Grid */
 .admin-item-grid {
     display: grid;

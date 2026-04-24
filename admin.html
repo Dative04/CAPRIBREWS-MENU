@@ -21,7 +21,7 @@
             <nav class="sidebar-nav">
                 <button class="nav-item active" data-view="dashboard">Dashboard</button>
                 <button class="nav-item" data-view="inventory">Inventory</button>
-                <button class="nav-item" id="price-manager-btn">Price Manager</button>
+                <button class="nav-item" data-view="price-manager">Price Manager</button>
                 <button class="nav-item" onclick="seedMenuData()">Seed Data</button>
             </nav>
             <div class="sidebar-footer">
@@ -105,6 +105,29 @@
                         </div>
                         <div id="admin-grid" class="admin-item-grid">
                             <p class="loading">Fetching your inventory...</p>
+                        </div>
+                    </div>
+
+                    <!-- Price Manager View -->
+                    <div id="price-manager-view" class="view-section hidden">
+                        <div class="view-header">
+                            <h2>Price Manager</h2>
+                            <p>Quickly update prices across your entire menu.</p>
+                        </div>
+                        <div class="price-table-container">
+                            <table class="price-table">
+                                <thead>
+                                    <tr>
+                                        <th>Item Name</th>
+                                        <th>Category</th>
+                                        <th>Pricing</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="price-manager-list">
+                                    <!-- Price rows will be injected here -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>

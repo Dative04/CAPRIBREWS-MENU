@@ -198,8 +198,85 @@ window.switchView = (viewId) => {
         }
     });
 
+    if (viewId === 'price-manager') {
+        renderPriceManager(currentItems);
+    }
+
     if (window.innerWidth <= 768) {
         adminSidebar.classList.remove('open');
+    }
+};
+
+function renderPriceManager(items) {
+    const list = document.getElementById('price-manager-list');
+    list.innerHTML = '';
+
+    items.forEach(item => {
+        const tr = document.createElement('tr');
+        
+        let pricingHtml = '';
+        if (item.prices) {
+            pricingHtml = `
+                <div class="price-edit-row">
+                    ${Object.entries(item.prices).map(([size, price]) => `
+                        <div class="price-edit-item">
+                            <span>${size}:</span>
+                            <input type="number" value="${price}" class="price-input-small" data-size="${size}">
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else {
+            pricingHtml = `
+                <div class="price-edit-row">
+                    <div class="price-edit-item">
+                        <span>₱:</span>
+                        <input type="number" value="${item.price}" class="price-input-small" data-single="true">
+                    </div>
+                </div>
+            `;
+        }
+
+        tr.innerHTML = `
+            <td><strong>${item.name}</strong></td>
+            <td><span class="tag">${item.category}</span></td>
+            <td>${pricingHtml}</td>
+            <td>
+                <button class="save-price-btn" onclick="updateItemPrice('${item.id}', this)">Save</button>
+            </td>
+        `;
+        list.appendChild(tr);
+    });
+}
+
+window.updateItemPrice = async (id, btn) => {
+    const row = btn.closest('tr');
+    const inputs = row.querySelectorAll('.price-input-small');
+    const updates = {};
+    let isSingle = false;
+
+    inputs.forEach(input => {
+        const val = parseFloat(input.value);
+        if (input.dataset.single) {
+            isSingle = true;
+            updates.price = val;
+        } else {
+            if (!updates.prices) updates.prices = {};
+            updates.prices[input.dataset.size] = val;
+        }
+    });
+
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+
+    try {
+        await db.collection('items').doc(id).update(updates);
+        showToast('Price updated successfully');
+    } catch (error) {
+        showToast('Failed to update price');
+    } finally {
+        btn.textContent = 'Save';
+        btn.disabled = false;
     }
 };
 
