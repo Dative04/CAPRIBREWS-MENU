@@ -19,7 +19,8 @@
                 <button id="close-sidebar" class="mobile-only">×</button>
             </div>
             <nav class="sidebar-nav">
-                <button class="nav-item active" data-view="inventory">Edit Menu</button>
+                <button class="nav-item active" data-view="dashboard">Dashboard</button>
+                <button class="nav-item" data-view="inventory">Inventory</button>
                 <button class="nav-item" id="price-manager-btn">Price Manager</button>
                 <button class="nav-item" onclick="seedMenuData()">Seed Data</button>
             </nav>
@@ -53,13 +54,58 @@
                 </div>
 
                 <div id="admin-screen" class="hidden">
-                    <div class="stats-row">
-                        <div class="stat-pill">Items: <span id="stat-count">0</span></div>
-                        <div class="stat-pill">Categories: <span id="stat-cats">0</span></div>
+                    <!-- Dashboard View -->
+                    <div id="dashboard-view" class="view-section">
+                        <div class="dashboard-header">
+                            <h2>Menu Overview</h2>
+                            <p>Quick stats and insights for your digital menu.</p>
+                        </div>
+                        
+                        <div class="stats-row">
+                            <div class="stat-card">
+                                <span class="stat-label">Total Items</span>
+                                <span class="stat-value" id="stat-count">0</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-label">Categories</span>
+                                <span class="stat-value" id="stat-cats">0</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-label">Active Items</span>
+                                <span class="stat-value" id="stat-active">0</span>
+                            </div>
+                        </div>
+
+                        <div class="quick-actions">
+                            <h3>Quick Actions</h3>
+                            <div class="action-grid">
+                                <button onclick="document.getElementById('show-add-modal').click()" class="action-btn">
+                                    <span class="icon">＋</span>
+                                    <span>Add Item</span>
+                                </button>
+                                <button onclick="switchView('inventory')" class="action-btn">
+                                    <span class="icon">📋</span>
+                                    <span>Manage All</span>
+                                </button>
+                                <button onclick="seedMenuData()" class="action-btn">
+                                    <span class="icon">🌱</span>
+                                    <span>Sync Defaults</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <div id="admin-grid" class="admin-item-grid">
-                        <p class="loading">Fetching your inventory...</p>
+
+                    <!-- Inventory View -->
+                    <div id="inventory-view" class="view-section hidden">
+                        <div class="view-header">
+                            <h2>Manage Inventory</h2>
+                            <div class="search-filter">
+                                <input type="text" id="admin-search" placeholder="Search items...">
+                            </div>
+                        </div>
+                        <div id="admin-grid" class="admin-item-grid">
+                            <p class="loading">Fetching your inventory...</p>
+                        </div>
                     </div>
                 </div>
             </div>
