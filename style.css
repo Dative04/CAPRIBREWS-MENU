@@ -1,15 +1,15 @@
 :root {
     --bg: #fdfcf8;
     --card-bg: #ffffff;
-    --accent: #1b4332;
-    --accent-light: #2d6a4f;
+    --accent: #1D3D2E; /* Capri Brews Signature Green */
+    --accent-light: #2a5641;
     --text-main: #1a1a1a;
     --text-dim: #666666;
     --border: #e5e1d8;
     --radius: 20px;
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
     --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.08);
-    --font-serif: 'Playfair Display', serif; /* Adding a serif font for titles */
+    --font-serif: 'Playfair Display', serif;
 }
 
 /* Add Google Font for titles */

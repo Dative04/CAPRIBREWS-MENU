@@ -64,60 +64,12 @@ const initialMenuData = [
         order: 8
     },
     {
-        name: "Choco Volcano",
-        category: "SIGNATURE TWISTS",
-        description: "Explosion of chocolate flavors in one cup.",
-        price: 129,
-        available: true,
-        order: 9
-    },
-    {
-        name: "Milo Oreo",
-        category: "SIGNATURE TWISTS",
-        description: "The perfect blend of Milo and Oreo cookies.",
-        price: 139,
-        available: true,
-        order: 10
-    },
-    {
-        name: "Green Apple Soda",
-        category: "SODA BLENDS",
-        description: "Refreshing green apple flavored soda with ice.",
-        prices: { "16oz": 39, "22oz": 49 },
-        available: true,
-        order: 11
-    },
-    {
-        name: "Kiwi Soda",
-        category: "SODA BLENDS",
-        description: "Zesty kiwi flavored soda, perfect for a hot day.",
-        prices: { "16oz": 39, "22oz": 49 },
-        available: true,
-        order: 12
-    },
-    {
-        name: "Cucumber Infusion",
-        category: "SIGNATURE INFUSIONS",
-        description: "Fresh cucumber infused water with a hint of lime.",
-        price: 129,
-        available: true,
-        order: 13
-    },
-    {
-        name: "Yakult Honey Infusion",
-        category: "SIGNATURE INFUSIONS",
-        description: "Probiotic Yakult mixed with sweet honey.",
-        price: 129,
-        available: true,
-        order: 14
-    },
-    {
         name: "French Fries",
         category: "SAVORY BITES",
         description: "Golden crispy fries served with your choice of dip.",
         prices: { "Solo": 59, "Sharing": 89 },
         available: true,
-        order: 15
+        order: 9
     },
     {
         name: "Loaded Nachos",
@@ -125,7 +77,7 @@ const initialMenuData = [
         description: "Nachos topped with cheese, meat, and jalapeños.",
         prices: { "Solo": 79, "Sharing": 129 },
         available: true,
-        order: 16
+        order: 10
     },
     {
         name: "Ham & Cheese Club",
@@ -133,7 +85,7 @@ const initialMenuData = [
         description: "Triple-decker sandwich with ham, cheese, and fresh veggies.",
         price: 129,
         available: true,
-        order: 17
+        order: 11
     },
     {
         name: "Bacon Club Sandwich",
@@ -141,6 +93,6 @@ const initialMenuData = [
         description: "Crispy bacon with lettuce and tomato in a classic club.",
         price: 129,
         available: true,
-        order: 18
+        order: 12
     }
 ];
