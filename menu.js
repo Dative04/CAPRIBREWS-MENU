@@ -104,16 +104,34 @@ function renderItems(items) {
     });
 }
 
-// Real-time listener
+// Real-time listener with Local Fallback
 if (typeof db !== 'undefined') {
     db.collection('items').onSnapshot(snapshot => {
-        allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        if (snapshot.empty && typeof initialMenuData !== 'undefined') {
+            console.log("Firestore is empty. Using local fallback data.");
+            allItems = initialMenuData;
+        } else {
+            allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
         renderTabs(allItems);
         filterAndRenderItems();
     }, error => {
-        console.error("Firestore Error:", error);
-        menuGrid.innerHTML = `<div class="loading-state"><p style="color: #ff4d4d">Error: ${error.message}</p></div>`;
+        console.warn("Firestore Error, using local fallback:", error);
+        if (typeof initialMenuData !== 'undefined') {
+            allItems = initialMenuData;
+            renderTabs(allItems);
+            filterAndRenderItems();
+        } else {
+            menuGrid.innerHTML = `<div class="loading-state"><p style="color: #ff4d4d">Error: ${error.message}</p></div>`;
+        }
     });
 } else {
-    menuGrid.innerHTML = '<div class="loading-state"><p style="color: #ff4d4d">Firebase not initialized. Check config.</p></div>';
+    console.warn("Firebase not initialized. Using local fallback data.");
+    if (typeof initialMenuData !== 'undefined') {
+        allItems = initialMenuData;
+        renderTabs(allItems);
+        filterAndRenderItems();
+    } else {
+        menuGrid.innerHTML = '<div class="loading-state"><p style="color: #ff4d4d">Firebase not initialized and no fallback found.</p></div>';
+    }
 }
