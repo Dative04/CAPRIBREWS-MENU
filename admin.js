@@ -7,6 +7,18 @@ const adminGrid = document.getElementById('admin-grid');
 const statCount = document.getElementById('stat-count');
 const statCats = document.getElementById('stat-cats');
 
+// Sidebar Drawer Logic
+const adminSidebar = document.getElementById('admin-sidebar');
+const openSidebarBtn = document.getElementById('open-sidebar');
+const closeSidebarBtn = document.getElementById('close-sidebar');
+
+if (openSidebarBtn) {
+    openSidebarBtn.onclick = () => adminSidebar.classList.add('open');
+}
+if (closeSidebarBtn) {
+    closeSidebarBtn.onclick = () => adminSidebar.classList.remove('open');
+}
+
 // Modal Elements
 const addModal = document.getElementById('add-modal');
 const showAddModalBtn = document.getElementById('show-add-modal');
