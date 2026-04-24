@@ -29,7 +29,7 @@
             <img src="https://i.imgur.com/F022t03.png" alt="Capibrews Logo" class="logo">
             <h1>Control Panel</h1>
             <div class="header-right">
-                <button id="restore-db-btn" class="restore-btn">⚠️ Restore All Items</button>
+                <button onclick="seedMenuData()" class="btn-secondary" style="font-size: 0.8em; opacity: 0.6;">Seed Data</button>
                 <button id="show-add-modal" class="add-btn">+ New Item</button>
                 <button id="logout-btn">Logout</button>
             </div>
@@ -97,16 +97,10 @@
                 </div>
 
                 <div id="multi-price-input" class="price-section hidden">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>16OZ Price (₱)</label>
-                            <input type="number" id="new-price-16" placeholder="0.00" step="0.01">
-                        </div>
-                        <div class="form-group">
-                            <label>22OZ Price (₱)</label>
-                            <input type="number" id="new-price-22" placeholder="0.00" step="0.01">
-                        </div>
+                    <div id="price-rows">
+                        <!-- Dynamic price rows will be added here -->
                     </div>
+                    <button type="button" id="add-price-row" class="btn-secondary" style="width: auto; margin-top: 10px; padding: 5px 15px;">+ Add Size/Price</button>
                 </div>
 
                 <div class="modal-btns">
