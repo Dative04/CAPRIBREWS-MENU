@@ -576,10 +576,11 @@ function renderOrdersTable(orders) {
             ? order.items.map(i => {
                 if (!i) return 'Unknown Item';
                 const name = i.name || 'Unnamed Item';
+                const qty = i.quantity ? ` (x${i.quantity})` : '';
                 const size = i.selectedSize && i.selectedSize !== 'Standard' 
-                    ? ` <span style="color:var(--text-dim); font-size:0.8em;">(${i.selectedSize})</span>` 
+                    ? ` <span style="color:var(--text-dim); font-size:0.8em;">${i.selectedSize}</span>` 
                     : '';
-                return `${name}${size}`;
+                return `${name}${size}${qty}`;
             }).join('<br>')
             : (String(order.items || '—'));
         const total    = `₱${Number(order.total_price || 0).toFixed(0)}`;

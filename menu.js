@@ -153,16 +153,28 @@ checkoutBtn.onclick = async () => {
     customerNameInput?.classList.remove('input-error');
 
     const currentCart = [...cart];
+    
+    // Group identical items (same name and size) for quantity
+    const groupedItems = currentCart.reduce((acc, item) => {
+        const key = `${item.name}-${item.selectedSize}`;
+        if (!acc[key]) {
+            acc[key] = {
+                name: item.name,
+                selectedSize: item.selectedSize,
+                selectedPrice: item.selectedPrice,
+                quantity: 1
+            };
+        } else {
+            acc[key].quantity += 1;
+        }
+        return acc;
+    }, {});
+
     const total = currentCart.reduce((sum, item) => sum + item.selectedPrice, 0);
 
     const orderData = {
         customer_name: customerName,
-        items: currentCart.map(item => ({
-            id:            item.id || 'local-' + Date.now(),
-            name:          item.name,
-            selectedSize:  item.selectedSize,
-            selectedPrice: item.selectedPrice
-        })),
+        items: Object.values(groupedItems),
         total_price: total,
         status: 'pending'
     };
