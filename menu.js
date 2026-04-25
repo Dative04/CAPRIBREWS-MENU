@@ -275,6 +275,8 @@ function renderItems(items) {
     menuGrid.innerHTML = '';
 
     if (items.length === 0) {
+        menuGrid.classList.remove('accordion-mode');
+        menuGrid.classList.remove('item-grid');
         menuGrid.innerHTML = `
             <div class="loading-state">
                 <div style="font-size: 2.5rem; margin-bottom: 12px; opacity: 0.4;">☕</div>
@@ -284,6 +286,8 @@ function renderItems(items) {
     }
 
     if (currentCategory === 'All') {
+        menuGrid.classList.remove('item-grid');
+        menuGrid.classList.add('accordion-mode');
         const groups = items.reduce((acc, item) => {
             if (!acc[item.category]) acc[item.category] = [];
             acc[item.category].push(item);
@@ -312,10 +316,10 @@ function renderItems(items) {
             menuGrid.appendChild(details);
         });
     } else {
-        const grid = document.createElement('div');
-        grid.className = 'item-grid';
-        items.forEach((item, i) => grid.appendChild(createItemCard(item, i)));
-        menuGrid.appendChild(grid);
+        menuGrid.classList.remove('accordion-mode');
+        // Ensure menuGrid itself acts as the grid for item cards
+        menuGrid.classList.add('item-grid');
+        items.forEach((item, i) => menuGrid.appendChild(createItemCard(item, i)));
     }
 }
 
