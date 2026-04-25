@@ -140,7 +140,10 @@
                     <div id="orders-view" class="view-section hidden">
                         <div class="view-header">
                             <h2>Active Orders</h2>
-                            <p>Manage incoming orders from customers.</p>
+                            <div class="header-actions">
+                                <button id="refresh-orders-btn" class="btn-secondary" style="font-size: 0.85em;">↻ Refresh Feed</button>
+                                <p>Manage incoming orders from customers.</p>
+                            </div>
                         </div>
                         <div id="orders-container" class="orders-grid">
                             <p class="loading">Waiting for orders...</p>
@@ -214,6 +217,8 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <script src="firebase-config.js"></script>
     <script src="menu-data.js"></script>
     <script src="admin.js"></script>

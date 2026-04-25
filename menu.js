@@ -91,41 +91,52 @@ checkoutBtn.onclick = async () => {
     const currentCart = [...cart]; // Copy for summary
     const total = currentCart.reduce((sum, item) => sum + item.selectedPrice, 0);
     
+    // Construct Order object for Supabase
     const orderData = {
-        items: currentCart,
-        total: total,
-        status: 'pending',
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        customer_name: "Customer", // You can add a name field later
+        items: currentCart.map(item => ({
+            id: item.id,
+            name: item.name,
+            selectedSize: item.selectedSize,
+            selectedPrice: item.selectedPrice
+        })),
+        total_price: total,
+        status: 'pending'
     };
     
     checkoutBtn.disabled = true;
     checkoutBtn.textContent = 'Processing...';
     
     try {
-        if (typeof db !== 'undefined') {
-            await db.collection('orders').add(orderData);
-            
-            // Show Summary in Modal
-            orderSummaryList.innerHTML = currentCart.map(item => `
-                <div class="summary-item">
-                    <span>${item.name} (${item.selectedSize})</span>
-                    <span>₱${item.selectedPrice.toFixed(0)}</span>
-                </div>
-            `).join('');
-            summaryTotalLabel.textContent = `₱${total.toFixed(0)}`;
-            
-            // Reset Cart
-            cart = [];
-            updateCartUI();
-            cartDrawer.classList.add('hidden');
-            orderModal.classList.remove('hidden');
-            orderModal.style.display = 'flex'; // Force show as flex
-        } else {
-            alert('Order system currently offline. Please order at the counter.');
-        }
+        // Use Supabase to place the order
+        const { data, error } = await supabase
+            .from('orders')
+            .insert([orderData])
+            .select();
+
+        if (error) throw error;
+
+        console.log("Order successfully saved to Supabase:", data);
+        
+        // Show Summary in Modal
+        orderSummaryList.innerHTML = currentCart.map(item => `
+            <div class="summary-item">
+                <span>${item.name} (${item.selectedSize})</span>
+                <span>₱${item.selectedPrice.toFixed(0)}</span>
+            </div>
+        `).join('');
+        summaryTotalLabel.textContent = `₱${total.toFixed(0)}`;
+        
+        // Reset Cart
+        cart = [];
+        updateCartUI();
+        cartDrawer.classList.add('hidden');
+        orderModal.classList.remove('hidden');
+        orderModal.style.display = 'flex';
+
     } catch (error) {
-        console.error("Order error:", error);
-        alert('Something went wrong. Please try again.');
+        console.error("CRITICAL: Order persistence failed:", error);
+        alert('Failed to send order to database. Please check your internet connection and try again.');
     } finally {
         checkoutBtn.disabled = false;
         checkoutBtn.textContent = 'Place Order';
@@ -292,19 +303,51 @@ if (typeof initialMenuData !== 'undefined') {
     filterAndRenderItems();
 }
 
-// Real-time listener with Local Fallback
-if (typeof db !== 'undefined') {
-    db.collection('items').orderBy('order', 'asc').onSnapshot(snapshot => {
-        if (!snapshot.empty) {
-            allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderTabs(allItems);
-            filterAndRenderItems();
-        } else {
-            console.log("Firestore is empty. Keeping local data.");
-        }
-    }, error => {
-        console.warn("Firestore Error, staying with local data:", error);
-    });
+// Real-time listener with Local Fallback for Supabase
+if (typeof supabase !== 'undefined') {
+    // 1. Initial fetch
+    supabase
+        .from('menu')
+        .select('*')
+        .order('sort_order', { ascending: true })
+        .then(({ data, error }) => {
+            if (error) {
+                console.warn("Supabase Fetch Error, staying with local data:", error);
+                return;
+            }
+            if (data && data.length > 0) {
+                // Map Supabase fields back to internal format if necessary
+                allItems = data.map(item => ({
+                    ...item,
+                    image: item.image_url // internal logic uses .image
+                }));
+                renderTabs(allItems);
+                filterAndRenderItems();
+            }
+        });
+
+    // 2. Real-time updates
+    supabase
+        .channel('public:menu')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'menu' }, payload => {
+            console.log('Menu change detected, refreshing data...');
+            // Simple approach: re-fetch everything to maintain sort order
+            supabase
+                .from('menu')
+                .select('*')
+                .order('sort_order', { ascending: true })
+                .then(({ data }) => {
+                    if (data) {
+                        allItems = data.map(item => ({
+                            ...item,
+                            image: item.image_url
+                        }));
+                        renderTabs(allItems);
+                        filterAndRenderItems();
+                    }
+                });
+        })
+        .subscribe();
 } else {
-    console.warn("Firebase not initialized. Using local data.");
+    console.warn("Supabase not initialized. Using local data.");
 }

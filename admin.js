@@ -9,8 +9,19 @@ const statCats = document.getElementById('stat-cats');
 
 // Orders State
 let allOrders = [];
+let ordersListener = null; // 3. State Management: Store the listener
 const ordersContainer = document.getElementById('orders-container');
 const newOrderBadge = document.getElementById('new-order-badge');
+const refreshOrdersBtn = document.getElementById('refresh-orders-btn');
+
+// 2. Admin View Integration: Manual Refresh logic
+if (refreshOrdersBtn) {
+    refreshOrdersBtn.onclick = () => {
+        console.log("Manual refresh triggered...");
+        loadOrdersData();
+        showToast('Orders feed refreshed');
+    };
+}
 
 // Sidebar Drawer Logic
 const adminSidebar = document.getElementById('admin-sidebar');
@@ -121,14 +132,15 @@ addItemForm.addEventListener('submit', async (e) => {
         name: document.getElementById('new-name').value,
         category: document.getElementById('new-category').value.toUpperCase(),
         description: document.getElementById('new-description').value,
-        image: document.getElementById('new-image').value,
-        dietary: dietary,
+        image_url: document.getElementById('new-image').value,
+        // dietary: dietary, // We'll add this if we update the schema later, or store in JSONB
         available: true,
-        order: Date.now()
+        sort_order: Date.now()
     };
 
     if (priceTypeSelect.value === 'single') {
         newItem.price = parseFloat(document.getElementById('new-price').value);
+        newItem.prices = null;
     } else {
         const prices = {};
         const rows = priceRowsContainer.querySelectorAll('.price-row');
@@ -140,39 +152,92 @@ addItemForm.addEventListener('submit', async (e) => {
             }
         });
         newItem.prices = prices;
+        newItem.price = null;
     }
 
     try {
-        await db.collection('items').add(newItem);
+        const { error } = await supabase
+            .from('menu')
+            .insert([newItem]);
+
+        if (error) throw error;
+
         addModal.classList.add('hidden');
         addItemForm.reset();
         showToast('Item created successfully');
+        loadAdminData();
     } catch (error) {
+        console.error("Error creating item:", error);
         showToast('Error creating item');
     }
 });
 
 function loadAdminData() {
-    db.collection('items').orderBy('order', 'asc').onSnapshot(snapshot => {
-        currentItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        updateStats(currentItems);
-        renderAdminGrid(currentItems);
-    });
+    console.log("Fetching menu items from Supabase...");
+    supabase
+        .from('menu')
+        .select('*')
+        .order('sort_order', { ascending: true })
+        .then(({ data, error }) => {
+            if (error) {
+                console.error("Error fetching menu:", error);
+                showToast('Failed to load menu data');
+                return;
+            }
+            currentItems = data;
+            updateStats(currentItems);
+            renderAdminGrid(currentItems);
+        });
 }
 
 function loadOrdersData() {
-    db.collection('orders').orderBy('timestamp', 'desc').limit(50).onSnapshot(snapshot => {
-        const prevCount = allOrders.length;
-        allOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        if (allOrders.length > prevCount && prevCount !== 0) {
+    // 3. State Management: Clean up existing listener before re-attaching
+    if (ordersListener) {
+        console.log("Detaching previous listener...");
+        supabase.removeChannel(ordersListener);
+    }
+
+    console.log("4. Admin Page: Fetching and listening to orders via Supabase...");
+    
+    // 1. Initial fetch of existing orders
+    supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50)
+        .then(({ data, error }) => {
+            if (error) {
+                console.error("Initial orders fetch failed:", error);
+                ordersContainer.innerHTML = `<p class="error">Failed to connect to orders feed: ${error.message}</p>`;
+                return;
+            }
+            allOrders = data;
+            updateStats(currentItems);
+            renderOrdersGrid(allOrders);
+        });
+
+    // 2. Listen for new orders live
+    ordersListener = supabase
+        .channel('public:orders')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
+            console.log('New order received!', payload.new);
+            allOrders = [payload.new, ...allOrders];
             newOrderBadge.classList.remove('hidden');
             showToast('New order received!');
-        }
-        
-        updateStats(currentItems);
-        renderOrdersGrid(allOrders);
-    });
+            updateStats(currentItems);
+            renderOrdersGrid(allOrders);
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, payload => {
+            console.log('Order updated!', payload.new);
+            allOrders = allOrders.map(o => o.id === payload.new.id ? payload.new : o);
+            renderOrdersGrid(allOrders);
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'orders' }, payload => {
+            console.log('Order deleted!', payload.old);
+            allOrders = allOrders.filter(o => o.id !== payload.old.id);
+            renderOrdersGrid(allOrders);
+        })
+        .subscribe();
 }
 
 function renderOrdersGrid(orders) {
@@ -184,7 +249,8 @@ function renderOrdersGrid(orders) {
     }
     
     orders.forEach(order => {
-        const timestamp = order.timestamp ? new Date(order.timestamp.seconds * 1000) : new Date();
+        // Supabase uses ISO strings for created_at
+        const timestamp = order.created_at ? new Date(order.created_at) : new Date();
         const timeStr = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const dateStr = timestamp.toLocaleDateString([], { month: 'short', day: 'numeric' });
         
@@ -206,7 +272,7 @@ function renderOrdersGrid(orders) {
             <div class="order-header">
                 <div class="order-id-group">
                     <span class="order-label">ORDER</span>
-                    <span class="order-id">#${order.id.slice(-4).toUpperCase()}</span>
+                    <span class="order-id">#${String(order.id).slice(-4).toUpperCase()}</span>
                 </div>
                 <div class="order-time-group">
                     <span class="order-time">${timeStr}</span>
@@ -218,7 +284,7 @@ function renderOrdersGrid(orders) {
             </div>
             <div class="order-total">
                 <span>Total Amount</span>
-                <span class="total-value">₱${order.total.toFixed(0)}</span>
+                <span class="total-value">₱${Number(order.total_price).toFixed(0)}</span>
             </div>
             <div class="order-actions">
                 ${order.status === 'pending' ? `
@@ -235,9 +301,15 @@ function renderOrdersGrid(orders) {
 
 window.updateOrderStatus = async (id, status) => {
     try {
-        await db.collection('orders').doc(id).update({ status: status });
+        const { error } = await supabase
+            .from('orders')
+            .update({ status: status })
+            .eq('id', id);
+
+        if (error) throw error;
         showToast('Order updated');
     } catch (error) {
+        console.error("Error updating order status:", error);
         showToast('Failed to update order');
     }
 };
@@ -245,15 +317,21 @@ window.updateOrderStatus = async (id, status) => {
 window.deleteOrder = async (id) => {
     if (confirm('Delete this order record?')) {
         try {
-            await db.collection('orders').doc(id).delete();
+            const { error } = await supabase
+                .from('orders')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
             showToast('Order removed');
         } catch (error) {
+            console.error("Error deleting order:", error);
             showToast('Failed to remove order');
         }
     }
 };
 
-// Data Seeding Utility (Run once)
+// Data Seeding Utility for Supabase
 window.seedMenuData = async () => {
     const menuData = typeof initialMenuData !== 'undefined' ? initialMenuData : [];
 
@@ -262,18 +340,30 @@ window.seedMenuData = async () => {
         return;
     }
 
-    if (confirm(`This will add ${menuData.length} items to your menu. Proceed?`)) {
+    if (confirm(`This will add ${menuData.length} items to your Supabase menu. Proceed?`)) {
         try {
-            const batch = db.batch();
-            menuData.forEach(item => {
-                const docRef = db.collection('items').doc();
-                batch.set(docRef, item);
-            });
-            await batch.commit();
+            const formattedData = menuData.map((item, index) => ({
+                name: item.name,
+                category: item.category,
+                description: item.description,
+                image_url: item.image || null,
+                price: item.price || null,
+                prices: item.prices || null,
+                available: item.available !== false,
+                sort_order: item.order || index
+            }));
+
+            const { data, error } = await supabase
+                .from('menu')
+                .insert(formattedData);
+
+            if (error) throw error;
+            
             alert('Menu seeded successfully!');
+            loadAdminData();
         } catch (error) {
             console.error("Error seeding data: ", error);
-            alert('Failed to seed menu.');
+            alert('Failed to seed menu: ' + error.message);
         }
     }
 };
@@ -357,16 +447,16 @@ window.updateItemPrice = async (id, btn) => {
     const row = btn.closest('tr');
     const inputs = row.querySelectorAll('.price-input-small');
     const updates = {};
-    let isSingle = false;
 
     inputs.forEach(input => {
         const val = parseFloat(input.value);
         if (input.dataset.single) {
-            isSingle = true;
             updates.price = val;
+            updates.prices = null;
         } else {
             if (!updates.prices) updates.prices = {};
             updates.prices[input.dataset.size] = val;
+            updates.price = null;
         }
     });
 
@@ -374,9 +464,16 @@ window.updateItemPrice = async (id, btn) => {
     btn.disabled = true;
 
     try {
-        await db.collection('items').doc(id).update(updates);
+        const { error } = await supabase
+            .from('menu')
+            .update(updates)
+            .eq('id', id);
+
+        if (error) throw error;
         showToast('Price updated successfully');
+        loadAdminData();
     } catch (error) {
+        console.error("Error updating price:", error);
         showToast('Failed to update price');
     } finally {
         btn.textContent = 'Save';
@@ -449,9 +546,15 @@ function renderAdminGrid(items) {
 
 async function toggleAvailability(id, isAvailable) {
     try {
-        await db.collection('items').doc(id).update({ available: isAvailable });
+        const { error } = await supabase
+            .from('menu')
+            .update({ available: isAvailable })
+            .eq('id', id);
+
+        if (error) throw error;
         showToast('Availability updated');
     } catch (error) {
+        console.error("Error toggling availability:", error);
         showToast('Update failed');
     }
 }
@@ -459,9 +562,16 @@ async function toggleAvailability(id, isAvailable) {
 async function deleteItem(id) {
     if (confirm('Permanently remove this item?')) {
         try {
-            await db.collection('items').doc(id).delete();
+            const { error } = await supabase
+                .from('menu')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
             showToast('Item deleted');
+            loadAdminData();
         } catch (error) {
+            console.error("Error deleting item:", error);
             showToast('Delete failed');
         }
     }

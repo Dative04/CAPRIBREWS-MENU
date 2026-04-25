@@ -67,7 +67,7 @@
         </div>
 
         <!-- Order Confirmation Modal -->
-        <div id="order-modal" class="modal hidden">
+        <div id="order-modal" class="modal hidden" style="display: none;">
             <div class="modal-content">
                 <div class="success-icon">✓</div>
                 <h2>Order Sent!</h2>
@@ -79,7 +79,7 @@
                     <span id="summary-total">₱0.00</span>
                 </div>
                 <p class="instruction-text">Please proceed to the counter and show this screen to pay and collect your order.</p>
-                <button id="close-order-modal" class="btn-primary">Back to Menu</button>
+                <button id="close-order-modal" class="btn-primary" type="button">Back to Menu</button>
             </div>
         </div>
 
@@ -89,6 +89,8 @@
         </footer>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <script src="firebase-config.js"></script>
     <script src="menu-data.js"></script>
     <script src="menu.js"></script>
