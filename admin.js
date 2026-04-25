@@ -168,20 +168,20 @@ window.toggleCustomCategory = (val) => {
 
 showAddModalBtn?.addEventListener('click', () => {
     addModal.classList.remove('hidden');
-    addItemForm.reset();
-    resetPriceRows();
     
-    // Default to single price
+    // 1. Reset the form first
+    addItemForm.reset();
+    
+    // 2. Explicitly set default pricing mode BEFORE creating rows
     priceTypeSelect.value = 'single';
     singlePriceSection.classList.remove('hidden');
     multiPriceSection.classList.add('hidden');
     
-    // ✅ Sync required attributes on modal open
-    const singleInput = document.getElementById('new-price');
-    if (singleInput) singleInput.required = true;
+    // 3. Reset price rows (now they will correctly see 'single' mode)
+    resetPriceRows();
     
-    const multiInputs = multiPriceSection.querySelectorAll('input');
-    multiInputs.forEach(input => input.required = false);
+    // 4. Sync required attributes
+    syncPricingRequired();
 
     document.getElementById('custom-category').classList.add('hidden');
 });
@@ -193,17 +193,28 @@ addModal?.addEventListener('click', (e) => {
     if (e.target === addModal) addModal.classList.add('hidden');
 });
 
-priceTypeSelect?.addEventListener('change', (e) => {
-    const isSingle = e.target.value === 'single';
+// Helper to sync 'required' attributes based on current pricing mode
+function syncPricingRequired() {
+    const isSingle = priceTypeSelect.value === 'single';
+    
+    // Single price input
+    const singleInput = document.getElementById('new-price');
+    if (singleInput) {
+        singleInput.required = isSingle;
+    }
+
+    // Multi-price rows
+    const multiInputs = multiPriceSection.querySelectorAll('input');
+    multiInputs.forEach(input => {
+        input.required = !isSingle;
+    });
+}
+
+priceTypeSelect?.addEventListener('change', () => {
+    const isSingle = priceTypeSelect.value === 'single';
     singlePriceSection.classList.toggle('hidden', !isSingle);
     multiPriceSection.classList.toggle('hidden', isSingle);
-    
-    // ✅ FIX: Toggle 'required' attribute based on visibility to avoid "not focusable" error
-    const singleInput = document.getElementById('new-price');
-    if (singleInput) singleInput.required = isSingle;
-
-    const multiInputs = multiPriceSection.querySelectorAll('input');
-    multiInputs.forEach(input => input.required = !isSingle);
+    syncPricingRequired();
 });
 
 function createPriceRow(size = '', price = '') {
@@ -211,20 +222,21 @@ function createPriceRow(size = '', price = '') {
     row.className = 'form-row price-row';
     row.style.cssText = 'margin-bottom: 10px; position: relative;';
     
-    // ✅ Check if multi-price is currently active to set 'required'
-    const isMultiActive = priceTypeSelect.value === 'multi';
-    
     row.innerHTML = `
         <div class="form-group">
-            <input type="text" placeholder="Size (e.g. 16oz)" class="size-input" value="${size}" ${isMultiActive ? 'required' : ''}>
+            <input type="text" placeholder="Size (e.g. 16oz)" class="size-input" value="${size}">
         </div>
         <div class="form-group">
-            <input type="number" placeholder="Price (₱)" class="price-input" value="${price}" step="0.01" ${isMultiActive ? 'required' : ''}>
+            <input type="number" placeholder="Price (₱)" class="price-input" value="${price}" step="0.01">
             <button type="button" class="remove-row" title="Remove">×</button>
         </div>
     `;
-    row.querySelector('.remove-row').onclick = () => row.remove();
+    row.querySelector('.remove-row').onclick = () => {
+        row.remove();
+        syncPricingRequired(); // Sync after removal too
+    };
     priceRowsContainer.appendChild(row);
+    syncPricingRequired(); // Sync after adding
 }
 
 function resetPriceRows() {
