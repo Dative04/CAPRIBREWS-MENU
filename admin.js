@@ -200,13 +200,15 @@ function syncPricingRequired() {
     // Single price input
     const singleInput = document.getElementById('new-price');
     if (singleInput) {
-        singleInput.required = isSingle;
+        if (isSingle) singleInput.setAttribute('required', '');
+        else singleInput.removeAttribute('required');
     }
 
-    // Multi-price rows
+    // Multi-price rows - remove required if hidden to avoid "not focusable" error
     const multiInputs = multiPriceSection.querySelectorAll('input');
     multiInputs.forEach(input => {
-        input.required = !isSingle;
+        if (!isSingle) input.setAttribute('required', '');
+        else input.removeAttribute('required');
     });
 }
 
@@ -248,6 +250,33 @@ addPriceRowBtn?.addEventListener('click', () => createPriceRow());
 
 addItemForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    // ─── Manual Validation for Pricing ───────────────────────────────────────
+    if (priceTypeSelect.value === 'single') {
+        const val = document.getElementById('new-price').value;
+        if (!val || parseFloat(val) < 0) {
+            showToast('Please enter a valid price', 'error');
+            document.getElementById('new-price').focus();
+            return;
+        }
+    } else {
+        const rows = priceRowsContainer.querySelectorAll('.price-row');
+        if (rows.length === 0) {
+            showToast('Please add at least one size/price', 'error');
+            return;
+        }
+        let valid = true;
+        rows.forEach(row => {
+            const s = row.querySelector('.size-input').value.trim();
+            const p = row.querySelector('.price-input').value;
+            if (!s || !p) valid = false;
+        });
+        if (!valid) {
+            showToast('Please fill in all size and price fields', 'error');
+            return;
+        }
+    }
+
     const dietary = Array.from(document.querySelectorAll('.diet-check:checked')).map(c => c.value);
     
     let category = document.getElementById('new-category').value;
