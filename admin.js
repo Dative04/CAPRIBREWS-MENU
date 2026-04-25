@@ -77,22 +77,34 @@ function showConfirm({ title = 'Are you sure?', message = 'This action cannot be
 window.toggleSidebar = () => sidebar.classList.toggle('expanded');
 
 window.showSection = (sectionId) => {
-    const sections = ['inventory', 'orders', 'settings'];
+    const sections = ['inventory', 'orders', 'completed', 'analytics', 'settings'];
     sections.forEach(id => {
         const el = document.getElementById(`${id}-section`);
         if (el) el.style.display = id === sectionId ? 'block' : 'none';
     });
 
     document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.toggle('active', item.getAttribute('onclick')?.includes(sectionId));
+        // Match by sectionId in the onclick attribute
+        const onclickAttr = item.getAttribute('onclick');
+        item.classList.toggle('active', onclickAttr && onclickAttr.includes(`'${sectionId}'`));
     });
 
-    const titles = { inventory: 'Inventory', orders: 'Orders', settings: 'Settings' };
+    const titles = { 
+        inventory: 'Inventory', 
+        orders: 'Active Orders', 
+        completed: 'Order History',
+        analytics: 'Sales Analytics',
+        settings: 'Settings' 
+    };
     if (viewTitle) viewTitle.textContent = titles[sectionId] || '';
 
     // Hide stats row on non-inventory sections
     const statsRow = document.getElementById('stats-row');
     if (statsRow) statsRow.style.display = sectionId === 'inventory' ? '' : 'none';
+
+    // Load data for specific sections
+    if (sectionId === 'completed') loadCompletedOrders();
+    if (sectionId === 'analytics') updateAnalytics();
 
     if (window.innerWidth <= 768 && sidebar.classList.contains('expanded')) {
         sidebar.classList.remove('expanded');
@@ -468,7 +480,7 @@ function renderAdminGrid(items) {
                         <span class="slider"></span>
                     </label>
                 </div>
-                <div class="btn-group">
+                <div class="item-actions">
                     <button class="edit-btn" onclick="editItem('${item.id}')">Edit</button>
                     <button class="delete-btn" onclick="deleteItem('${item.id}')">Delete</button>
                 </div>
@@ -625,18 +637,21 @@ function renderOrdersTable(orders) {
     if (!ordersTableBody) return;
     ordersTableBody.innerHTML = '';
 
-    if (orders.length === 0) {
+    // Only show pending/non-completed orders in the Incoming Orders section
+    const activeOrders = orders.filter(o => o.status !== 'completed');
+
+    if (activeOrders.length === 0) {
         ordersTableBody.innerHTML = `
             <tr>
                 <td colspan="5" style="text-align:center; padding: 48px 20px; color: var(--text-dim);">
                     <div style="font-size: 2rem; margin-bottom: 8px;">☕</div>
-                    <div>No orders yet. They'll appear here in real-time.</div>
+                    <div>No active orders. They'll appear here in real-time.</div>
                 </td>
             </tr>`;
         return;
     }
 
-    orders.forEach(order => {
+    activeOrders.forEach(order => {
         const customer  = order.customer_name || 'Guest';
         const itemsList = Array.isArray(order.items)
             ? order.items.map(i => {
@@ -697,6 +712,136 @@ window.deleteOrder = async (id) => {
         showToast('Order deleted', 'success');
     } catch (err) {
         showToast('Error: ' + err.message, 'error');
+    }
+};
+
+// ─── Order History & Analytics ────────────────────────────────────────────────
+window.loadCompletedOrders = async () => {
+    const completedTableBody = document.getElementById('completedTableBody');
+    const dateFilter = document.getElementById('completed-date-filter');
+    if (!completedTableBody) return;
+
+    completedTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">Loading history...</td></tr>';
+
+    try {
+        let query = window.supabaseClient
+            .from('orders')
+            .select('*')
+            .eq('status', 'completed')
+            .order('created_at', { ascending: false });
+
+        if (dateFilter && dateFilter.value) {
+            const date = dateFilter.value;
+            query = query.gte('created_at', `${date}T00:00:00`).lte('created_at', `${date}T23:59:59`);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        completedTableBody.innerHTML = '';
+        if (!data || data.length === 0) {
+            completedTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-dim);">No completed orders found.</td></tr>';
+            return;
+        }
+
+        data.forEach(order => {
+            const date = new Date(order.created_at).toLocaleDateString();
+            const time = new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const customer = order.customer_name || 'Guest';
+            const total = `₱${Number(order.total_price || 0).toFixed(0)}`;
+            
+            const itemsSummary = Array.isArray(order.items)
+                ? order.items.map(i => `${i.name} (x${i.quantity})`).join(', ')
+                : '—';
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><div style="font-weight:600;">${date}</div><div style="font-size:0.8em; color:var(--text-dim);">${time}</div></td>
+                <td>${customer}</td>
+                <td style="font-size:0.9em; max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${itemsSummary}">${itemsSummary}</td>
+                <td><strong>${total}</strong></td>
+                <td><span class="status-badge completed">Completed</span></td>
+            `;
+            completedTableBody.appendChild(row);
+        });
+    } catch (err) {
+        console.error('Error loading history:', err);
+        completedTableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--error);">Failed to load: ${err.message}</td></tr>`;
+    }
+};
+
+window.updateAnalytics = async () => {
+    const summaryContent = document.getElementById('sales-summary-content');
+    const productsContent = document.getElementById('top-products-content');
+    if (!summaryContent || !productsContent) return;
+
+    summaryContent.innerHTML = '<p>Loading...</p>';
+    productsContent.innerHTML = '<p>Loading...</p>';
+
+    try {
+        // Fetch all completed orders for today by default
+        const today = new Date().toISOString().split('T')[0];
+        const { data, error } = await window.supabaseClient
+            .from('orders')
+            .select('*')
+            .eq('status', 'completed')
+            .gte('created_at', `${today}T00:00:00`);
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            summaryContent.innerHTML = '<p style="color:var(--text-dim);">No sales data for today yet.</p>';
+            productsContent.innerHTML = '<p style="color:var(--text-dim);">No products sold today.</p>';
+            return;
+        }
+
+        // Calculate Stats
+        let totalSales = 0;
+        let totalItems = 0;
+        const productCounts = {};
+
+        data.forEach(order => {
+            totalSales += Number(order.total_price || 0);
+            if (Array.isArray(order.items)) {
+                order.items.forEach(item => {
+                    totalItems += (item.quantity || 1);
+                    productCounts[item.name] = (productCounts[item.name] || 0) + (item.quantity || 1);
+                });
+            }
+        });
+
+        // Render Summary
+        summaryContent.innerHTML = `
+            <div class="summary-item">
+                <span class="summary-label">Today's Revenue</span>
+                <span class="summary-value">₱${totalSales.toFixed(0)}</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Orders Completed</span>
+                <span class="summary-value">${data.length}</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Items Sold</span>
+                <span class="summary-value">${totalItems}</span>
+            </div>
+        `;
+
+        // Render Top Products
+        const sortedProducts = Object.entries(productCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5);
+
+        productsContent.innerHTML = sortedProducts.map(([name, qty], index) => `
+            <div class="top-product-item">
+                <div class="product-rank">${index + 1}</div>
+                <div class="product-name">${name}</div>
+                <div class="product-qty">${qty} sold</div>
+            </div>
+        `).join('');
+
+    } catch (err) {
+        console.error('Analytics error:', err);
+        summaryContent.innerHTML = `<p style="color:var(--error);">Error: ${err.message}</p>`;
     }
 };
 

@@ -47,6 +47,12 @@
                 <a href="#" class="nav-item" onclick="showSection('orders'); return false;">
                     <span class="icon">☕</span><span class="nav-label">Orders</span>
                 </a>
+                <a href="#" class="nav-item" onclick="showSection('completed'); return false;">
+                    <span class="icon">✅</span><span class="nav-label">Completed</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('analytics'); return false;">
+                    <span class="icon">📊</span><span class="nav-label">Analytics</span>
+                </a>
                 <a href="#" class="nav-item" onclick="showSection('settings'); return false;">
                     <span class="icon">⚙️</span><span class="nav-label">Settings</span>
                 </a>
@@ -138,6 +144,52 @@
                     </div>
                 </section>
 
+                <!-- Completed Orders Section -->
+                <section id="completed-section" style="display:none;">
+                    <div class="view-header">
+                        <h2>Order History</h2>
+                        <div class="header-controls">
+                            <input type="date" id="completed-date-filter">
+                            <button onclick="loadCompletedOrders()" class="btn-secondary">Filter</button>
+                        </div>
+                    </div>
+                    <div class="orders-table-wrapper">
+                        <table id="completedTable" class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Customer</th>
+                                    <th>Items</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="completedTableBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Analytics Section -->
+                <section id="analytics-section" style="display:none;">
+                    <div class="view-header">
+                        <h2>Sales Analytics</h2>
+                    </div>
+                    <div class="analytics-grid">
+                        <div class="analytics-card">
+                            <h3>Sales Summary</h3>
+                            <div id="sales-summary-content">
+                                <p>Select a date range to view sales data.</p>
+                            </div>
+                        </div>
+                        <div class="analytics-card">
+                            <h3>Top Products</h3>
+                            <div id="top-products-content">
+                                <p>Loading analytics...</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- Settings Section -->
                 <section id="settings-section" style="display:none;">
                     <div class="view-header">
@@ -212,7 +264,7 @@
                         <label>Dietary Tags</label>
                         <div class="check-group">
                             <label><input type="checkbox" value="vegan" class="diet-check"> Vegan</label>
-                            <label><input type="checkbox" value="gf" class="diet-check"> Gluten-Free</label>
+                            <label><input type="checkbox" value="gluten-free" class="diet-check"> Gluten-Free</label>
                         </div>
                     </div>
                 </div>
