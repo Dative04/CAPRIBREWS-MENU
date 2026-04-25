@@ -9,10 +9,61 @@ const statCats = document.getElementById('stat-cats');
 
 // Orders State
 let allOrders = [];
-let ordersListener = null; // 3. State Management: Store the listener
+let ordersListener = null;
 const ordersContainer = document.getElementById('orders-container');
+const ordersTableBody = document.getElementById('ordersTableBody');
 const newOrderBadge = document.getElementById('new-order-badge');
 const refreshOrdersBtn = document.getElementById('refresh-orders-btn');
+
+// Sidebar Logic
+const sidebar = document.getElementById('sidebar');
+const viewTitle = document.getElementById('view-title');
+
+window.toggleSidebar = () => {
+    sidebar.classList.toggle('expanded');
+};
+
+window.showSection = (sectionId) => {
+    // Hide all sections
+    document.getElementById('inventory-section').style.display = 'none';
+    document.getElementById('orders-section').style.display = 'none';
+    document.getElementById('settings-section').style.display = 'none';
+    
+    // Show active section
+    const activeSection = document.getElementById(`${sectionId}-section`);
+    if (activeSection) activeSection.style.display = 'block';
+
+    // Update nav items
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.classList.remove('active');
+        // Check if the link contains the sectionId in its onclick or text
+        if (item.getAttribute('onclick')?.includes(sectionId)) {
+            item.classList.add('active');
+        }
+    });
+
+    // Auto-close sidebar on mobile after selection if expanded
+    if (window.innerWidth <= 768 && sidebar.classList.contains('expanded')) {
+        sidebar.classList.remove('expanded');
+    }
+};
+
+// Category Filtering for Inventory
+const categoryFilter = document.getElementById('itemCategory');
+categoryFilter?.addEventListener('change', (e) => {
+    const category = e.target.value;
+    filterInventory(category);
+});
+
+function filterInventory(category) {
+    if (category === 'all') {
+        renderAdminGrid(currentItems);
+    } else {
+        const filtered = currentItems.filter(item => item.category === category);
+        renderAdminGrid(filtered);
+    }
+}
 
 // 2. Admin View Integration: Manual Refresh logic
 if (refreshOrdersBtn) {
@@ -21,18 +72,6 @@ if (refreshOrdersBtn) {
         loadOrdersData();
         showToast('Orders feed refreshed');
     };
-}
-
-// Sidebar Drawer Logic
-const adminSidebar = document.getElementById('admin-sidebar');
-const openSidebarBtn = document.getElementById('open-sidebar');
-const closeSidebarBtn = document.getElementById('close-sidebar');
-
-if (openSidebarBtn) {
-    openSidebarBtn.onclick = () => adminSidebar.classList.add('open');
-}
-if (closeSidebarBtn) {
-    closeSidebarBtn.onclick = () => adminSidebar.classList.remove('open');
 }
 
 // Modal Elements
@@ -53,13 +92,13 @@ window.supabaseClient.auth.onAuthStateChange((event, session) => {
     if (session && session.user) {
         loginScreen.classList.add('hidden');
         adminScreen.classList.remove('hidden');
-        adminSidebar.classList.remove('hidden'); // Ensure sidebar shows
+        sidebar.classList.remove('hidden');
         loadAdminData();
         loadOrdersData();
     } else {
         loginScreen.classList.remove('hidden');
         adminScreen.classList.add('hidden');
-        adminSidebar.classList.add('hidden'); // Hide sidebar on login
+        sidebar.classList.add('hidden');
     }
 });
 
@@ -264,61 +303,32 @@ function loadOrdersData() {
 }
 
 function renderOrdersGrid(orders) {
-    ordersContainer.innerHTML = '';
-    
-    if (orders.length === 0) {
-        ordersContainer.innerHTML = '<p class="loading">No orders yet today.</p>';
-        return;
+    if (ordersTableBody) {
+        ordersTableBody.innerHTML = '';
+        
+        if (orders.length === 0) {
+            ordersTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No orders yet today.</td></tr>';
+        } else {
+            orders.forEach(order => {
+                // Correcting the "Undefined" by using exact Supabase names
+                const customer = order.customer_name || "Guest";
+                
+                // Formatting the JSON items list
+                const itemsList = Array.isArray(order.items) 
+                    ? order.items.map(i => `${i.name} (x${i.quantity || 1})`).join('<br>')
+                    : String(order.items);
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${customer}</strong></td>
+                    <td>${itemsList}</td>
+                    <td>₱${Number(order.total_price || 0).toFixed(0)}</td>
+                    <td><button class="delete-btn" onclick="deleteOrder(${order.id})">Delete</button></td>
+                `;
+                ordersTableBody.appendChild(row);
+            });
+        }
     }
-    
-    orders.forEach(order => {
-        // Log the order to help debug column names if they are still undefined
-        console.log("Single Order Data:", order);
-
-        // Supabase uses ISO strings for created_at
-        const timestamp = order.created_at ? new Date(order.created_at) : new Date();
-        const timeStr = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const dateStr = timestamp.toLocaleDateString([], { month: 'short', day: 'numeric' });
-        
-        const card = document.createElement('div');
-        card.className = `order-card ${order.status}`;
-        
-        // Use helper to format items and handle undefined/mismatched keys
-        const itemsHtml = formatOrderItems(order.items);
-
-        card.innerHTML = `
-            <div class="order-header">
-                <div class="order-id-group">
-                    <span class="order-label">ORDER</span>
-                    <span class="order-id">#${String(order.id).slice(-4).toUpperCase()}</span>
-                </div>
-                <div class="order-time-group">
-                    <span class="order-time">${timeStr}</span>
-                    <span class="order-date">${dateStr}</span>
-                </div>
-            </div>
-            <div class="customer-info" style="margin: 10px 0; padding-bottom: 8px; border-bottom: 1px dashed #eee;">
-                <span style="font-size: 0.85em; color: #666;">Customer:</span>
-                <span style="font-weight: 600; color: #1D3D2E;">${order.customer_name || 'Guest'}</span>
-            </div>
-            <div class="order-items">
-                ${itemsHtml}
-            </div>
-            <div class="order-total">
-                <span>Total Amount</span>
-                <span class="total-value">₱${Number(order.total_price || 0).toFixed(0)}</span>
-            </div>
-            <div class="order-actions">
-                ${order.status === 'pending' ? `
-                    <button class="complete-order-btn" onclick="updateOrderStatus(${order.id}, 'completed')">Mark as Done</button>
-                ` : `
-                    <span class="status-badge completed">Completed</span>
-                `}
-                <button class="delete-order-btn" onclick="deleteOrder(${order.id})" title="Delete Record">×</button>
-            </div>
-        `;
-        ordersContainer.appendChild(card);
-    });
 }
 
 // Helper to format the items JSONB from Supabase
@@ -413,79 +423,7 @@ window.seedMenuData = async () => {
     }
 };
 
-// View Switching Logic
-const navItems = document.querySelectorAll('.nav-item');
-const viewSections = document.querySelectorAll('.view-section');
 
-window.switchView = (viewId) => {
-    viewSections.forEach(section => {
-        section.classList.add('hidden');
-        if (section.id === `${viewId}-view`) {
-            section.classList.remove('hidden');
-        }
-    });
-
-    navItems.forEach(item => {
-        item.classList.remove('active');
-        if (item.getAttribute('data-view') === viewId) {
-            item.classList.add('active');
-        }
-    });
-
-    if (viewId === 'price-manager') {
-        renderPriceManager(currentItems);
-    }
-
-    if (viewId === 'orders') {
-        newOrderBadge.classList.add('hidden');
-    }
-
-    if (window.innerWidth <= 768) {
-        adminSidebar.classList.remove('open');
-    }
-};
-
-function renderPriceManager(items) {
-    const list = document.getElementById('price-manager-list');
-    list.innerHTML = '';
-
-    items.forEach(item => {
-        const tr = document.createElement('tr');
-        
-        let pricingHtml = '';
-        if (item.prices) {
-            pricingHtml = `
-                <div class="price-edit-row">
-                    ${Object.entries(item.prices).map(([size, price]) => `
-                        <div class="price-edit-item">
-                            <span>${size}:</span>
-                            <input type="number" value="${price}" class="price-input-small" data-size="${size}">
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        } else {
-            pricingHtml = `
-                <div class="price-edit-row">
-                    <div class="price-edit-item">
-                        <span>₱:</span>
-                        <input type="number" value="${item.price}" class="price-input-small" data-single="true">
-                    </div>
-                </div>
-            `;
-        }
-
-        tr.innerHTML = `
-            <td><strong>${item.name}</strong></td>
-            <td><span class="tag">${item.category}</span></td>
-            <td>${pricingHtml}</td>
-            <td>
-                <button class="save-price-btn" onclick="updateItemPrice('${item.id}', this)">Save</button>
-            </td>
-        `;
-        list.appendChild(tr);
-    });
-}
 
 window.updateItemPrice = async (id, btn) => {
     if (!confirm('Save changes to this item\'s price?')) return;
@@ -526,13 +464,6 @@ window.updateItemPrice = async (id, btn) => {
     }
 };
 
-navItems.forEach(item => {
-    item.addEventListener('click', () => {
-        const view = item.getAttribute('data-view');
-        if (view) switchView(view);
-    });
-});
-
 // Admin Search Logic
 const adminSearchInput = document.getElementById('admin-search');
 adminSearchInput?.addEventListener('input', (e) => {
@@ -550,9 +481,15 @@ function updateStats(items) {
     const activeCount = items.filter(i => i.available !== false).length;
     const pendingOrders = allOrders.filter(o => o.status === 'pending').length;
 
-    document.getElementById('stat-count').textContent = totalCount;
-    document.getElementById('stat-cats').textContent = categories;
-    document.getElementById('stat-active').textContent = activeCount;
+    const statCount = document.getElementById('stat-count');
+    if (statCount) statCount.textContent = totalCount;
+    
+    const statCats = document.getElementById('stat-cats');
+    if (statCats) statCats.textContent = categories;
+    
+    const statActive = document.getElementById('stat-active');
+    if (statActive) statActive.textContent = activeCount;
+    
     const statOrders = document.getElementById('stat-orders');
     if (statOrders) statOrders.textContent = pendingOrders;
 }

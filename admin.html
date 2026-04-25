@@ -9,29 +9,33 @@
 </head>
 <body>
     <div class="admin-layout">
-        <!-- Collapsible Sidebar -->
-        <aside class="admin-sidebar" id="admin-sidebar">
+        <!-- Sidebar Navigation -->
+        <div id="sidebar" class="sidebar">
             <div class="sidebar-header">
+                <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
                 <img src="https://i.imgur.com/F022t03.png" alt="Capibrews Logo" class="logo">
-                <button id="close-sidebar" class="mobile-only">×</button>
             </div>
-            <nav class="sidebar-nav">
-                <button class="nav-item active" data-view="dashboard">Dashboard</button>
-                <button class="nav-item" data-view="orders">Orders <span id="new-order-badge" class="badge hidden">!</span></button>
-                <button class="nav-item" data-view="inventory">Inventory</button>
-                <button class="nav-item" data-view="price-manager">Price Manager</button>
-                <button class="nav-item" onclick="seedMenuData()">Seed Data</button>
+            <nav class="nav-links">
+                <a href="#" class="nav-item active" onclick="showSection('inventory')">
+                    <span class="icon">📋</span> Inventory
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('orders')">
+                    <span class="icon">☕</span> Orders
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('settings')">
+                    <span class="icon">⚙️</span> Settings
+                </a>
             </nav>
             <div class="sidebar-footer">
                 <button id="logout-btn" class="btn-secondary">Logout</button>
             </div>
-        </aside>
+        </div>
 
-        <!-- Main Content -->
-        <main class="admin-main">
+        <!-- Main Content Area -->
+        <main id="main-content" class="admin-main">
             <header class="admin-top-bar">
-                <button id="open-sidebar" class="mobile-only">☰</button>
-                <h1>Control Panel</h1>
+                <button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
+                <h1 id="view-title">Control Panel</h1>
                 <div class="top-bar-right">
                     <button id="show-add-modal" class="add-btn">+ New Item</button>
                 </div>
@@ -52,100 +56,58 @@
                 </div>
 
                 <div id="admin-screen" class="hidden">
-                    <!-- Dashboard View -->
-                    <div id="dashboard-view" class="view-section">
-                        <div class="dashboard-header">
-                            <h2>Menu Overview</h2>
-                            <p>Quick stats and insights for your digital menu.</p>
-                        </div>
-                        
-                        <div class="stats-row">
-                            <div class="stat-card">
-                                <span class="stat-label">Total Items</span>
-                                <span class="stat-value" id="stat-count">0</span>
-                            </div>
-                            <div class="stat-card">
-                                <span class="stat-label">Categories</span>
-                                <span class="stat-value" id="stat-cats">0</span>
-                            </div>
-                            <div class="stat-card">
-                                <span class="stat-label">Active Items</span>
-                                <span class="stat-value" id="stat-active">0</span>
-                            </div>
-                            <div class="stat-card">
-                                <span class="stat-label">Pending Orders</span>
-                                <span class="stat-value" id="stat-orders">0</span>
-                            </div>
-                        </div>
-
-                        <div class="quick-actions">
-                            <h3>Quick Actions</h3>
-                            <div class="action-grid">
-                                <button onclick="document.getElementById('show-add-modal').click()" class="action-btn">
-                                    <span class="icon">＋</span>
-                                    <span>Add Item</span>
-                                </button>
-                                <button onclick="switchView('inventory')" class="action-btn">
-                                    <span class="icon">📋</span>
-                                    <span>Manage All</span>
-                                </button>
-                                <button onclick="seedMenuData()" class="action-btn">
-                                    <span class="icon">🌱</span>
-                                    <span>Sync Defaults</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Inventory View -->
-                    <div id="inventory-view" class="view-section hidden">
+                    <!-- Inventory Section -->
+                    <section id="inventory-section">
                         <div class="view-header">
-                            <h2>Manage Inventory</h2>
-                            <div class="search-filter">
-                                <input type="text" id="admin-search" placeholder="Search items...">
+                            <h2>Manage Menu</h2>
+                            <div class="header-controls">
+                                <select id="itemCategory">
+                                    <option value="Soda Blends">Soda Blends</option>
+                                    <option value="Signature Blends">Signature Blends</option>
+                                    <option value="Coffee Selection">Coffee Selection</option>
+                                </select>
+                                <div class="search-filter">
+                                    <input type="text" id="admin-search" placeholder="Search items...">
+                                </div>
                             </div>
                         </div>
                         <div id="admin-grid" class="admin-item-grid">
                             <p class="loading">Fetching your inventory...</p>
                         </div>
-                    </div>
+                    </section>
 
-                    <!-- Price Manager View -->
-                    <div id="price-manager-view" class="view-section hidden">
+                    <!-- Orders Section -->
+                    <section id="orders-section" style="display:none;">
                         <div class="view-header">
-                            <h2>Price Manager</h2>
-                            <p>Quickly update prices across your entire menu.</p>
+                            <h2>Incoming Orders</h2>
+                            <button id="refresh-orders-btn" class="btn-secondary" style="font-size: 0.85em;">↻ Refresh Feed</button>
                         </div>
-                        <div class="price-table-container">
-                            <table class="price-table">
+                        <div class="orders-table-wrapper">
+                            <table id="ordersTable" class="admin-table">
                                 <thead>
                                     <tr>
-                                        <th>Item Name</th>
-                                        <th>Category</th>
-                                        <th>Pricing</th>
+                                        <th>Customer</th>
+                                        <th>Items ordered</th>
+                                        <th>Total</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
-                                <tbody id="price-manager-list">
-                                    <!-- Price rows will be injected here -->
-                                </tbody>
+                                <tbody id="ordersTableBody"></tbody>
                             </table>
                         </div>
-                    </div>
+                    </section>
 
-                    <!-- Orders View -->
-                    <div id="orders-view" class="view-section hidden">
+                    <!-- Settings Section -->
+                    <section id="settings-section" style="display:none;">
                         <div class="view-header">
-                            <h2>Active Orders</h2>
-                            <div class="header-actions">
-                                <button id="refresh-orders-btn" class="btn-secondary" style="font-size: 0.85em;">↻ Refresh Feed</button>
-                                <p>Manage incoming orders from customers.</p>
-                            </div>
+                            <h2>Settings</h2>
                         </div>
-                        <div id="orders-container" class="orders-grid">
-                            <p class="loading">Waiting for orders...</p>
+                        <div class="settings-content">
+                            <button onclick="seedMenuData()" class="btn-secondary">
+                                <span class="icon">🌱</span> Sync Default Menu Data
+                            </button>
                         </div>
-                    </div>
+                    </section>
                 </div>
             </div>
         </main>
