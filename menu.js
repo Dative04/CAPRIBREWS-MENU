@@ -66,7 +66,7 @@ closeOrderModalBtn.addEventListener('click', closeOrderModal);
 orderModal.addEventListener('click', (e) => { if (e.target === orderModal) closeOrderModal(); });
 
 // ─── Cart Logic ───────────────────────────────────────────────────────────────
-function addToCart(item, size, price) {
+function addToCart(item, size, price, event) {
     cart.push({ ...item, selectedSize: size, selectedPrice: price });
     updateCartUI();
 
@@ -122,10 +122,17 @@ function showCartFAB() {
 
 // ─── Checkout ─────────────────────────────────────────────────────────────────
 checkoutBtn.onclick = async () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0) {
+        console.warn('Checkout attempted with empty cart');
+        return;
+    }
 
     const customerNameInput = document.getElementById('customer-name-input');
-    const customerName = customerNameInput?.value.trim() ?? '';
+    if (!customerNameInput) {
+        console.error('Customer name input not found');
+        return;
+    }
+    const customerName = customerNameInput.value.trim();
 
     // ✅ FIX: Inline validation instead of alert()
     if (!customerName) {
@@ -147,7 +154,7 @@ checkoutBtn.onclick = async () => {
     const orderData = {
         customer_name: customerName,
         items: currentCart.map(item => ({
-            id:            item.id,
+            id:            item.id || 'local-' + Date.now(),
             name:          item.name,
             selectedSize:  item.selectedSize,
             selectedPrice: item.selectedPrice
@@ -334,14 +341,14 @@ function createItemCard(item, index) {
                     </div>
                 `).join('')}
             </div>`;
-        addBtnHtml = `<button class="add-to-cart-btn" onclick="handleAddToCart('${item.id}')">Add to Order</button>`;
+        addBtnHtml = `<button class="add-to-cart-btn" onclick="handleAddToCart('${item.id}', event)">Add to Order</button>`;
     } else {
         const price = Number(item.price || 0);
         priceHtml = `
             <div class="price-single">
                 <span class="price-value">₱${price.toFixed(0)}</span>
             </div>`;
-        addBtnHtml = `<button class="add-to-cart-btn" onclick="addToCart({id:'${item.id}', name:'${item.name}'}, 'Standard', ${price})">Add to Order</button>`;
+        addBtnHtml = `<button class="add-to-cart-btn" onclick="addToCart({id:'${item.id}', name:'${item.name}'}, 'Standard', ${price}, event)">Add to Order</button>`;
     }
 
     card.innerHTML = `
@@ -367,13 +374,13 @@ function createItemCard(item, index) {
     return card;
 }
 
-window.handleAddToCart = (itemId) => {
+window.handleAddToCart = (itemId, event) => {
     const selected = document.querySelector(`input[name="size-${itemId}"]:checked`);
     if (selected) {
         const item  = allItems.find(i => i.id === itemId);
         const size  = selected.value;
         const price = parseFloat(selected.dataset.price);
-        addToCart(item, size, price);
+        addToCart(item, size, price, event);
     }
 };
 

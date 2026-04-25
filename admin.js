@@ -654,7 +654,7 @@ window.seedMenuData = async () => {
             prices:     item.prices || null,
             available:  item.available !== false,
             dietary:    item.dietary || null,
-            sort_order: item.order || index
+            sort_order: item.order !== undefined ? item.order : index
         }));
 
         const { error } = await window.supabaseClient.from('menu').insert(formattedData);
