@@ -240,6 +240,75 @@ body {
 
 .category-section { margin-bottom: var(--space-6); }
 
+/* Accordion / Details Styling */
+.category-accordion {
+    margin-bottom: 1.5rem;
+    border-radius: 16px;
+    background: var(--card-bg);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    transition: all 0.3s ease;
+}
+
+.category-accordion[open] {
+    box-shadow: var(--shadow-md);
+}
+
+.category-summary {
+    display: flex;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    cursor: pointer;
+    list-style: none; /* Remove default arrow */
+    user-select: none;
+}
+
+.category-summary::-webkit-details-marker {
+    display: none; /* Remove default arrow for Safari */
+}
+
+.category-summary .category-title {
+    margin: 0;
+    flex: 1;
+    font-family: var(--font-serif);
+    font-size: 1.5rem;
+    color: var(--accent);
+    border-bottom: none;
+}
+
+.category-count {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-right: 1rem;
+    background: var(--accent-soft);
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.accordion-icon {
+    font-size: 1.2rem;
+    color: var(--accent);
+    transition: transform 0.3s ease;
+}
+
+.category-accordion[open] .accordion-icon {
+    transform: rotate(180deg);
+}
+
+.category-accordion .item-grid {
+    padding: 0 1.5rem 1.5rem;
+    margin-top: 0;
+}
+
+@media (max-width: 600px) {
+    .category-summary {
+        padding: 1rem;
+    }
+    .category-accordion .item-grid {
+        padding: 0 1rem 1rem;
+    }
+}
+
 .category-title {
     font-family: var(--font-serif);
     font-size: 1.5rem;

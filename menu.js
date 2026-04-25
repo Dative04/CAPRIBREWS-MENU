@@ -67,6 +67,10 @@ orderModal.addEventListener('click', (e) => { if (e.target === orderModal) close
 
 // ─── Cart Logic ───────────────────────────────────────────────────────────────
 function addToCart(item, size, price, event) {
+    if (!item) {
+        console.error('Cannot add undefined item to cart');
+        return;
+    }
     cart.push({ ...item, selectedSize: size, selectedPrice: price });
     updateCartUI();
 
@@ -295,15 +299,26 @@ function renderItems(items) {
             return acc;
         }, {});
 
-        Object.entries(groups).forEach(([category, catItems]) => {
-            const section = document.createElement('div');
-            section.className = 'category-section';
-            section.innerHTML = `<h2 class="category-title">${category}</h2>`;
+        Object.entries(groups).forEach(([category, catItems], index) => {
+            const details = document.createElement('details');
+            details.className = 'category-accordion';
+            // Open the first category by default
+            if (index === 0 && !searchTerm) details.open = true;
+
+            details.innerHTML = `
+                <summary class="category-summary">
+                    <h2 class="category-title">${category}</h2>
+                    <span class="category-count">${catItems.length} items</span>
+                    <span class="accordion-icon">▾</span>
+                </summary>
+            `;
+            
             const grid = document.createElement('div');
             grid.className = 'item-grid';
             catItems.forEach((item, i) => grid.appendChild(createItemCard(item, i)));
-            section.appendChild(grid);
-            menuGrid.appendChild(section);
+            
+            details.appendChild(grid);
+            menuGrid.appendChild(details);
         });
     } else {
         const grid = document.createElement('div');
@@ -348,7 +363,8 @@ function createItemCard(item, index) {
             <div class="price-single">
                 <span class="price-value">₱${price.toFixed(0)}</span>
             </div>`;
-        addBtnHtml = `<button class="add-to-cart-btn" onclick="addToCart({id:'${item.id}', name:'${item.name}'}, 'Standard', ${price}, event)">Add to Order</button>`;
+        // Pass item ID to handleAddToCart for consistency, or we can pass a simplified object
+        addBtnHtml = `<button class="add-to-cart-btn" onclick="handleAddToCart('${item.id}', event)">Add to Order</button>`;
     }
 
     card.innerHTML = `
@@ -375,20 +391,33 @@ function createItemCard(item, index) {
 }
 
 window.handleAddToCart = (itemId, event) => {
+    const item = allItems.find(i => String(i.id) === String(itemId));
+    if (!item) {
+        console.error('Item not found:', itemId);
+        return;
+    }
+
+    let size = 'Standard';
+    let price = item.price || 0;
+
     const selected = document.querySelector(`input[name="size-${itemId}"]:checked`);
     if (selected) {
-        const item  = allItems.find(i => i.id === itemId);
-        const size  = selected.value;
-        const price = parseFloat(selected.dataset.price);
-        addToCart(item, size, price, event);
+        size = selected.value;
+        price = parseFloat(selected.dataset.price);
     }
+    
+    addToCart(item, size, price, event);
 };
 
 window.removeFromCart = removeFromCart;
 
 // ─── Initialize ───────────────────────────────────────────────────────────────
 if (typeof initialMenuData !== 'undefined') {
-    allItems = initialMenuData;
+    // Ensure local data has IDs for cart logic
+    allItems = initialMenuData.map((item, idx) => ({
+        id: 'local-' + idx,
+        ...item
+    }));
     renderTabs(allItems);
     filterAndRenderItems();
 }
@@ -404,6 +433,7 @@ async function displayMenu() {
     if (error) { console.warn('Supabase menu fetch error, using local data:', error); return; }
 
     if (data?.length > 0) {
+        // Items from DB already have IDs
         allItems = data.map(item => ({ ...item, image: item.image_url }));
         renderTabs(allItems);
         filterAndRenderItems();

@@ -573,7 +573,14 @@ function renderOrdersTable(orders) {
     orders.forEach(order => {
         const customer  = order.customer_name || 'Guest';
         const itemsList = Array.isArray(order.items)
-            ? order.items.map(i => `${i.name}${i.selectedSize && i.selectedSize !== 'Standard' ? ` <span style="color:var(--text-dim); font-size:0.8em;">(${i.selectedSize})</span>` : ''}`).join('<br>')
+            ? order.items.map(i => {
+                if (!i) return 'Unknown Item';
+                const name = i.name || 'Unnamed Item';
+                const size = i.selectedSize && i.selectedSize !== 'Standard' 
+                    ? ` <span style="color:var(--text-dim); font-size:0.8em;">(${i.selectedSize})</span>` 
+                    : '';
+                return `${name}${size}`;
+            }).join('<br>')
             : (String(order.items || '—'));
         const total    = `₱${Number(order.total_price || 0).toFixed(0)}`;
         const status   = order.status || 'pending';
