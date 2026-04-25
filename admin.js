@@ -48,9 +48,9 @@ const addPriceRowBtn = document.getElementById('add-price-row');
 
 let currentItems = [];
 
-// Auth Listener
-firebase.auth().onAuthStateChanged(user => {
-    if (user) {
+// Supabase Auth Listener
+window.supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (session && session.user) {
         loginScreen.classList.add('hidden');
         adminScreen.classList.remove('hidden');
         adminSidebar.classList.remove('hidden'); // Ensure sidebar shows
@@ -72,15 +72,20 @@ loginForm.addEventListener('submit', async (e) => {
     submitBtn.disabled = true;
 
     try {
-        await firebase.auth().signInWithEmailAndPassword(email, password);
+        const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+            email: email,
+            password: password,
+        });
+        
+        if (error) throw error;
     } catch (error) {
-        loginError.textContent = 'Access Denied: Invalid Credentials';
+        loginError.textContent = 'Access Denied: ' + error.message;
         submitBtn.textContent = 'Login';
         submitBtn.disabled = false;
     }
 });
 
-logoutBtn.addEventListener('click', () => firebase.auth().signOut());
+logoutBtn.addEventListener('click', () => window.supabaseClient.auth.signOut());
 
 // Modal Logic
 showAddModalBtn.addEventListener('click', () => {
