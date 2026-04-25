@@ -16,6 +16,7 @@
         <button class="cart-icon-btn" onclick="toggleCart()" aria-label="View Cart">🛒 <span id="cart-count-nav">0</span></button>
     </header>
 
+    <!-- Side Nav Drawer -->
     <div id="side-drawer" class="drawer">
         <div class="drawer-header">
             <button class="close-btn-drawer" onclick="toggleMenu()" aria-label="Close Menu">×</button>
@@ -29,6 +30,9 @@
             <a href="#" onclick="filterByCategory('All'); toggleMenu()">📋 View All Menu</a>
         </nav>
     </div>
+
+    <!-- ✅ FIX: Backdrop overlay for side drawer -->
+    <div id="drawer-backdrop" class="drawer-backdrop" onclick="toggleMenu()"></div>
 
     <div class="app-container">
         <header class="main-header" id="main-header">
@@ -44,7 +48,6 @@
             
             <nav class="category-tabs-container">
                 <div class="category-tabs" id="category-tabs">
-                    <!-- Tabs will be injected here -->
                     <div class="tab-skeleton"></div>
                 </div>
             </nav>
@@ -52,7 +55,6 @@
 
         <main class="menu-view">
             <div class="item-grid" id="menu-grid">
-                <!-- Menu cards will be injected here -->
                 <div class="loading-state">
                     <div class="spinner"></div>
                     <p>Brewing your menu...</p>
@@ -61,23 +63,28 @@
         </main>
 
         <!-- Floating Cart Button -->
-        <button id="cart-fab" class="cart-fab hidden">
+        <button id="cart-fab" class="cart-fab hidden" aria-label="View Cart">
             <span class="cart-icon">🛒</span>
             <span id="cart-count" class="cart-count">0</span>
         </button>
 
+        <!-- ✅ FIX: Cart backdrop overlay -->
+        <div id="cart-backdrop" class="cart-backdrop hidden" onclick="toggleCart()"></div>
+
         <!-- Cart Drawer -->
-        <div id="cart-drawer" class="cart-drawer hidden">
+        <div id="cart-drawer" class="cart-drawer hidden" role="dialog" aria-label="Your Order">
             <div class="cart-header">
                 <h2>Your Order</h2>
                 <button id="close-cart" class="close-btn" aria-label="Close Cart">×</button>
             </div>
             <div id="cart-items" class="cart-items">
-                <!-- Cart items will be injected here -->
+                <!-- injected by menu.js -->
             </div>
             <div class="cart-customer-info">
-                <label for="customer-name-input" class="sr-only">Your Name</label>
-                <input type="text" id="customer-name-input" placeholder="Enter your name..." required>
+                <label for="customer-name-input">Your Name</label>
+                <input type="text" id="customer-name-input" placeholder="e.g. Maria" required autocomplete="given-name">
+                <!-- ✅ FIX: Inline error instead of alert() -->
+                <p id="name-error" class="name-error-msg" aria-live="polite"></p>
             </div>
             <div class="cart-footer">
                 <div class="total-row">
@@ -93,9 +100,7 @@
             <div class="modal-content">
                 <div class="success-icon">✓</div>
                 <h2>Order Sent!</h2>
-                <div id="order-summary-list" class="order-summary-list">
-                    <!-- Summary items will be injected here -->
-                </div>
+                <div id="order-summary-list" class="order-summary-list"></div>
                 <div class="order-total-row">
                     <span>Total Amount</span>
                     <span id="summary-total">₱0.00</span>
