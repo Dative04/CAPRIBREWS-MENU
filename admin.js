@@ -57,7 +57,7 @@ categoryFilter?.addEventListener('change', (e) => {
 });
 
 function filterInventory(category) {
-    if (category === 'all') {
+    if (category === 'All') {
         renderAdminGrid(currentItems);
     } else {
         const filtered = currentItems.filter(item => item.category === category);
@@ -174,7 +174,7 @@ addItemForm.addEventListener('submit', async (e) => {
     
     const newItem = {
         name: document.getElementById('new-name').value,
-        category: document.getElementById('new-category').value.toUpperCase() || "GENERAL",
+        category: document.getElementById('new-category').value || "General",
         description: document.getElementById('new-description').value || "",
         image_url: document.getElementById('new-image').value || "",
         available: true,

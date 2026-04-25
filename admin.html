@@ -62,9 +62,11 @@
                             <h2>Manage Menu</h2>
                             <div class="header-controls">
                                 <select id="itemCategory">
-                                    <option value="Soda Blends">Soda Blends</option>
-                                    <option value="Signature Blends">Signature Blends</option>
+                                    <option value="All">All Categories</option>
                                     <option value="Coffee Selection">Coffee Selection</option>
+                                    <option value="Signature Blends">Signature Blends</option>
+                                    <option value="Soda Blends">Soda Blends</option>
+                                    <option value="Frappe">Frappe</option>
                                 </select>
                                 <div class="search-filter">
                                     <input type="text" id="admin-search" placeholder="Search items...">
@@ -125,7 +127,13 @@
                     </div>
                     <div class="form-group">
                         <label>Category</label>
-                        <input type="text" id="new-category" placeholder="e.g. COLD COFFEE" required>
+                        <select id="new-category" required>
+                            <option value="" disabled selected>Select Category</option>
+                            <option value="Coffee Selection">Coffee Selection</option>
+                            <option value="Signature Blends">Signature Blends</option>
+                            <option value="Soda Blends">Soda Blends</option>
+                            <option value="Frappe">Frappe</option>
+                        </select>
                     </div>
                 </div>
 

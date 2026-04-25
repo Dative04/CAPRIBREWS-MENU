@@ -260,67 +260,96 @@ function renderItems(items) {
         return;
     }
 
-    items.forEach((item, index) => {
-        const card = document.createElement('div');
-        card.className = `menu-card ${item.available === false ? 'sold-out' : ''}`;
-        card.style.animationDelay = `${index * 0.05}s`; // Staggered entry
-        
-        const isSoldOut = item.available === false;
-        
-        // Handle both single price and multiple sizes
-        let priceHtml = '';
-        let addBtnHtml = '';
+    // Grouping Logic
+    if (currentCategory === 'All') {
+        const groups = items.reduce((acc, item) => {
+            if (!acc[item.category]) acc[item.category] = [];
+            acc[item.category].push(item);
+            return acc;
+        }, {});
 
-        if (item.prices && Object.keys(item.prices).length > 0) {
-            const sizes = Object.entries(item.prices);
-            priceHtml = `
-                <div class="price-grid">
-                    ${sizes.map(([size, price], i) => `
-                        <div class="price-item">
-                            <label class="size-selector">
-                                <input type="radio" name="size-${item.id}" value="${size}" data-price="${price}" ${i === 0 ? 'checked' : ''}>
-                                <span class="size-pill">
-                                    <span class="size-label">${size}</span>
-                                    <span class="price-value">₱${price.toFixed(0)}</span>
-                                </span>
-                            </label>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-            addBtnHtml = `<button class="add-to-cart-btn" onclick="handleAddToCart('${item.id}')">Add to Order</button>`;
-        } else {
-            priceHtml = `
-                <div class="price-single">
-                    <span class="price-value">₱${typeof item.price === 'number' ? item.price.toFixed(0) : item.price}</span>
-                </div>
-            `;
-            addBtnHtml = `<button class="add-to-cart-btn" onclick="addToCart({id: '${item.id}', name: '${item.name}'}, 'Standard', ${item.price})">Add to Order</button>`;
-        }
+        Object.entries(groups).forEach(([category, catItems]) => {
+            const section = document.createElement('div');
+            section.className = 'category-section';
+            section.innerHTML = `<h2 class="category-title">${category}</h2>`;
+            const grid = document.createElement('div');
+            grid.className = 'item-grid';
+            catItems.forEach((item, index) => {
+                grid.appendChild(createItemCard(item, index));
+            });
+            section.appendChild(grid);
+            menuGrid.appendChild(section);
+        });
+    } else {
+        const grid = document.createElement('div');
+        grid.className = 'item-grid';
+        items.forEach((item, index) => {
+            grid.appendChild(createItemCard(item, index));
+        });
+        menuGrid.appendChild(grid);
+    }
+}
 
-        card.innerHTML = `
-            <div class="card-img-wrapper">
-                <img src="${item.image || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=400'}" 
-                     alt="${item.name}" 
-                     class="card-img" 
-                     onload="this.classList.add('loaded')">
-                ${isSoldOut ? '<div class="sold-out-overlay"><span class="sold-out-tag">SOLD OUT</span></div>' : ''}
-            </div>
-            <div class="card-content">
-                <div class="card-header">
-                    <h3 class="card-title">${item.name}</h3>
-                    <div class="dietary-icons">
-                        ${item.dietary?.includes('vegan') ? '<span class="dietary-dot v-dot" title="Vegan"></span>' : ''}
-                        ${item.dietary?.includes('gf') ? '<span class="dietary-dot gf-dot" title="Gluten Free"></span>' : ''}
+function createItemCard(item, index) {
+    const card = document.createElement('div');
+    card.className = `menu-card ${item.available === false ? 'sold-out' : ''}`;
+    card.style.animationDelay = `${index * 0.05}s`;
+    
+    const isSoldOut = item.available === false;
+    
+    let priceHtml = '';
+    let addBtnHtml = '';
+
+    if (item.prices && Object.keys(item.prices).length > 0) {
+        const sizes = Object.entries(item.prices);
+        priceHtml = `
+            <div class="price-grid">
+                ${sizes.map(([size, price], i) => `
+                    <div class="price-item">
+                        <label class="size-selector">
+                            <input type="radio" name="size-${item.id}" value="${size}" data-price="${price}" ${i === 0 ? 'checked' : ''}>
+                            <span class="size-pill">
+                                <span class="size-label">${size}</span>
+                                <span class="price-value">₱${Number(price).toFixed(0)}</span>
+                            </span>
+                        </label>
                     </div>
-                </div>
-                <p class="card-desc">${item.description || 'Crafted with premium ingredients for the perfect sip.'}</p>
-                ${priceHtml}
-                ${!isSoldOut ? addBtnHtml : ''}
+                `).join('')}
             </div>
         `;
-        menuGrid.appendChild(card);
-    });
+        addBtnHtml = `<button class="add-to-cart-btn" onclick="handleAddToCart('${item.id}')">Add to Order</button>`;
+    } else {
+        const price = Number(item.price || 0);
+        priceHtml = `
+            <div class="price-single">
+                <span class="price-value">₱${price.toFixed(0)}</span>
+            </div>
+        `;
+        addBtnHtml = `<button class="add-to-cart-btn" onclick="addToCart({id: '${item.id}', name: '${item.name}'}, 'Standard', ${price})">Add to Order</button>`;
+    }
+
+    card.innerHTML = `
+        <div class="card-img-wrapper">
+            <img src="${item.image || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=400'}" 
+                 alt="${item.name}" 
+                 class="card-img" 
+                 onload="this.classList.add('loaded')">
+            ${isSoldOut ? '<div class="sold-out-overlay"><span class="sold-out-tag">SOLD OUT</span></div>' : ''}
+        </div>
+        <div class="card-content">
+            <div class="card-header">
+                <h3 class="card-title">${item.name}</h3>
+                <div class="dietary-icons">
+                    ${item.dietary?.includes('vegan') ? '<span class="dietary-dot v-dot" title="Vegan"></span>' : ''}
+                    ${item.dietary?.includes('gf') ? '<span class="dietary-dot gf-dot" title="Gluten Free"></span>' : ''}
+                </div>
+            </div>
+            <p class="card-desc">${item.description || 'Crafted with premium ingredients for the perfect sip.'}</p>
+            ${priceHtml}
+            ${!isSoldOut ? addBtnHtml : ''}
+        </div>
+    `;
+    return card;
 }
 
 // Global handler for complex add to cart
