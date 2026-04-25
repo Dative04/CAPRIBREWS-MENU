@@ -170,8 +170,19 @@ showAddModalBtn?.addEventListener('click', () => {
     addModal.classList.remove('hidden');
     addItemForm.reset();
     resetPriceRows();
+    
+    // Default to single price
+    priceTypeSelect.value = 'single';
     singlePriceSection.classList.remove('hidden');
     multiPriceSection.classList.add('hidden');
+    
+    // ✅ Sync required attributes on modal open
+    const singleInput = document.getElementById('new-price');
+    if (singleInput) singleInput.required = true;
+    
+    const multiInputs = multiPriceSection.querySelectorAll('input');
+    multiInputs.forEach(input => input.required = false);
+
     document.getElementById('custom-category').classList.add('hidden');
 });
 
@@ -186,18 +197,29 @@ priceTypeSelect?.addEventListener('change', (e) => {
     const isSingle = e.target.value === 'single';
     singlePriceSection.classList.toggle('hidden', !isSingle);
     multiPriceSection.classList.toggle('hidden', isSingle);
+    
+    // ✅ FIX: Toggle 'required' attribute based on visibility to avoid "not focusable" error
+    const singleInput = document.getElementById('new-price');
+    if (singleInput) singleInput.required = isSingle;
+
+    const multiInputs = multiPriceSection.querySelectorAll('input');
+    multiInputs.forEach(input => input.required = !isSingle);
 });
 
 function createPriceRow(size = '', price = '') {
     const row = document.createElement('div');
     row.className = 'form-row price-row';
     row.style.cssText = 'margin-bottom: 10px; position: relative;';
+    
+    // ✅ Check if multi-price is currently active to set 'required'
+    const isMultiActive = priceTypeSelect.value === 'multi';
+    
     row.innerHTML = `
         <div class="form-group">
-            <input type="text" placeholder="Size (e.g. 16oz)" class="size-input" value="${size}" required>
+            <input type="text" placeholder="Size (e.g. 16oz)" class="size-input" value="${size}" ${isMultiActive ? 'required' : ''}>
         </div>
         <div class="form-group">
-            <input type="number" placeholder="Price (₱)" class="price-input" value="${price}" step="0.01" required>
+            <input type="number" placeholder="Price (₱)" class="price-input" value="${price}" step="0.01" ${isMultiActive ? 'required' : ''}>
             <button type="button" class="remove-row" title="Remove">×</button>
         </div>
     `;
