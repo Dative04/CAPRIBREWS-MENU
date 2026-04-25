@@ -227,7 +227,7 @@ function loadOrdersData() {
                 return;
             }
             allOrders = data;
-            updateStats(currentItems);
+            updateStats(currentItems); // Still uses currentItems for menu stats, but will use allOrders for order stats
             renderOrdersGrid(allOrders);
         });
 
@@ -236,11 +236,19 @@ function loadOrdersData() {
         .channel('public:orders')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
             console.log('New order received!', payload.new);
-            allOrders = [payload.new, ...allOrders];
-            newOrderBadge.classList.remove('hidden');
-            showToast('New order received!');
-            updateStats(currentItems);
-            renderOrdersGrid(allOrders);
+            // Check if order already exists in our local state to prevent duplicates
+            if (!allOrders.find(o => o.id === payload.new.id)) {
+                allOrders = [payload.new, ...allOrders];
+                
+                // Show notification if it's a new pending order
+                if (payload.new.status === 'pending') {
+                    newOrderBadge.classList.remove('hidden');
+                    showToast('New order received!');
+                }
+                
+                updateStats(currentItems);
+                renderOrdersGrid(allOrders);
+            }
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, payload => {
             console.log('Order updated!', payload.new);
@@ -264,6 +272,9 @@ function renderOrdersGrid(orders) {
     }
     
     orders.forEach(order => {
+        // Log the order to help debug column names if they are still undefined
+        console.log("Single Order Data:", order);
+
         // Supabase uses ISO strings for created_at
         const timestamp = order.created_at ? new Date(order.created_at) : new Date();
         const timeStr = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -272,16 +283,8 @@ function renderOrdersGrid(orders) {
         const card = document.createElement('div');
         card.className = `order-card ${order.status}`;
         
-        const itemsHtml = order.items.map(item => `
-            <div class="order-item-row">
-                <div class="item-detail">
-                    <span class="item-qty">1×</span>
-                    <span class="item-name">${item.name}</span>
-                    <span class="item-size-tag">${item.selectedSize}</span>
-                </div>
-                <span class="item-price">₱${item.selectedPrice.toFixed(0)}</span>
-            </div>
-        `).join('');
+        // Use helper to format items and handle undefined/mismatched keys
+        const itemsHtml = formatOrderItems(order.items);
 
         card.innerHTML = `
             <div class="order-header">
@@ -294,24 +297,50 @@ function renderOrdersGrid(orders) {
                     <span class="order-date">${dateStr}</span>
                 </div>
             </div>
+            <div class="customer-info" style="margin: 10px 0; padding-bottom: 8px; border-bottom: 1px dashed #eee;">
+                <span style="font-size: 0.85em; color: #666;">Customer:</span>
+                <span style="font-weight: 600; color: #1D3D2E;">${order.customer_name || 'Guest'}</span>
+            </div>
             <div class="order-items">
                 ${itemsHtml}
             </div>
             <div class="order-total">
                 <span>Total Amount</span>
-                <span class="total-value">₱${Number(order.total_price).toFixed(0)}</span>
+                <span class="total-value">₱${Number(order.total_price || 0).toFixed(0)}</span>
             </div>
             <div class="order-actions">
                 ${order.status === 'pending' ? `
-                    <button class="complete-order-btn" onclick="updateOrderStatus('${order.id}', 'completed')">Mark as Done</button>
+                    <button class="complete-order-btn" onclick="updateOrderStatus(${order.id}, 'completed')">Mark as Done</button>
                 ` : `
                     <span class="status-badge completed">Completed</span>
                 `}
-                <button class="delete-order-btn" onclick="deleteOrder('${order.id}')" title="Delete Record">×</button>
+                <button class="delete-order-btn" onclick="deleteOrder(${order.id})" title="Delete Record">×</button>
             </div>
         `;
         ordersContainer.appendChild(card);
     });
+}
+
+// Helper to format the items JSONB from Supabase
+function formatOrderItems(items) {
+    if (!items) return '<p>No items</p>';
+    
+    // If it's already an array (standard behavior)
+    if (Array.isArray(items)) {
+        return items.map(item => `
+            <div class="order-item-row">
+                <div class="item-detail">
+                    <span class="item-qty">1×</span>
+                    <span class="item-name">${item.name || 'Unknown Item'}</span>
+                    <span class="item-size-tag">${item.selectedSize || 'Standard'}</span>
+                </div>
+                <span class="item-price">₱${Number(item.selectedPrice || 0).toFixed(0)}</span>
+            </div>
+        `).join('');
+    }
+    
+    // Fallback for string or other formats
+    return `<p>${String(items)}</p>`;
 }
 
 window.updateOrderStatus = async (id, status) => {
