@@ -62,10 +62,22 @@ orderModal.addEventListener('click', (e) => {
     if (e.target === orderModal) closeOrderModal();
 });
 
-function addToCart(item, size, price) {
+function addToCart(item, size, price, event) {
     cart.push({ ...item, selectedSize: size, selectedPrice: price });
     updateCartUI();
     showCartFAB();
+    
+    // Success feedback on the button
+    const btn = event?.target;
+    if (btn && btn.classList.contains('add-to-cart-btn')) {
+        const originalText = btn.textContent;
+        btn.textContent = 'Added! ✓';
+        btn.style.backgroundColor = 'var(--accent-light)';
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.backgroundColor = '';
+        }, 1500);
+    }
 }
 
 function removeFromCart(index) {
@@ -230,16 +242,33 @@ function renderTabs(items) {
     });
 }
 
-searchInput.addEventListener('input', (e) => {
+// Debounce helper
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+const debouncedSearch = debounce((e) => {
     searchTerm = e.target.value.toLowerCase();
     filterAndRenderItems();
-});
+}, 250);
+
+searchInput.addEventListener('input', debouncedSearch);
 
 function filterAndRenderItems() {
     let filtered = allItems;
     
     if (currentCategory !== 'All') {
-        filtered = filtered.filter(item => item.category === currentCategory);
+        filtered = filtered.filter(item => 
+            item.category && item.category.toLowerCase() === currentCategory.toLowerCase()
+        );
     }
     
     if (searchTerm) {
@@ -297,6 +326,10 @@ function createItemCard(item, index) {
     
     const isSoldOut = item.available === false;
     
+    // Image Fallback Logic
+    const placeholderImage = 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=400';
+    const itemImage = item.image || item.image_url || placeholderImage;
+    
     let priceHtml = '';
     let addBtnHtml = '';
 
@@ -317,7 +350,7 @@ function createItemCard(item, index) {
                 `).join('')}
             </div>
         `;
-        addBtnHtml = `<button class="add-to-cart-btn" onclick="handleAddToCart('${item.id}')">Add to Order</button>`;
+        addBtnHtml = `<button class="add-to-cart-btn" onclick="handleAddToCart('${item.id}', event)">Add to Order</button>`;
     } else {
         const price = Number(item.price || 0);
         priceHtml = `
@@ -325,14 +358,15 @@ function createItemCard(item, index) {
                 <span class="price-value">₱${price.toFixed(0)}</span>
             </div>
         `;
-        addBtnHtml = `<button class="add-to-cart-btn" onclick="addToCart({id: '${item.id}', name: '${item.name}'}, 'Standard', ${price})">Add to Order</button>`;
+        addBtnHtml = `<button class="add-to-cart-btn" onclick="addToCart({id: '${item.id}', name: '${item.name}'}, 'Standard', ${price}, event)">Add to Order</button>`;
     }
 
     card.innerHTML = `
         <div class="card-img-wrapper">
-            <img src="${item.image || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=400'}" 
+            <img src="${itemImage}" 
                  alt="${item.name}" 
                  class="card-img" 
+                 onerror="this.src='${placeholderImage}'; this.onerror=null;"
                  onload="this.classList.add('loaded')">
             ${isSoldOut ? '<div class="sold-out-overlay"><span class="sold-out-tag">SOLD OUT</span></div>' : ''}
         </div>
@@ -353,13 +387,13 @@ function createItemCard(item, index) {
 }
 
 // Global handler for complex add to cart
-window.handleAddToCart = (itemId) => {
+window.handleAddToCart = (itemId, event) => {
     const selectedRadio = document.querySelector(`input[name="size-${itemId}"]:checked`);
     if (selectedRadio) {
         const item = allItems.find(i => i.id === itemId);
         const size = selectedRadio.value;
         const price = parseFloat(selectedRadio.dataset.price);
-        addToCart(item, size, price);
+        addToCart(item, size, price, event);
     }
 };
 window.removeFromCart = removeFromCart; // Expose to global scope

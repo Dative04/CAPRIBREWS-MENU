@@ -1,20 +1,36 @@
 :root {
+    /* Colors - Matching main app */
     --bg: #fdfcf8;
     --card-bg: #ffffff;
-    --accent: #1b4332;
+    --accent: #1D3D2E;
+    --accent-light: #2a5641;
+    --accent-soft: rgba(29, 61, 46, 0.05);
     --text-main: #1a1a1a;
     --text-dim: #666666;
     --border: #e5e1d8;
-    --radius: 12px;
-    --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --error: #e63946;
+    
+    /* 8px Spacing System */
+    --space-1: 8px;
+    --space-2: 16px;
+    --space-3: 24px;
+    --space-4: 32px;
+    
+    /* Borders & Shadows */
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     margin: 0;
     padding: 0;
     background-color: var(--bg);
     color: var(--text-main);
+    line-height: 1.5;
 }
 
 .hidden { display: none !important; }
@@ -538,22 +554,33 @@ body {
 /* Grid */
 .admin-item-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-2);
 }
 
 .admin-card {
     background: var(--card-bg);
-    padding: 20px;
-    border-radius: var(--radius);
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
     border: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
 }
 
-.card-info h3 { margin: 0 0 5px; font-size: 1.1em; }
+.admin-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--accent);
+}
+
+.card-info h3 { 
+    margin: 0 0 4px; 
+    font-size: 1.1rem;
+    font-weight: 600;
+}
 .card-meta { color: var(--text-dim); font-size: 0.85em; margin: 0; }
 
 .card-actions {

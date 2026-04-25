@@ -7,23 +7,25 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
     <header class="top-nav">
-        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        <button class="menu-btn" onclick="toggleMenu()" aria-label="Open Menu">☰</button>
         <div class="logo">Capibrews</div>
-        <div class="cart-icon-btn" onclick="toggleCart()">🛒 <span id="cart-count-nav">0</span></div>
+        <button class="cart-icon-btn" onclick="toggleCart()" aria-label="View Cart">🛒 <span id="cart-count-nav">0</span></button>
     </header>
 
     <div id="side-drawer" class="drawer">
-        <button class="close-btn-drawer" onclick="toggleMenu()">×</button>
+        <div class="drawer-header">
+            <button class="close-btn-drawer" onclick="toggleMenu()" aria-label="Close Menu">×</button>
+        </div>
         <nav class="drawer-links">
             <a href="#" onclick="filterByCategory('Soda Blends'); toggleMenu()">🥤 Soda Blends</a>
             <a href="#" onclick="filterByCategory('Signature Blends'); toggleMenu()">✨ Signature Blends</a>
             <a href="#" onclick="filterByCategory('Coffee Selection'); toggleMenu()">☕ Coffee Selection</a>
             <a href="#" onclick="filterByCategory('Frappe'); toggleMenu()">🍦 Frappe</a>
-            <hr>
+            <div class="drawer-divider"></div>
             <a href="#" onclick="filterByCategory('All'); toggleMenu()">📋 View All Menu</a>
         </nav>
     </div>
@@ -68,12 +70,13 @@
         <div id="cart-drawer" class="cart-drawer hidden">
             <div class="cart-header">
                 <h2>Your Order</h2>
-                <button id="close-cart" class="close-btn">×</button>
+                <button id="close-cart" class="close-btn" aria-label="Close Cart">×</button>
             </div>
             <div id="cart-items" class="cart-items">
                 <!-- Cart items will be injected here -->
             </div>
             <div class="cart-customer-info">
+                <label for="customer-name-input" class="sr-only">Your Name</label>
                 <input type="text" id="customer-name-input" placeholder="Enter your name..." required>
             </div>
             <div class="cart-footer">
