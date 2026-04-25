@@ -160,9 +160,13 @@ showAddModalBtn?.addEventListener('click', () => {
     resetPriceRows();
     singlePriceSection.classList.remove('hidden');
     multiPriceSection.classList.add('hidden');
-    // Reset category combo
-    if (newCategorySelect) newCategorySelect.value = '';
-    if (newCategoryCustom) { newCategoryCustom.style.display = 'none'; newCategoryCustom.value = ''; newCategoryCustom.required = false; }
+    // Reset category combo fully
+    if (newCategorySelect) newCategorySelect.selectedIndex = 0;
+    if (newCategoryCustom) {
+        newCategoryCustom.style.display = 'none';
+        newCategoryCustom.value = '';
+        newCategoryCustom.required = false;
+    }
     if (newCategoryHidden) newCategoryHidden.value = '';
 });
 
@@ -215,8 +219,14 @@ newCategorySelect?.addEventListener('change', (e) => {
     } else {
         newCategoryCustom.style.display = 'none';
         newCategoryCustom.required = false;
+        newCategoryCustom.value = '';
         newCategoryHidden.value = e.target.value;
     }
+});
+
+// Sync typed custom category into the hidden field in real-time
+newCategoryCustom?.addEventListener('input', (e) => {
+    newCategoryHidden.value = e.target.value.trim();
 });
 
 addPriceRowBtn?.addEventListener('click', () => createPriceRow());
@@ -236,9 +246,7 @@ addItemForm?.addEventListener('submit', async (e) => {
     };
 
     if (!newItem.name) { showToast('Item name is required', 'error'); return; }
-    if (!newItem.category || newItem.category === 'General' && !document.getElementById('new-category').value) {
-        showToast('Please select or enter a category', 'error'); return;
-    }
+    if (!newItem.category) { showToast('Please select or enter a category', 'error'); return; }
 
     if (priceTypeSelect.value === 'single') {
         newItem.price  = parseFloat(document.getElementById('new-price').value) || 0;
@@ -263,6 +271,9 @@ addItemForm?.addEventListener('submit', async (e) => {
         if (error) throw error;
         addModal.classList.add('hidden');
         addItemForm.reset();
+        if (newCategorySelect) newCategorySelect.selectedIndex = 0;
+        if (newCategoryCustom) { newCategoryCustom.style.display = 'none'; newCategoryCustom.value = ''; newCategoryCustom.required = false; }
+        if (newCategoryHidden) newCategoryHidden.value = '';
         showToast('Item created successfully ✓', 'success');
         loadAdminData();
     } catch (err) {
