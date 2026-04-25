@@ -160,14 +160,9 @@ showAddModalBtn?.addEventListener('click', () => {
     resetPriceRows();
     singlePriceSection.classList.remove('hidden');
     multiPriceSection.classList.add('hidden');
-    // Reset category combo fully
+    // Reset category combo
     if (newCategorySelect) newCategorySelect.selectedIndex = 0;
-    if (newCategoryCustom) {
-        newCategoryCustom.style.display = 'none';
-        newCategoryCustom.value = '';
-        newCategoryCustom.required = false;
-    }
-    if (newCategoryHidden) newCategoryHidden.value = '';
+    if (newCategoryCustom) { newCategoryCustom.style.display = 'none'; newCategoryCustom.value = ''; }
 });
 
 closeModalBtn?.addEventListener('click', () => addModal.classList.add('hidden'));
@@ -208,25 +203,24 @@ function resetPriceRows() {
 // ─── Category Combo (select + custom input) ───────────────────────────────────
 const newCategorySelect = document.getElementById('new-category-select');
 const newCategoryCustom = document.getElementById('new-category-custom');
-const newCategoryHidden = document.getElementById('new-category');
+
+// Returns the currently chosen category string, or '' if none chosen
+function getSelectedCategory() {
+    if (!newCategorySelect) return '';
+    if (newCategorySelect.value === '__custom__') {
+        return (newCategoryCustom?.value || '').trim();
+    }
+    return newCategorySelect.value || '';
+}
 
 newCategorySelect?.addEventListener('change', (e) => {
     if (e.target.value === '__custom__') {
         newCategoryCustom.style.display = 'block';
-        newCategoryCustom.required = true;
         newCategoryCustom.focus();
-        newCategoryHidden.value = '';
     } else {
         newCategoryCustom.style.display = 'none';
-        newCategoryCustom.required = false;
         newCategoryCustom.value = '';
-        newCategoryHidden.value = e.target.value;
     }
-});
-
-// Sync typed custom category into the hidden field in real-time
-newCategoryCustom?.addEventListener('input', (e) => {
-    newCategoryHidden.value = e.target.value.trim();
 });
 
 addPriceRowBtn?.addEventListener('click', () => createPriceRow());
@@ -237,7 +231,7 @@ addItemForm?.addEventListener('submit', async (e) => {
 
     const newItem = {
         name:        document.getElementById('new-name').value.trim(),
-        category:    (document.getElementById('new-category').value || '').trim() || 'General',
+        category:    getSelectedCategory(),
         description: document.getElementById('new-description').value.trim() || '',
         image_url:   document.getElementById('new-image').value.trim() || '',
         available:   true,
@@ -272,8 +266,7 @@ addItemForm?.addEventListener('submit', async (e) => {
         addModal.classList.add('hidden');
         addItemForm.reset();
         if (newCategorySelect) newCategorySelect.selectedIndex = 0;
-        if (newCategoryCustom) { newCategoryCustom.style.display = 'none'; newCategoryCustom.value = ''; newCategoryCustom.required = false; }
-        if (newCategoryHidden) newCategoryHidden.value = '';
+        if (newCategoryCustom) { newCategoryCustom.style.display = 'none'; newCategoryCustom.value = ''; }
         showToast('Item created successfully ✓', 'success');
         loadAdminData();
     } catch (err) {
