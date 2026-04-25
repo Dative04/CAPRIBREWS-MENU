@@ -160,6 +160,10 @@ showAddModalBtn?.addEventListener('click', () => {
     resetPriceRows();
     singlePriceSection.classList.remove('hidden');
     multiPriceSection.classList.add('hidden');
+    // Reset category combo
+    if (newCategorySelect) newCategorySelect.value = '';
+    if (newCategoryCustom) { newCategoryCustom.style.display = 'none'; newCategoryCustom.value = ''; newCategoryCustom.required = false; }
+    if (newCategoryHidden) newCategoryHidden.value = '';
 });
 
 closeModalBtn?.addEventListener('click', () => addModal.classList.add('hidden'));
@@ -197,6 +201,24 @@ function resetPriceRows() {
     createPriceRow();
 }
 
+// ─── Category Combo (select + custom input) ───────────────────────────────────
+const newCategorySelect = document.getElementById('new-category-select');
+const newCategoryCustom = document.getElementById('new-category-custom');
+const newCategoryHidden = document.getElementById('new-category');
+
+newCategorySelect?.addEventListener('change', (e) => {
+    if (e.target.value === '__custom__') {
+        newCategoryCustom.style.display = 'block';
+        newCategoryCustom.required = true;
+        newCategoryCustom.focus();
+        newCategoryHidden.value = '';
+    } else {
+        newCategoryCustom.style.display = 'none';
+        newCategoryCustom.required = false;
+        newCategoryHidden.value = e.target.value;
+    }
+});
+
 addPriceRowBtn?.addEventListener('click', () => createPriceRow());
 
 addItemForm?.addEventListener('submit', async (e) => {
@@ -205,13 +227,18 @@ addItemForm?.addEventListener('submit', async (e) => {
 
     const newItem = {
         name:        document.getElementById('new-name').value.trim(),
-        category:    document.getElementById('new-category').value || 'General',
+        category:    (document.getElementById('new-category').value || '').trim() || 'General',
         description: document.getElementById('new-description').value.trim() || '',
         image_url:   document.getElementById('new-image').value.trim() || '',
         available:   true,
         dietary:     dietary.length ? dietary : null,
         sort_order:  Date.now()
     };
+
+    if (!newItem.name) { showToast('Item name is required', 'error'); return; }
+    if (!newItem.category || newItem.category === 'General' && !document.getElementById('new-category').value) {
+        showToast('Please select or enter a category', 'error'); return;
+    }
 
     if (priceTypeSelect.value === 'single') {
         newItem.price  = parseFloat(document.getElementById('new-price').value) || 0;
@@ -289,6 +316,38 @@ function renderAdminGrid(items) {
                 <p>No items found. Try a different search or category.</p>
             </div>`;
         return;
+    }
+
+    // Dynamically rebuild category filter dropdown from actual data
+    const allCategories = [...new Set(currentItems.map(i => i.category).filter(Boolean))].sort();
+    const categoryFilter = document.getElementById('itemCategory');
+    if (categoryFilter) {
+        const currentVal = categoryFilter.value;
+        categoryFilter.innerHTML = '<option value="All">All Categories</option>';
+        allCategories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = cat;
+            if (cat === currentVal) opt.selected = true;
+            categoryFilter.appendChild(opt);
+        });
+    }
+
+    // Dynamically sync new categories into the Add Item modal select
+    const addCatSelect = document.getElementById('new-category-select');
+    if (addCatSelect) {
+        const existingVals = new Set(
+            Array.from(addCatSelect.options).map(o => o.value).filter(v => v && v !== '__custom__')
+        );
+        allCategories.forEach(cat => {
+            if (!existingVals.has(cat)) {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                // Insert before the last "New Category…" option
+                addCatSelect.insertBefore(opt, addCatSelect.lastElementChild);
+            }
+        });
     }
 
     items.forEach(item => {
@@ -428,7 +487,10 @@ function renderOrdersTable(orders) {
     orders.forEach(order => {
         const customer  = order.customer_name || 'Guest';
         const itemsList = Array.isArray(order.items)
-            ? order.items.map(i => `${i.name}${i.selectedSize && i.selectedSize !== 'Standard' ? ` <span style="color:var(--text-dim); font-size:0.8em;">(${i.selectedSize})</span>` : ''}`).join('<br>')
+            ? order.items.map(i => {
+                const size = i.selectedSize && i.selectedSize !== 'Standard' ? ` <span style="color:var(--text-dim); font-size:0.8em;">(${i.selectedSize})</span>` : '';
+                return `${i.name || '(unnamed)'}${size}`;
+              }).join('<br>')
             : (String(order.items || '—'));
         const total    = `₱${Number(order.total_price || 0).toFixed(0)}`;
         const status   = order.status || 'pending';
