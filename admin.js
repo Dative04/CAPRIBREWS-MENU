@@ -135,30 +135,31 @@ addItemForm.addEventListener('submit', async (e) => {
     
     const newItem = {
         name: document.getElementById('new-name').value,
-        category: document.getElementById('new-category').value.toUpperCase(),
-        description: document.getElementById('new-description').value,
-        image_url: document.getElementById('new-image').value,
-        // dietary: dietary, // We'll add this if we update the schema later, or store in JSONB
+        category: document.getElementById('new-category').value.toUpperCase() || "GENERAL",
+        description: document.getElementById('new-description').value || "",
+        image_url: document.getElementById('new-image').value || "",
         available: true,
-        sort_order: Date.now()
+        sort_order: 0 // Reset to 0 as per recommendation or use Date.now() for unique sorting
     };
 
     if (priceTypeSelect.value === 'single') {
-        newItem.price = parseFloat(document.getElementById('new-price').value);
+        newItem.price = parseFloat(document.getElementById('new-price').value) || 0;
         newItem.prices = null;
     } else {
         const prices = {};
         const rows = priceRowsContainer.querySelectorAll('.price-row');
         rows.forEach(row => {
             const size = row.querySelector('.size-input').value;
-            const price = parseFloat(row.querySelector('.price-input').value);
-            if (size && !isNaN(price)) {
+            const price = parseFloat(row.querySelector('.price-input').value) || 0;
+            if (size) {
                 prices[size] = price;
             }
         });
         newItem.prices = prices;
         newItem.price = null;
     }
+
+    console.log("Pushing to Supabase:", newItem);
 
     try {
         const { error } = await window.supabaseClient
@@ -172,8 +173,17 @@ addItemForm.addEventListener('submit', async (e) => {
         showToast('Item created successfully');
         loadAdminData();
     } catch (error) {
-        console.error("Error creating item:", error);
-        showToast('Error creating item');
+        // This will print the actual text (e.g., "column sort_order does not exist") 
+        console.error("Full Error Object:", error);
+        
+        if (error.message) {
+            console.error("Error Message:", error.message);
+            console.error("Error Details:", error.details);
+            console.error("Error Hint:", error.hint);
+            showToast(`Error: ${error.message}`);
+        } else {
+            showToast('Error creating item');
+        }
     }
 });
 
