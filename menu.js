@@ -304,50 +304,52 @@ if (typeof initialMenuData !== 'undefined') {
 }
 
 // Real-time listener with Local Fallback for Supabase
-if (typeof supabase !== 'undefined') {
-    // 1. Initial fetch
-    supabase
+async function displayMenu() {
+    if (typeof supabase === 'undefined') {
+        console.warn("Supabase not initialized. Using local data.");
+        return;
+    }
+
+    console.log("Fetching menu items from Supabase...");
+    const { data, error } = await supabase
         .from('menu')
         .select('*')
-        .order('sort_order', { ascending: true })
-        .then(({ data, error }) => {
-            if (error) {
-                console.warn("Supabase Fetch Error, staying with local data:", error);
-                return;
-            }
-            if (data && data.length > 0) {
-                // Map Supabase fields back to internal format if necessary
-                allItems = data.map(item => ({
-                    ...item,
-                    image: item.image_url // internal logic uses .image
-                }));
-                renderTabs(allItems);
-                filterAndRenderItems();
-            }
-        });
+        .order('sort_order', { ascending: true });
 
-    // 2. Real-time updates
+    if (error) {
+        console.warn("Supabase Fetch Error, staying with local data:", error);
+        return;
+    }
+
+    if (data && data.length > 0) {
+        // Map Supabase fields back to internal format
+        allItems = data.map(item => ({
+            ...item,
+            image: item.image_url // internal logic uses .image
+        }));
+        renderTabs(allItems);
+        filterAndRenderItems();
+    }
+}
+
+// Initialize Supabase Logic
+if (typeof supabase !== 'undefined') {
+    // 1. Initial fetch
+    displayMenu();
+
+    // 2. Real-time updates - Instant sync when Admin changes something
     supabase
-        .channel('public:menu')
+        .channel('menu-changes')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'menu' }, payload => {
-            console.log('Menu change detected, refreshing data...');
-            // Simple approach: re-fetch everything to maintain sort order
-            supabase
-                .from('menu')
-                .select('*')
-                .order('sort_order', { ascending: true })
-                .then(({ data }) => {
-                    if (data) {
-                        allItems = data.map(item => ({
-                            ...item,
-                            image: item.image_url
-                        }));
-                        renderTabs(allItems);
-                        filterAndRenderItems();
-                    }
-                });
+            console.log('Menu updated by Admin! Syncing...');
+            displayMenu(); 
         })
         .subscribe();
 } else {
-    console.warn("Supabase not initialized. Using local data.");
+    // Fallback to local data if Supabase is unavailable
+    if (typeof initialMenuData !== 'undefined') {
+        allItems = initialMenuData;
+        renderTabs(allItems);
+        filterAndRenderItems();
+    }
 }
