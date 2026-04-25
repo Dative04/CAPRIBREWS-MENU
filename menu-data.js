@@ -5,6 +5,7 @@ const initialMenuData = [
         description: "Smooth and bold espresso with hot water.",
         prices: { "8oz": 79, "12oz": 89, "16oz": 99 },
         available: true,
+        dietary: ["vegan"],
         order: 1
     },
     {
@@ -37,6 +38,7 @@ const initialMenuData = [
         description: "Creamy mango shake with graham cracker bits.",
         prices: { "16oz": 119, "22oz": 129 },
         available: true,
+        dietary: ["gf"],
         order: 5
     },
     {

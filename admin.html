@@ -9,54 +9,59 @@
 </head>
 <body>
 
-    <!-- Login screen outside layout so sidebar never shows before auth -->
+    <!-- ✅ FIX: Login screen is now OUTSIDE .admin-layout so the sidebar is never visible before auth -->
     <div id="login-screen">
         <div class="login-box">
             <img src="https://i.imgur.com/F022t03.png" alt="Capibrews Logo" class="login-logo">
             <h1>Admin Login</h1>
-            <p style="color:var(--text-dim);margin:0 0 24px;font-size:0.9em;">Capibrews Control Panel</p>
+            <p class="login-subtitle">Capibrews Control Panel</p>
             <form id="login-form">
-                <div class="form-group" style="text-align:left;">
+                <div class="form-group">
                     <label for="email">Email</label>
                     <input type="email" id="email" placeholder="admin@capibrews.com" required>
                 </div>
-                <div class="form-group" style="text-align:left;">
+                <div class="form-group">
                     <label for="password">Password</label>
                     <input type="password" id="password" placeholder="••••••••" required>
                 </div>
-                <button type="submit" class="btn-primary" style="width:100%;margin-top:8px;">Login</button>
+                <button type="submit" class="btn-primary login-submit-btn">Login</button>
             </form>
-            <p id="login-error" style="color:var(--error);font-size:0.85em;margin-top:12px;min-height:20px;"></p>
+            <p id="login-error" class="login-error-msg"></p>
         </div>
     </div>
 
-    <!-- Admin layout — hidden until logged in -->
+    <!-- ✅ FIX: .admin-layout is hidden by default, shown only after auth -->
     <div class="admin-layout hidden" id="admin-layout">
 
+        <!-- Sidebar -->
         <div id="sidebar" class="sidebar">
             <div class="sidebar-header">
-                <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+                <button class="toggle-btn" onclick="toggleSidebar()" aria-label="Toggle Sidebar">☰</button>
                 <img src="https://i.imgur.com/F022t03.png" alt="Capibrews Logo" class="logo">
             </div>
             <nav class="nav-links">
                 <a href="#" class="nav-item active" onclick="showSection('inventory'); return false;">
-                    <span class="icon">📋</span><span class="nav-label"> Inventory</span>
+                    <span class="icon">📋</span><span class="nav-label">Inventory</span>
                 </a>
                 <a href="#" class="nav-item" onclick="showSection('orders'); return false;">
-                    <span class="icon">☕</span><span class="nav-label"> Orders</span>
+                    <span class="icon">☕</span><span class="nav-label">Orders</span>
                 </a>
                 <a href="#" class="nav-item" onclick="showSection('settings'); return false;">
-                    <span class="icon">⚙️</span><span class="nav-label"> Settings</span>
+                    <span class="icon">⚙️</span><span class="nav-label">Settings</span>
                 </a>
             </nav>
             <div class="sidebar-footer">
-                <button id="logout-btn" class="btn-secondary" style="width:100%;">🚪 <span class="nav-label">Logout</span></button>
+                <button id="logout-btn" class="logout-btn">
+                    <span class="icon">🚪</span><span class="nav-label">Logout</span>
+                </button>
             </div>
         </div>
 
-        <main class="admin-main">
+        <!-- Main Content -->
+        <main id="main-content" class="admin-main">
+            <!-- Top Bar -->
             <header class="admin-top-bar">
-                <button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
+                <button class="mobile-toggle" onclick="toggleSidebar()" aria-label="Open Menu">☰</button>
                 <h1 id="view-title">Inventory</h1>
                 <div class="top-bar-right">
                     <button id="show-add-modal" class="add-btn">+ New Item</button>
@@ -64,54 +69,95 @@
             </header>
 
             <div id="admin-container">
+
+                <!-- ✅ FIX: Stats row with correct IDs referenced in admin.js -->
                 <div class="stats-row" id="stats-row">
-                    <div class="stat-card"><span class="stat-label">Total Items</span><span class="stat-value" id="stat-count">—</span></div>
-                    <div class="stat-card"><span class="stat-label">Categories</span><span class="stat-value" id="stat-cats">—</span></div>
-                    <div class="stat-card"><span class="stat-label">Available</span><span class="stat-value" id="stat-active">—</span></div>
-                    <div class="stat-card"><span class="stat-label">Pending Orders</span><span class="stat-value" id="stat-orders">—</span></div>
+                    <div class="stat-card">
+                        <span class="stat-label">Total Items</span>
+                        <span class="stat-value" id="stat-count">—</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Categories</span>
+                        <span class="stat-value" id="stat-cats">—</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Available</span>
+                        <span class="stat-value" id="stat-active">—</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Pending Orders</span>
+                        <span class="stat-value" id="stat-orders">—</span>
+                    </div>
                 </div>
 
+                <!-- Inventory Section -->
                 <section id="inventory-section">
                     <div class="view-header">
                         <h2>Manage Menu</h2>
                         <div class="header-controls">
-                            <select id="itemCategory"><option value="All">All Categories</option></select>
-                            <div class="search-filter"><input type="text" id="admin-search" placeholder="Search items..."></div>
+                            <select id="itemCategory">
+                                <option value="All">All Categories</option>
+                                <option value="Coffee Selection">Coffee Selection</option>
+                                <option value="Signature Blends">Signature Blends</option>
+                                <option value="Soda Blends">Soda Blends</option>
+                                <option value="Frappe">Frappe</option>
+                            </select>
+                            <div class="search-filter">
+                                <input type="text" id="admin-search" placeholder="Search items...">
+                            </div>
                         </div>
                     </div>
-                    <div id="admin-grid" class="admin-item-grid"><p>Fetching inventory...</p></div>
+                    <div id="admin-grid" class="admin-item-grid">
+                        <div class="empty-state-loading">
+                            <div class="loading-spinner"></div>
+                            <p>Fetching inventory...</p>
+                        </div>
+                    </div>
                 </section>
 
+                <!-- Orders Section -->
                 <section id="orders-section" style="display:none;">
                     <div class="view-header">
                         <h2>Incoming Orders</h2>
-                        <button id="refresh-orders-btn" class="btn-secondary" style="font-size:0.85em;">↻ Refresh</button>
+                        <button id="refresh-orders-btn" class="btn-secondary refresh-btn">↻ Refresh</button>
                     </div>
                     <div class="orders-table-wrapper">
-                        <table class="admin-table">
-                            <thead><tr><th>Customer</th><th>Items Ordered</th><th>Total</th><th>Status</th><th>Action</th></tr></thead>
+                        <table id="ordersTable" class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Items Ordered</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
                             <tbody id="ordersTableBody"></tbody>
                         </table>
                     </div>
                 </section>
 
+                <!-- Settings Section -->
                 <section id="settings-section" style="display:none;">
-                    <div class="view-header"><h2>Settings</h2></div>
+                    <div class="view-header">
+                        <h2>Settings</h2>
+                    </div>
                     <div class="settings-content">
-                        <div class="stat-card" style="display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;">
-                            <div>
-                                <strong>Sync Default Menu</strong>
-                                <p style="margin:4px 0 0;color:var(--text-dim);font-size:0.85em;">Load default menu into database. Only run once on a fresh setup.</p>
+                        <div class="settings-card">
+                            <div class="settings-card-info">
+                                <h3>Sync Default Menu</h3>
+                                <p>Load the default Capibrews menu data into your database. Only run this once on a fresh setup.</p>
                             </div>
                             <button onclick="seedMenuData()" class="btn-secondary">🌱 Sync Default Menu Data</button>
                         </div>
                     </div>
                 </section>
+
             </div>
         </main>
     </div>
 
-    <!-- Add Item Modal — plain form, no hidden required fields -->
+    <!-- Add Item Modal -->
     <div id="add-modal" class="modal hidden">
         <div class="modal-content">
             <h2>New Menu Item</h2>
@@ -123,15 +169,13 @@
                     </div>
                     <div class="form-group">
                         <label>Category</label>
-                        <select id="new-category">
-                            <option value="" disabled selected>Select category</option>
+                        <select id="new-category" required>
+                            <option value="" disabled selected>Select Category</option>
                             <option value="Coffee Selection">Coffee Selection</option>
                             <option value="Signature Blends">Signature Blends</option>
                             <option value="Soda Blends">Soda Blends</option>
                             <option value="Frappe">Frappe</option>
-                            <option value="__custom__">+ New Category…</option>
                         </select>
-                        <input type="text" id="new-category-custom" placeholder="Type new category name" style="display:none;margin-top:8px;">
                     </div>
                 </div>
                 <div class="form-group">
@@ -164,13 +208,26 @@
                 </div>
                 <div id="multi-price-input" class="price-section hidden">
                     <div id="price-rows"></div>
-                    <button type="button" id="add-price-row" class="btn-secondary" style="width:auto;margin-top:10px;padding:6px 16px;font-size:0.85em;">+ Add Size/Price</button>
+                    <button type="button" id="add-price-row" class="btn-secondary add-size-btn">+ Add Size/Price</button>
                 </div>
                 <div class="modal-btns">
                     <button type="button" id="close-modal" class="btn-secondary">Cancel</button>
                     <button type="submit" class="btn-primary">Create Item</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- ✅ FIX: Custom Confirm Modal — replaces all native confirm() and alert() dialogs -->
+    <div id="confirm-modal" class="modal hidden">
+        <div class="modal-content confirm-modal-content">
+            <div class="confirm-icon" id="confirm-icon">⚠️</div>
+            <h3 id="confirm-title">Are you sure?</h3>
+            <p id="confirm-message">This action cannot be undone.</p>
+            <div class="modal-btns">
+                <button id="confirm-cancel-btn" class="btn-secondary">Cancel</button>
+                <button id="confirm-ok-btn" class="btn-danger">Confirm</button>
+            </div>
         </div>
     </div>
 
