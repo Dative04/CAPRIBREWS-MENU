@@ -158,11 +158,12 @@
         </main>
     </div>
 
-    <!-- Add Item Modal -->
+    <!-- Add/Edit Item Modal -->
     <div id="add-modal" class="modal hidden">
         <div class="modal-content">
-            <h2>New Menu Item</h2>
+            <h2 id="modal-title">New Menu Item</h2>
             <form id="add-item-form">
+                <input type="hidden" id="edit-item-id">
                 <div class="form-row">
                     <div class="form-group">
                         <label>Name</label>
@@ -185,9 +186,19 @@
                     <label>Description</label>
                     <textarea id="new-description" placeholder="Describe the flavors..." rows="2"></textarea>
                 </div>
-                <div class="form-group">
-                    <label>Image URL</label>
-                    <input type="text" id="new-image" placeholder="Paste image link here">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Image URL</label>
+                        <input type="text" id="new-image" placeholder="Paste image link here">
+                    </div>
+                    <div class="form-group">
+                        <label>Temperature</label>
+                        <div class="temp-group">
+                            <label><input type="radio" name="temp" value="hot" class="temp-radio"> Hot</label>
+                            <label><input type="radio" name="temp" value="cold" class="temp-radio"> Cold</label>
+                            <label><input type="radio" name="temp" value="both" class="temp-radio" checked> Both</label>
+                        </div>
+                    </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -201,7 +212,7 @@
                         <label>Dietary Tags</label>
                         <div class="check-group">
                             <label><input type="checkbox" value="vegan" class="diet-check"> Vegan</label>
-                            <label><input type="checkbox" value="gf" class="diet-check"> GF</label>
+                            <label><input type="checkbox" value="gf" class="diet-check"> Gluten-Free</label>
                         </div>
                     </div>
                 </div>
@@ -215,7 +226,7 @@
                 </div>
                 <div class="modal-btns">
                     <button type="button" id="close-modal" class="btn-secondary">Cancel</button>
-                    <button type="submit" class="btn-primary">Create Item</button>
+                    <button type="submit" id="submit-btn" class="btn-primary">Create Item</button>
                 </div>
             </form>
         </div>

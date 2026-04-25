@@ -169,20 +169,23 @@ window.toggleCustomCategory = (val) => {
 showAddModalBtn?.addEventListener('click', () => {
     addModal.classList.remove('hidden');
     
-    // 1. Reset the form first
+    // Reset the form
     addItemForm.reset();
+    document.getElementById('modal-title').textContent = 'New Menu Item';
+    document.getElementById('submit-btn').textContent = 'Create Item';
+    document.getElementById('edit-item-id').value = '';
     
-    // 2. Explicitly set default pricing mode BEFORE creating rows
+    // Set default temperature to 'both'
+    const tempRadios = document.getElementsByName('temp');
+    tempRadios.forEach(r => { if (r.value === 'both') r.checked = true; });
+
+    // Explicitly set default pricing mode BEFORE creating rows
     priceTypeSelect.value = 'single';
     singlePriceSection.classList.remove('hidden');
     multiPriceSection.classList.add('hidden');
     
-    // 3. Reset price rows (now they will correctly see 'single' mode)
     resetPriceRows();
-    
-    // 4. Sync required attributes
     syncPricingRequired();
-
     document.getElementById('custom-category').classList.add('hidden');
 });
 
@@ -284,20 +287,21 @@ addItemForm?.addEventListener('submit', async (e) => {
         category = document.getElementById('custom-category').value.trim() || 'General';
     }
 
-    const newItem = {
+    const temp = document.querySelector('input[name="temp"]:checked')?.value || 'both';
+    const editId = document.getElementById('edit-item-id').value;
+
+    const itemData = {
         name:        document.getElementById('new-name').value.trim(),
         category:    category,
         description: document.getElementById('new-description').value.trim() || '',
         image_url:   document.getElementById('new-image').value.trim() || '',
-        available:   true,
         dietary:     dietary.length ? dietary : null,
-        // Using a safer sort order if BIGINT isn't ready, but Date.now() is preferred for uniqueness
-        sort_order:  Date.now() 
+        temp:        temp
     };
 
     if (priceTypeSelect.value === 'single') {
-        newItem.price  = parseFloat(document.getElementById('new-price').value) || 0;
-        newItem.prices = null;
+        itemData.price  = parseFloat(document.getElementById('new-price').value) || 0;
+        itemData.prices = null;
     } else {
         const prices = {};
         priceRowsContainer.querySelectorAll('.price-row').forEach(row => {
@@ -305,35 +309,45 @@ addItemForm?.addEventListener('submit', async (e) => {
             const price = parseFloat(row.querySelector('.price-input').value) || 0;
             if (size) prices[size] = price;
         });
-        newItem.prices = prices;
-        newItem.price  = null;
+        itemData.prices = prices;
+        itemData.price  = null;
     }
 
-    const submitBtn = addItemForm.querySelector('[type="submit"]');
-    submitBtn.textContent = 'Creating…';
+    const submitBtn = document.getElementById('submit-btn');
+    const isEditing = !!editId;
+    submitBtn.textContent = isEditing ? 'Saving...' : 'Creating...';
     submitBtn.disabled = true;
 
     try {
-        let { error } = await window.supabaseClient.from('menu').insert([newItem]);
-        
-        // Fallback for "value out of range for type integer" if user hasn't run the SQL migration
-        if (error && error.code === '22003') {
-            console.warn('Sort order overflow, retrying with smaller value...');
-            newItem.sort_order = Math.floor(Date.now() / 10000); // Reduce size
-            const retry = await window.supabaseClient.from('menu').insert([newItem]);
-            error = retry.error;
+        let error;
+        if (isEditing) {
+            const result = await window.supabaseClient.from('menu').update(itemData).eq('id', editId);
+            error = result.error;
+        } else {
+            // New item needs available and sort_order
+            itemData.available = true;
+            itemData.sort_order = Date.now();
+            const result = await window.supabaseClient.from('menu').insert([itemData]);
+            error = result.error;
+
+            // Fallback for sort_order overflow
+            if (error && error.code === '22003') {
+                itemData.sort_order = Math.floor(Date.now() / 10000);
+                const retry = await window.supabaseClient.from('menu').insert([itemData]);
+                error = retry.error;
+            }
         }
 
         if (error) throw error;
         addModal.classList.add('hidden');
         addItemForm.reset();
-        showToast('Item created successfully ✓', 'success');
+        showToast(isEditing ? 'Item updated successfully ✓' : 'Item created successfully ✓', 'success');
         loadAdminData();
     } catch (err) {
-        console.error('Create item error:', err);
+        console.error('Save item error:', err);
         showToast(`Error: ${err.message}`, 'error');
     } finally {
-        submitBtn.textContent = 'Create Item';
+        submitBtn.textContent = isEditing ? 'Save Changes' : 'Create Item';
         submitBtn.disabled = false;
     }
 });
@@ -430,10 +444,14 @@ function renderAdminGrid(items) {
             ? Object.entries(item.prices).map(([s, p]) => `${s}: ₱${Number(p).toFixed(0)}`).join(' · ')
             : `₱${Number(item.price || 0).toFixed(0)}`;
 
+        const tempTag = item.temp && item.temp !== 'both' 
+            ? `<span class="temp-tag ${item.temp}">${item.temp.toUpperCase()}</span>` 
+            : '';
+
         card.innerHTML = `
             <div class="card-info">
                 <div class="card-title-row">
-                    <h3>${item.name}</h3>
+                    <h3>${item.name} ${tempTag}</h3>
                     <div class="dietary-tags">
                         ${item.dietary?.includes('vegan') ? '<span class="tag-v" title="Vegan">🌱</span>' : ''}
                         ${item.dietary?.includes('gf') ? '<span class="tag-gf" title="Gluten Free">🌾</span>' : ''}
@@ -450,12 +468,60 @@ function renderAdminGrid(items) {
                         <span class="slider"></span>
                     </label>
                 </div>
-                <button class="delete-btn" onclick="deleteItem('${item.id}')">Delete</button>
+                <div class="btn-group">
+                    <button class="edit-btn" onclick="editItem('${item.id}')">Edit</button>
+                    <button class="delete-btn" onclick="deleteItem('${item.id}')">Delete</button>
+                </div>
             </div>
         `;
         adminGrid.appendChild(card);
     });
 }
+
+window.editItem = (id) => {
+    const item = currentItems.find(i => i.id === id);
+    if (!item) return;
+
+    addModal.classList.remove('hidden');
+    document.getElementById('modal-title').textContent = 'Edit Menu Item';
+    document.getElementById('submit-btn').textContent = 'Save Changes';
+    document.getElementById('edit-item-id').value = item.id;
+
+    document.getElementById('new-name').value = item.name;
+    document.getElementById('new-category').value = item.category;
+    document.getElementById('new-description').value = item.description || '';
+    document.getElementById('new-image').value = item.image_url || '';
+
+    // Handle temperature
+    const tempRadios = document.getElementsByName('temp');
+    tempRadios.forEach(r => { if (r.value === (item.temp || 'both')) r.checked = true; });
+
+    // Handle dietary checks
+    document.querySelectorAll('.diet-check').forEach(check => {
+        check.checked = item.dietary?.includes(check.value);
+    });
+
+    // Handle pricing
+    if (item.prices && Object.keys(item.prices).length > 0) {
+        priceTypeSelect.value = 'multi';
+        singlePriceSection.classList.add('hidden');
+        multiPriceSection.classList.remove('hidden');
+        
+        priceRowsContainer.innerHTML = '';
+        Object.entries(item.prices).forEach(([size, price]) => {
+            const row = createPriceRow(size, price);
+            priceRowsContainer.appendChild(row);
+        });
+    } else {
+        priceTypeSelect.value = 'single';
+        singlePriceSection.classList.remove('hidden');
+        multiPriceSection.classList.add('hidden');
+        document.getElementById('new-price').value = item.price || 0;
+        resetPriceRows();
+    }
+    
+    syncPricingRequired();
+};
 
 window.toggleAvailability = async (id, isAvailable) => {
     try {

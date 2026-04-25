@@ -472,6 +472,9 @@ body {
 .tag-v, .tag-gf {
     font-size: 0.9rem;
     cursor: help;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .card-meta {
@@ -533,6 +536,88 @@ body {
 
 input:checked + .slider { background-color: var(--accent); }
 input:checked + .slider:before { transform: translateX(17px); }
+
+.temp-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+.temp-tag.hot {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.temp-tag.cold {
+    background: #e0f2fe;
+    color: #0284c7;
+}
+
+.temp-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.temp-radio {
+    margin-right: 4px;
+}
+
+.temp-group label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-weight: 400 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+}
+
+.temp-tag {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.temp-tag.hot {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.temp-tag.cold {
+    background: #e0f2fe;
+    color: #0284c7;
+}
+
+.btn-group {
+    display: flex;
+    gap: 8px;
+}
+
+.edit-btn {
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: white;
+    color: var(--text-main);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.edit-btn:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+}
 
 /* ─────────────────────────────────────────
    ORDERS TABLE

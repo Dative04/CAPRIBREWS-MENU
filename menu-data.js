@@ -38,7 +38,7 @@ const initialMenuData = [
         description: "Creamy mango shake with graham cracker bits.",
         prices: { "16oz": 119, "22oz": 129 },
         available: true,
-        dietary: ["gf"],
+        dietary: ["gluten-free"],
         order: 5
     },
     {

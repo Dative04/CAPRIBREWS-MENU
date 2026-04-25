@@ -369,6 +369,10 @@ function createItemCard(item, index) {
         addBtnHtml = `<button class="add-to-cart-btn" onclick="handleAddToCart('${item.id}', event)">Add to Order</button>`;
     }
 
+    const tempTag = item.temp && item.temp !== 'both' 
+        ? `<span class="temp-tag-mini ${item.temp}">${item.temp.toUpperCase()}</span>` 
+        : '';
+
     card.innerHTML = `
         <div class="card-img-wrapper">
             <img src="${itemImage}" alt="${item.name}" class="card-img"
@@ -378,7 +382,7 @@ function createItemCard(item, index) {
         </div>
         <div class="card-content">
             <div class="card-header">
-                <h3 class="card-title">${item.name}</h3>
+                <h3 class="card-title">${item.name} ${tempTag}</h3>
                 <div class="dietary-icons">
                     ${item.dietary?.includes('vegan') ? '<span class="dietary-dot v-dot" title="Vegan">🌱</span>' : ''}
                     ${item.dietary?.includes('gf') ? '<span class="dietary-dot gf-dot" title="Gluten Free">🌾</span>' : ''}
