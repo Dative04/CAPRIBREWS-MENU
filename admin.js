@@ -330,19 +330,20 @@ window.updateOrderStatus = async (id, status) => {
 };
 
 window.deleteOrder = async (id) => {
-    if (confirm('Delete this order record?')) {
-        try {
-            const { error } = await window.supabaseClient
-                .from('orders')
-                .delete()
-                .eq('id', id);
+    if (!confirm("Are you sure you want to delete this order?")) return;
 
-            if (error) throw error;
-            showToast('Order removed');
-        } catch (error) {
-            console.error("Error deleting order:", error);
-            showToast('Failed to remove order');
-        }
+    try {
+        const { error } = await window.supabaseClient
+            .from('orders')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+        showToast('Order deleted successfully!');
+        // No need to call loadOrdersData() because the real-time listener handles it
+    } catch (error) {
+        console.error("Delete failed:", error.message);
+        showToast('Error: ' + error.message);
     }
 };
 
