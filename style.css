@@ -287,8 +287,17 @@ body {
 
 /* Status Indicators */
 .sold-out-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2;
 }
 
 .sold-out-tag {
@@ -297,7 +306,137 @@ body {
     padding: 10px 24px;
     border-radius: 40px;
     font-size: 0.8em;
+    font-weight: 700;
     letter-spacing: 2px;
+}
+
+/* Sidebar Drawer Styles */
+.drawer {
+    position: fixed;
+    top: 0;
+    left: -280px; /* Hidden by default */
+    width: 280px;
+    height: 100%;
+    background: var(--card-bg);
+    box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2000;
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.drawer.open {
+    left: 0; /* Slides in */
+}
+
+.close-btn-drawer {
+    align-self: flex-end;
+    font-size: 28px;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+.drawer-links {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.drawer-links a {
+    text-decoration: none;
+    color: var(--text-main);
+    font-size: 1.1em;
+    font-weight: 600;
+    padding: 12px 15px;
+    border-radius: 12px;
+    transition: all 0.2s;
+}
+
+.drawer-links a:hover {
+    background: rgba(29, 61, 46, 0.05);
+    color: var(--accent);
+}
+
+.drawer-links hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 15px 0;
+}
+
+/* Top Navigation Styles */
+.top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 24px;
+    background: var(--accent);
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 1500;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.top-nav .logo {
+    font-family: var(--font-serif);
+    font-size: 1.4em;
+    font-weight: 700;
+}
+
+.menu-btn, .cart-icon-btn {
+    font-size: 22px;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#cart-count-nav {
+    background: #e74c3c;
+    color: white;
+    font-size: 0.6em;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+/* Customer Name Input in Cart */
+.cart-customer-info {
+    padding: 15px 20px;
+    border-top: 1px solid var(--border);
+    background: #f9f9f9;
+}
+
+#customer-name-input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 0.95em;
+    outline: none;
+    box-sizing: border-box;
+}
+
+#customer-name-input:focus {
+    border-color: var(--accent);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .main-header {
+        display: none; /* Hide old header on mobile since we have top-nav */
+    }
+    
+    .app-container {
+        padding-top: 20px;
+    }
 }
 
 .menu-card.sold-out {

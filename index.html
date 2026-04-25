@@ -10,6 +10,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <header class="top-nav">
+        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        <div class="logo">Capibrews</div>
+        <div class="cart-icon-btn" onclick="toggleCart()">🛒 <span id="cart-count-nav">0</span></div>
+    </header>
+
+    <div id="side-drawer" class="drawer">
+        <button class="close-btn-drawer" onclick="toggleMenu()">×</button>
+        <nav class="drawer-links">
+            <a href="#" onclick="filterByCategory('Soda Blends'); toggleMenu()">🥤 Soda Blends</a>
+            <a href="#" onclick="filterByCategory('Signature Blends'); toggleMenu()">✨ Signature Blends</a>
+            <a href="#" onclick="filterByCategory('Coffee Selection'); toggleMenu()">☕ Coffee Selection</a>
+            <hr>
+            <a href="#" onclick="filterByCategory('All'); toggleMenu()">📋 View All Menu</a>
+        </nav>
+    </div>
+
     <div class="app-container">
         <header class="main-header" id="main-header">
             <div class="header-content-wrapper">
@@ -54,6 +71,9 @@
             </div>
             <div id="cart-items" class="cart-items">
                 <!-- Cart items will be injected here -->
+            </div>
+            <div class="cart-customer-info">
+                <input type="text" id="customer-name-input" placeholder="Enter your name..." required>
             </div>
             <div class="cart-footer">
                 <div class="total-row">

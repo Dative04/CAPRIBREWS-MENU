@@ -17,6 +17,32 @@ const closeOrderModalBtn = document.getElementById('close-order-modal');
 const orderSummaryList = document.getElementById('order-summary-list');
 const summaryTotalLabel = document.getElementById('summary-total');
 
+const cartCountNav = document.getElementById('cart-count-nav');
+
+// Toggle Side Menu
+window.toggleMenu = () => {
+    const drawer = document.getElementById('side-drawer');
+    drawer.classList.toggle('open');
+};
+
+// Toggle Cart Drawer
+window.toggleCart = () => {
+    cartDrawer.classList.toggle('hidden');
+};
+
+// Global Category Filter for Drawer
+window.filterByCategory = (cat) => {
+    currentCategory = cat;
+    renderTabs(allItems);
+    filterAndRenderItems();
+    
+    // Smooth scroll to menu grid
+    const menuSection = document.getElementById('menu-grid');
+    if (menuSection) {
+        menuSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+};
+
 // Cart Interactions
 cartFab.onclick = () => cartDrawer.classList.toggle('hidden');
 closeCartBtn.onclick = () => cartDrawer.classList.add('hidden');
@@ -49,7 +75,10 @@ function removeFromCart(index) {
 }
 
 function updateCartUI() {
-    cartCount.textContent = cart.length;
+    const totalCount = cart.length;
+    if (cartCount) cartCount.textContent = totalCount;
+    if (cartCountNav) cartCountNav.textContent = totalCount;
+    
     cartItemsContainer.innerHTML = '';
     
     let total = 0;
@@ -88,12 +117,21 @@ function showCartFAB() {
 checkoutBtn.onclick = async () => {
     if (cart.length === 0) return;
     
+    const customerNameInput = document.getElementById('customer-name-input');
+    const customerName = customerNameInput ? customerNameInput.value.trim() : "";
+
+    if (!customerName) {
+        alert("Please enter your name so we know who the order is for!");
+        customerNameInput?.focus();
+        return;
+    }
+    
     const currentCart = [...cart]; // Copy for summary
     const total = currentCart.reduce((sum, item) => sum + item.selectedPrice, 0);
     
     // Construct Order object for Supabase
     const orderData = {
-        customer_name: "Customer", // You can add a name field later
+        customer_name: customerName,
         items: currentCart.map(item => ({
             id: item.id,
             name: item.name,
@@ -129,6 +167,7 @@ checkoutBtn.onclick = async () => {
         
         // Reset Cart
         cart = [];
+        if (customerNameInput) customerNameInput.value = '';
         updateCartUI();
         cartDrawer.classList.add('hidden');
         orderModal.classList.remove('hidden');
