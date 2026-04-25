@@ -178,58 +178,7 @@ body {
     box-shadow: 0 0 0 4px rgba(29, 61, 46, 0.08);
 }
 
-/* ─── Category Tabs ──────────────────────────────────────────────────────────── */
-.category-tabs-container {
-    position: sticky;
-    top: 57px;
-    background: rgba(253, 252, 248, 0.85);
-    backdrop-filter: blur(12px);
-    z-index: 1000;
-    margin: 0 calc(-1 * var(--space-3));
-    padding: var(--space-2) var(--space-3);
-    border-bottom: 1px solid var(--border);
-}
-
-.category-tabs {
-    display: flex;
-    justify-content: center;
-    overflow-x: auto;
-    gap: var(--space-1);
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-
-.category-tabs::-webkit-scrollbar { display: none; }
-
-.tab-btn {
-    white-space: nowrap;
-    padding: var(--space-1) var(--space-3);
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-full);
-    color: var(--text-dim);
-    font-weight: 600;
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: var(--shadow-sm);
-    font-family: var(--font-sans);
-}
-
-.tab-btn:hover {
-    border-color: var(--accent-light);
-    color: var(--accent-light);
-    transform: translateY(-1px);
-}
-
-.tab-btn.active {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
-    box-shadow: 0 4px 12px rgba(29, 61, 46, 0.2);
-}
-
-/* ─── Menu Grid ──────────────────────────────────────────────────────────────── */
+/* ─── Menu Sections ──────────────────────────────────────────────────────────── */
 .menu-view { padding: var(--space-6) 0; }
 
 .item-grid {
@@ -254,6 +203,50 @@ body {
     box-shadow: var(--shadow-md);
 }
 
+/* Quantity Selector */
+.qty-selector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin: 1rem 0;
+    background: var(--accent-soft);
+    padding: 0.5rem;
+    border-radius: 12px;
+}
+
+.qty-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: var(--card-bg);
+    color: var(--accent);
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.qty-btn:hover {
+    background: var(--accent);
+    color: white;
+}
+
+.qty-input {
+    width: 40px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--text-main);
+    background: transparent;
+    border: none;
+}
+
+/* Hide default arrow in summary */
 .category-summary {
     display: flex;
     align-items: center;

@@ -1,5 +1,4 @@
 const menuGrid          = document.getElementById('menu-grid');
-const categoryTabs      = document.getElementById('category-tabs');
 const searchInput       = document.getElementById('menu-search');
 const mainHeader        = document.getElementById('main-header');
 
@@ -47,12 +46,9 @@ const closeCart = () => {
 cartFab.onclick       = openCart;
 closeCartBtn.onclick  = closeCart;
 
-// ─── Global Category Filter ───────────────────────────────────────────────────
-window.filterByCategory = (cat) => {
-    currentCategory = cat;
-    renderTabs(allItems);
+window.filterByCategory = (category) => {
+    currentCategory = category;
     filterAndRenderItems();
-    document.getElementById('menu-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
 // ─── Order Modal ──────────────────────────────────────────────────────────────
@@ -247,23 +243,6 @@ window.addEventListener('scroll', () => {
     lastScrollY = currentScrollY;
 });
 
-// ─── Tabs ─────────────────────────────────────────────────────────────────────
-function renderTabs(items) {
-    const categories = ['All', ...new Set(items.map(item => item.category))];
-    categoryTabs.innerHTML = '';
-    categories.forEach(cat => {
-        const btn = document.createElement('button');
-        btn.className = `tab-btn${currentCategory === cat ? ' active' : ''}`;
-        btn.textContent = cat;
-        btn.onclick = () => {
-            currentCategory = cat;
-            renderTabs(items);
-            filterAndRenderItems();
-        };
-        categoryTabs.appendChild(btn);
-    });
-}
-
 // ─── Search ───────────────────────────────────────────────────────────────────
 function debounce(fn, wait) {
     let t;
@@ -351,6 +330,13 @@ function createItemCard(item, index) {
 
     let priceHtml = '';
     let addBtnHtml = '';
+    const qtySelectorHtml = `
+        <div class="qty-selector">
+            <button class="qty-btn" onclick="changeQty('${item.id}', -1)" aria-label="Decrease quantity">−</button>
+            <input type="number" id="qty-${item.id}" class="qty-input" value="1" min="1" readonly>
+            <button class="qty-btn" onclick="changeQty('${item.id}', 1)" aria-label="Increase quantity">+</button>
+        </div>
+    `;
 
     if (item.prices && Object.keys(item.prices).length > 0) {
         const sizes = Object.entries(item.prices);
@@ -396,11 +382,20 @@ function createItemCard(item, index) {
             </div>
             <p class="card-desc">${item.description || 'Crafted with premium ingredients for the perfect sip.'}</p>
             ${priceHtml}
-            ${!isSoldOut ? addBtnHtml : ''}
+            ${!isSoldOut ? qtySelectorHtml + addBtnHtml : ''}
         </div>
     `;
     return card;
 }
+
+window.changeQty = (itemId, delta) => {
+    const input = document.getElementById(`qty-${itemId}`);
+    if (input) {
+        let val = parseInt(input.value) + delta;
+        if (val < 1) val = 1;
+        input.value = val;
+    }
+};
 
 window.handleAddToCart = (itemId, event) => {
     const item = allItems.find(i => String(i.id) === String(itemId));
@@ -408,6 +403,9 @@ window.handleAddToCart = (itemId, event) => {
         console.error('Item not found:', itemId);
         return;
     }
+
+    const qtyInput = document.getElementById(`qty-${itemId}`);
+    const quantity = qtyInput ? parseInt(qtyInput.value) : 1;
 
     let size = 'Standard';
     let price = item.price || 0;
@@ -418,7 +416,13 @@ window.handleAddToCart = (itemId, event) => {
         price = parseFloat(selected.dataset.price);
     }
     
-    addToCart(item, size, price, event);
+    // Add to cart 'quantity' times
+    for (let i = 0; i < quantity; i++) {
+        addToCart(item, size, price, event);
+    }
+    
+    // Reset quantity to 1 after adding
+    if (qtyInput) qtyInput.value = 1;
 };
 
 window.removeFromCart = removeFromCart;
@@ -430,7 +434,6 @@ if (typeof initialMenuData !== 'undefined') {
         id: 'local-' + idx,
         ...item
     }));
-    renderTabs(allItems);
     filterAndRenderItems();
 }
 
@@ -447,7 +450,6 @@ async function displayMenu() {
     if (data?.length > 0) {
         // Items from DB already have IDs
         allItems = data.map(item => ({ ...item, image: item.image_url }));
-        renderTabs(allItems);
         filterAndRenderItems();
     }
 }
