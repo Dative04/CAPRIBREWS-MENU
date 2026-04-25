@@ -156,7 +156,7 @@ addItemForm.addEventListener('submit', async (e) => {
     }
 
     try {
-        const { error } = await supabase
+        const { error } = await window.supabaseClient
             .from('menu')
             .insert([newItem]);
 
@@ -174,7 +174,7 @@ addItemForm.addEventListener('submit', async (e) => {
 
 function loadAdminData() {
     console.log("Fetching menu items from Supabase...");
-    supabase
+    window.supabaseClient
         .from('menu')
         .select('*')
         .order('sort_order', { ascending: true })
@@ -194,13 +194,13 @@ function loadOrdersData() {
     // 3. State Management: Clean up existing listener before re-attaching
     if (ordersListener) {
         console.log("Detaching previous listener...");
-        supabase.removeChannel(ordersListener);
+        window.supabaseClient.removeChannel(ordersListener);
     }
 
     console.log("4. Admin Page: Fetching and listening to orders via Supabase...");
     
     // 1. Initial fetch of existing orders
-    supabase
+    window.supabaseClient
         .from('orders')
         .select('*')
         .order('created_at', { ascending: false })
@@ -217,7 +217,7 @@ function loadOrdersData() {
         });
 
     // 2. Listen for new orders live
-    ordersListener = supabase
+    ordersListener = window.supabaseClient
         .channel('public:orders')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
             console.log('New order received!', payload.new);
@@ -301,7 +301,7 @@ function renderOrdersGrid(orders) {
 
 window.updateOrderStatus = async (id, status) => {
     try {
-        const { error } = await supabase
+        const { error } = await window.supabaseClient
             .from('orders')
             .update({ status: status })
             .eq('id', id);
@@ -317,7 +317,7 @@ window.updateOrderStatus = async (id, status) => {
 window.deleteOrder = async (id) => {
     if (confirm('Delete this order record?')) {
         try {
-            const { error } = await supabase
+            const { error } = await window.supabaseClient
                 .from('orders')
                 .delete()
                 .eq('id', id);
@@ -353,7 +353,7 @@ window.seedMenuData = async () => {
                 sort_order: item.order || index
             }));
 
-            const { data, error } = await supabase
+            const { data, error } = await window.supabaseClient
                 .from('menu')
                 .insert(formattedData);
 
@@ -464,7 +464,7 @@ window.updateItemPrice = async (id, btn) => {
     btn.disabled = true;
 
     try {
-        const { error } = await supabase
+        const { error } = await window.supabaseClient
             .from('menu')
             .update(updates)
             .eq('id', id);
@@ -546,7 +546,7 @@ function renderAdminGrid(items) {
 
 async function toggleAvailability(id, isAvailable) {
     try {
-        const { error } = await supabase
+        const { error } = await window.supabaseClient
             .from('menu')
             .update({ available: isAvailable })
             .eq('id', id);
@@ -562,7 +562,7 @@ async function toggleAvailability(id, isAvailable) {
 async function deleteItem(id) {
     if (confirm('Permanently remove this item?')) {
         try {
-            const { error } = await supabase
+            const { error } = await window.supabaseClient
                 .from('menu')
                 .delete()
                 .eq('id', id);

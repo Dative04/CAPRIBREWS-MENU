@@ -109,7 +109,7 @@ checkoutBtn.onclick = async () => {
     
     try {
         // Use Supabase to place the order
-        const { data, error } = await supabase
+        const { data, error } = await window.supabaseClient
             .from('orders')
             .insert([orderData])
             .select();
@@ -305,13 +305,13 @@ if (typeof initialMenuData !== 'undefined') {
 
 // Real-time listener with Local Fallback for Supabase
 async function displayMenu() {
-    if (typeof supabase === 'undefined') {
+    if (typeof window.supabaseClient === 'undefined') {
         console.warn("Supabase not initialized. Using local data.");
         return;
     }
 
     console.log("Fetching menu items from Supabase...");
-    const { data, error } = await supabase
+    const { data, error } = await window.supabaseClient
         .from('menu')
         .select('*')
         .order('sort_order', { ascending: true });
@@ -333,12 +333,12 @@ async function displayMenu() {
 }
 
 // Initialize Supabase Logic
-if (typeof supabase !== 'undefined') {
+if (typeof window.supabaseClient !== 'undefined') {
     // 1. Initial fetch
     displayMenu();
 
     // 2. Real-time updates - Instant sync when Admin changes something
-    supabase
+    window.supabaseClient
         .channel('menu-changes')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'menu' }, payload => {
             console.log('Menu updated by Admin! Syncing...');
