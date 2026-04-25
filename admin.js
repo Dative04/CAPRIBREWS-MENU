@@ -154,12 +154,25 @@ loginForm.addEventListener('submit', async (e) => {
 logoutBtn?.addEventListener('click', () => window.supabaseClient.auth.signOut());
 
 // ─── Add Item Modal ───────────────────────────────────────────────────────────
+window.toggleCustomCategory = (val) => {
+    const customInput = document.getElementById('custom-category');
+    if (val === 'custom') {
+        customInput.classList.remove('hidden');
+        customInput.required = true;
+        customInput.focus();
+    } else {
+        customInput.classList.add('hidden');
+        customInput.required = false;
+    }
+};
+
 showAddModalBtn?.addEventListener('click', () => {
     addModal.classList.remove('hidden');
     addItemForm.reset();
     resetPriceRows();
     singlePriceSection.classList.remove('hidden');
     multiPriceSection.classList.add('hidden');
+    document.getElementById('custom-category').classList.add('hidden');
 });
 
 closeModalBtn?.addEventListener('click', () => addModal.classList.add('hidden'));
@@ -202,15 +215,21 @@ addPriceRowBtn?.addEventListener('click', () => createPriceRow());
 addItemForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const dietary = Array.from(document.querySelectorAll('.diet-check:checked')).map(c => c.value);
+    
+    let category = document.getElementById('new-category').value;
+    if (category === 'custom') {
+        category = document.getElementById('custom-category').value.trim() || 'General';
+    }
 
     const newItem = {
         name:        document.getElementById('new-name').value.trim(),
-        category:    document.getElementById('new-category').value || 'General',
+        category:    category,
         description: document.getElementById('new-description').value.trim() || '',
         image_url:   document.getElementById('new-image').value.trim() || '',
         available:   true,
         dietary:     dietary.length ? dietary : null,
-        sort_order:  Date.now()
+        // Using a safer sort order if BIGINT isn't ready, but Date.now() is preferred for uniqueness
+        sort_order:  Date.now() 
     };
 
     if (priceTypeSelect.value === 'single') {
@@ -232,7 +251,16 @@ addItemForm?.addEventListener('submit', async (e) => {
     submitBtn.disabled = true;
 
     try {
-        const { error } = await window.supabaseClient.from('menu').insert([newItem]);
+        let { error } = await window.supabaseClient.from('menu').insert([newItem]);
+        
+        // Fallback for "value out of range for type integer" if user hasn't run the SQL migration
+        if (error && error.code === '22003') {
+            console.warn('Sort order overflow, retrying with smaller value...');
+            newItem.sort_order = Math.floor(Date.now() / 10000); // Reduce size
+            const retry = await window.supabaseClient.from('menu').insert([newItem]);
+            error = retry.error;
+        }
+
         if (error) throw error;
         addModal.classList.add('hidden');
         addItemForm.reset();
@@ -267,15 +295,55 @@ function loadAdminData() {
 // ─── Stats ────────────────────────────────────────────────────────────────────
 function updateStats(items) {
     const totalCount   = items.length;
-    const categories   = new Set(items.map(i => i.category)).size;
+    const categoriesSet = new Set(items.map(i => i.category));
+    const categoriesCount = categoriesSet.size;
     const activeCount  = items.filter(i => i.available !== false).length;
     const pendingOrders = allOrders.filter(o => o.status === 'pending').length;
 
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
     set('stat-count',  totalCount);
-    set('stat-cats',   categories);
+    set('stat-cats',   categoriesCount);
     set('stat-active', activeCount);
     set('stat-orders', pendingOrders);
+
+    // Refresh Category Filter Dropdown
+    refreshCategoryDropdowns(categoriesSet);
+}
+
+function refreshCategoryDropdowns(categoriesSet) {
+    const filterSelect = document.getElementById('itemCategory');
+    const modalSelect  = document.getElementById('new-category');
+    
+    if (!filterSelect || !modalSelect) return;
+
+    // 1. Update Filter Dropdown
+    const currentFilterVal = filterSelect.value;
+    filterSelect.innerHTML = '<option value="All">All Categories</option>';
+    Array.from(categoriesSet).sort().forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        filterSelect.appendChild(opt);
+    });
+    filterSelect.value = currentFilterVal; // Preserve selection
+
+    // 2. Update Modal Dropdown (Keep defaults + dynamic + "Add New")
+    const defaults = ["Coffee Selection", "Signature Blends", "Soda Blends", "Frappe"];
+    const allCats = new Set([...defaults, ...categoriesSet]);
+    
+    const currentModalVal = modalSelect.value;
+    modalSelect.innerHTML = '<option value="" disabled>Select Category</option>';
+    Array.from(allCats).sort().forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        modalSelect.appendChild(opt);
+    });
+    const addBtn = document.createElement('option');
+    addBtn.value = 'custom';
+    addBtn.textContent = '+ Add New Category';
+    modalSelect.appendChild(addBtn);
+    modalSelect.value = currentModalVal;
 }
 
 // ─── Render Inventory Grid ────────────────────────────────────────────────────
@@ -357,16 +425,24 @@ window.deleteItem = async (id) => {
     }
 };
 
-// ─── Admin Search ─────────────────────────────────────────────────────────────
+// ─── Admin Search & Filter ────────────────────────────────────────────────────
 const adminSearchInput = document.getElementById('admin-search');
-adminSearchInput?.addEventListener('input', (e) => {
-    const term = e.target.value.toLowerCase();
-    const filtered = currentItems.filter(item =>
-        item.name.toLowerCase().includes(term) ||
-        item.category.toLowerCase().includes(term)
-    );
+const itemCategoryFilter = document.getElementById('itemCategory');
+
+function filterAdminGrid() {
+    const term = adminSearchInput?.value.toLowerCase() || '';
+    const cat  = itemCategoryFilter?.value || 'All';
+    
+    const filtered = currentItems.filter(item => {
+        const matchesSearch = item.name.toLowerCase().includes(term) || item.category.toLowerCase().includes(term);
+        const matchesCat    = cat === 'All' || item.category === cat;
+        return matchesSearch && matchesCat;
+    });
     renderAdminGrid(filtered);
-});
+}
+
+adminSearchInput?.addEventListener('input', filterAdminGrid);
+itemCategoryFilter?.addEventListener('change', filterAdminGrid);
 
 // ─── Orders ───────────────────────────────────────────────────────────────────
 function loadOrdersData() {
