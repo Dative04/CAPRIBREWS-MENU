@@ -27,6 +27,36 @@ window.toggleMenu = () => {
     backdrop?.classList.toggle('visible', isOpen);
 };
 
+// ─── Geolocation ───────────────────────────────────────────────────────────────
+// Returns a Google Maps URL from coordinates
+async function getLocationMapLink() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      resolve(null);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const mapLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+        resolve(mapLink);
+      },
+      (error) => {
+        console.warn('Geolocation error:', error.message);
+        resolve(null);
+      },
+      { timeout: 5000, enableHighAccuracy: true }
+    );
+  });
+}
+
+// ─── Messenger Link ────────────────────────────────────────────────────────────
+function buildMessengerLink(totalPrice, mapLink) {
+  const message = `☕ New Order Confirmation\n\nTotal: ₱${totalPrice.toFixed(0)}\n${mapLink ? `Location: ${mapLink}` : 'Location: Not shared'}`;
+  const encodedMessage = encodeURIComponent(message);
+  return `https://m.me/61580219733955?text=${encodedMessage}`;
+}
+
 // ─── Cart Toggle ──────────────────────────────────────────────────────────────
 window.toggleCart = () => {
     const isHidden = cartDrawer.classList.toggle('hidden');
@@ -134,7 +164,6 @@ checkoutBtn.onclick = async () => {
     }
     const customerName = customerNameInput.value.trim();
 
-    // ✅ FIX: Inline validation instead of alert()
     if (!customerName) {
         if (nameError) {
             nameError.textContent = 'Please enter your name so we know who the order is for!';
@@ -144,41 +173,45 @@ checkoutBtn.onclick = async () => {
         return;
     }
 
-    // Clear any previous error
     if (nameError) nameError.textContent = '';
     customerNameInput?.classList.remove('input-error');
 
-    const currentCart = [...cart];
-    
-    // Group identical items (same name and size) for quantity
-    const groupedItems = currentCart.reduce((acc, item) => {
-        const key = `${item.name}-${item.selectedSize}`;
-        if (!acc[key]) {
-            acc[key] = {
-                name: item.name,
-                selectedSize: item.selectedSize,
-                selectedPrice: item.selectedPrice,
-                quantity: 1
-            };
-        } else {
-            acc[key].quantity += 1;
-        }
-        return acc;
-    }, {});
-
-    const total = currentCart.reduce((sum, item) => sum + item.selectedPrice, 0);
-
-    const orderData = {
-        customer_name: customerName,
-        items: Object.values(groupedItems),
-        total_price: total,
-        status: 'pending'
-    };
-
     checkoutBtn.disabled = true;
-    checkoutBtn.textContent = 'Processing…';
+    checkoutBtn.textContent = 'Processing...';
 
     try {
+        // 1. Capture Location Map Link
+        const mapLink = await getLocationMapLink();
+
+        const currentCart = [...cart];
+        
+        // Group identical items for quantity
+        const groupedItems = currentCart.reduce((acc, item) => {
+            const key = `${item.name}-${item.selectedSize}`;
+            if (!acc[key]) {
+                acc[key] = {
+                    name: item.name,
+                    selectedSize: item.selectedSize,
+                    selectedPrice: item.selectedPrice,
+                    quantity: 1
+                };
+            } else {
+                acc[key].quantity += 1;
+            }
+            return acc;
+        }, {});
+
+        const total = currentCart.reduce((sum, item) => sum + item.selectedPrice, 0);
+
+        // 2. Add map_link to the order data
+        const orderData = {
+            customer_name: customerName,
+            items: Object.values(groupedItems),
+            total_price: total,
+            status: 'pending',
+            map_link: mapLink
+        };
+
         const { error } = await window.supabaseClient
             .from('orders')
             .insert([orderData])
@@ -186,24 +219,10 @@ checkoutBtn.onclick = async () => {
 
         if (error) throw error;
 
-        orderSummaryList.innerHTML = currentCart.map(item => `
-            <div class="summary-item">
-                <span>${item.name} (${item.selectedSize})</span>
-                <span>₱${item.selectedPrice.toFixed(0)}</span>
-            </div>
-        `).join('');
-
-        summaryTotalLabel.textContent = `₱${total.toFixed(0)}`;
-        cart = [];
-        if (customerNameInput) customerNameInput.value = '';
-        updateCartUI();
-        closeCart();
-        orderModal.classList.remove('hidden');
-        orderModal.style.display = 'flex';
+        showOrderSuccess(total, mapLink, currentCart);
 
     } catch (err) {
         console.error('Order failed:', err);
-        // ✅ FIX: Inline error instead of alert()
         if (nameError) {
             nameError.textContent = 'Failed to send order. Check your connection and try again.';
             nameError.style.color = '#e63946';
@@ -213,6 +232,72 @@ checkoutBtn.onclick = async () => {
         checkoutBtn.textContent = 'Place Order';
     }
 };
+
+/**
+ * Shows the success modal and configures the Messenger confirmation button
+ */
+function showOrderSuccess(total, mapLink, cartItems) {
+    const messengerBtn = document.getElementById('messengerConfirmBtn');
+    const fbPageId = "61580219733955";
+
+    // 1. Configure Messenger Button
+    if (messengerBtn) {
+        const locationText = mapLink ? `My Location: ${mapLink}` : "Location: Not shared";
+        
+        const messageText = `Hi Capri Brews! 👋\n\n` + 
+                            `Order Total: ₱${total.toFixed(0)}\n` + 
+                            `${locationText}\n\n` + 
+                            `Please confirm my order!`;
+
+        const messengerUrl = `https://m.me/${fbPageId}?text=${encodeURIComponent(messageText)}`;
+        
+        messengerBtn.onclick = () => window.open(messengerUrl, '_blank');
+    }
+
+    // 2. Update Success Modal UI
+    orderSummaryList.innerHTML = cartItems.map(item => `
+        <div class="summary-item">
+            <span>${item.name} (${item.selectedSize})</span>
+            <span>₱${item.selectedPrice.toFixed(0)}</span>
+        </div>
+    `).join('');
+
+    summaryTotalLabel.textContent = `₱${total.toFixed(0)}`;
+    
+    // 3. Reset Cart
+    cart = [];
+    const customerNameInput = document.getElementById('customer-name-input');
+    if (customerNameInput) customerNameInput.value = '';
+    updateCartUI();
+    closeCart();
+
+    // 4. Show Modal
+    orderModal.classList.remove('hidden');
+    orderModal.style.display = 'flex';
+}
+
+// ─── Helper Functions ───────────────────────────────────────────────────────
+
+async function getLocationMapLink() {
+    return new Promise((resolve) => {
+        if (!navigator.geolocation) {
+            resolve("Location not supported");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                resolve(`https://www.google.com/maps?q=${latitude},${longitude}`);
+            },
+            (error) => {
+                console.warn("Location error:", error);
+                resolve("Location not shared");
+            },
+            { timeout: 10000 }
+        );
+    });
+}
 
 // Clear error state when user types
 document.getElementById('customer-name-input')?.addEventListener('input', () => {
@@ -385,7 +470,7 @@ function createItemCard(item, index) {
                 <h3 class="card-title">${item.name} ${tempTag}</h3>
                 <div class="dietary-icons">
                     ${item.dietary?.includes('vegan') ? '<span class="dietary-dot v-dot" title="Vegan">🌱</span>' : ''}
-                    ${item.dietary?.includes('gf') ? '<span class="dietary-dot gf-dot" title="Gluten Free">🌾</span>' : ''}
+                    ${item.dietary?.includes('gluten-free') ? '<span class="dietary-dot gf-dot" title="Gluten Free">🌾</span>' : ''}
                 </div>
             </div>
             <p class="card-desc">${item.description || 'Crafted with premium ingredients for the perfect sip.'}</p>
