@@ -58,10 +58,22 @@ window.filterByCategory = (category) => {
     filterAndRenderItems();
 };
 
+// ─── Order Modal State & Elements ───────────────────────────────────────────
+const confirmLocationBtn = document.getElementById('confirmLocationBtn');
+const messengerConfirmBtn = document.getElementById('messengerConfirmBtn');
+const copyReceiptBtn = document.getElementById('copyReceiptBtn');
+const modalHeaderSuccess = document.getElementById('modal-header-success');
+const modalHeaderPreview = document.getElementById('modal-header-preview');
+const deliveryInfoPreview = document.getElementById('delivery-info-preview');
+const modalInstruction = document.getElementById('modal-instruction');
+
+let currentOrderData = null; // Stores data between steps
+
 // ─── Order Modal ──────────────────────────────────────────────────────────────
 const closeOrderModal = () => {
     orderModal.classList.add('hidden');
     orderModal.style.display = 'none';
+    currentOrderData = null; // Reset
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
@@ -170,8 +182,8 @@ async function getUserLocation() {
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
-                // Reliable pin drop format: https://www.google.com/maps?q=${lat},${long}
-                resolve(`https://www.google.com/maps?q=${latitude},${longitude}`);
+                // Reliable pin drop format: https://www.google.com/maps?q=${lat},${long}.
+                resolve(`https://www.google.com/maps?q=${latitude},${longitude}.`);
             },
             (error) => {
                 console.warn("Location error:", error.message);
@@ -184,9 +196,10 @@ async function getUserLocation() {
 
 /**
  * Main checkout handler - processes both Dine-in and Delivery
+ * For Delivery, it triggers Step 1: Receipt Preview
  */
 async function handleCheckout(e) {
-    if (e) e.preventDefault(); // Critical: Prevents "Message channel closed" error
+    if (e) e.preventDefault();
 
     if (cart.length === 0) return;
 
@@ -195,7 +208,6 @@ async function handleCheckout(e) {
     const orderType = document.querySelector('input[name="order-type"]:checked')?.value;
     const isDelivery = orderType === 'delivery';
 
-    // 1. Validation with inline error messages (Replacing alert())
     if (!customerName) {
         if (nameError) nameError.textContent = 'Please enter your name for the order!';
         customerNameInput?.focus();
@@ -212,127 +224,232 @@ async function handleCheckout(e) {
         return;
     }
 
-    // Clear previous error state
     if (nameError) nameError.textContent = '';
     customerNameInput?.classList.remove('input-error');
 
-    // 2. Manage Button State
-    checkoutBtn.disabled = true;
-    const originalBtnContent = checkoutBtn.innerHTML;
-    checkoutBtn.textContent = isDelivery ? '📍 Pinpointing Location...' : 'Processing...';
+    const currentCart = [...cart];
+    const total = currentCart.reduce((sum, item) => sum + item.selectedPrice, 0);
 
-    try {
-        // 3. Geolocation Logic
-        let mapLink = 'N/A';
-        if (isDelivery) {
-            mapLink = await getUserLocation();
+    const groupedItems = currentCart.reduce((acc, item) => {
+        const key = `${item.name}-${item.selectedSize}`;
+        if (!acc[key]) {
+            acc[key] = {
+                name: item.name,
+                selectedSize: item.selectedSize,
+                selectedPrice: item.selectedPrice,
+                quantity: 1
+            };
+        } else {
+            acc[key].quantity += 1;
         }
+        return acc;
+    }, {});
 
-        const currentCart = [...cart];
-        const total = currentCart.reduce((sum, item) => sum + item.selectedPrice, 0);
+    // Store order data for next steps
+    currentOrderData = {
+        customer_name: customerName,
+        items: Object.values(groupedItems),
+        total_price: total,
+        order_type: orderType,
+        delivery_address: isDelivery ? deliveryAddress : 'N/A',
+        cartItems: currentCart
+    };
 
-        // Group items for the database
-        const groupedItems = currentCart.reduce((acc, item) => {
-            const key = `${item.name}-${item.selectedSize}`;
-            if (!acc[key]) {
-                acc[key] = {
-                    name: item.name,
-                    selectedSize: item.selectedSize,
-                    selectedPrice: item.selectedPrice,
-                    quantity: 1
-                };
-            } else {
-                acc[key].quantity += 1;
-            }
-            return acc;
-        }, {});
-
-        // 4. Data Schema & Supabase Alignment
-        const orderData = {
-            customer_name: customerName,
-            items: Object.values(groupedItems),
-            total_price: total,
-            status: 'pending',
-            order_type: orderType,
-            delivery_address: isDelivery ? deliveryAddress : 'N/A',
-            coordinates: mapLink // Correctly maps to coordinates column
-        };
-
-        const { error } = await window.supabaseClient
-            .from('orders')
-            .insert([orderData]);
-
-        if (error) throw error;
-
-        // 5. Messenger Redirect Logic (If Delivery)
-        const receiptText = generateReceiptText(customerName, groupedItems, total, orderType, deliveryAddress, mapLink);
-        
-        if (isDelivery) {
-            const fbPageId = "61580219733955";
-            // Critical: Use encodeURIComponent() for URL safety
-            const messengerUrl = `https://m.me/${fbPageId}?text=${encodeURIComponent(receiptText)}`;
-            window.open(messengerUrl, '_blank');
-        }
-
-        // 6. UI Update
-        showOrderSuccess(total, mapLink, currentCart, isDelivery, receiptText);
-
-    } catch (err) {
-        console.error('Final Error:', err.message);
-        if (nameError) {
-            nameError.textContent = `Error: ${err.message}`;
-            nameError.style.color = 'var(--error)';
-        }
-    } finally {
-        checkoutBtn.disabled = false;
-        checkoutBtn.innerHTML = originalBtnContent;
+    if (isDelivery) {
+        // Step 1: Show Receipt Preview for Delivery
+        showOrderPreview(currentOrderData);
+    } else {
+        // Direct processing for Dine-in
+        processDineInOrder(currentOrderData);
     }
 }
 
-// Bind checkout button to handler
-checkoutBtn.onclick = handleCheckout;
+/**
+ * Step 1: Shows the Receipt Preview modal for Delivery orders
+ */
+function showOrderPreview(orderData) {
+    // 1. Set Modal to Preview Mode
+    modalHeaderSuccess.classList.add('hidden');
+    modalHeaderPreview.classList.remove('hidden');
+    deliveryInfoPreview.classList.remove('hidden');
+    confirmLocationBtn.classList.remove('hidden');
+    messengerConfirmBtn.classList.add('hidden');
+    modalInstruction.textContent = "Please confirm your details. Clicking the button below will ask for your location to ensure accurate delivery.";
+    
+    // 2. Populate Preview Data
+    document.getElementById('preview-customer-name').textContent = orderData.customer_name;
+    document.getElementById('preview-address').textContent = orderData.delivery_address;
+    
+    orderSummaryList.innerHTML = orderData.cartItems.map(item => `
+        <div class="summary-item">
+            <span>${item.name} (${item.selectedSize})</span>
+            <span>₱${item.selectedPrice.toFixed(0)}</span>
+        </div>
+    `).join('');
+    summaryTotalLabel.textContent = `₱${orderData.total_price.toFixed(0)}`;
+
+    // 3. Configure Buttons
+    confirmLocationBtn.onclick = () => handleDeliveryStep2();
+    
+    // 4. Show Modal
+    orderModal.classList.remove('hidden');
+    orderModal.style.display = 'flex';
+}
+
+/**
+ * Step 2: Location Trigger - Only called after user confirms preview
+ */
+async function handleDeliveryStep2() {
+    if (!currentOrderData) return;
+
+    // Loading State
+    confirmLocationBtn.disabled = true;
+    confirmLocationBtn.innerHTML = `<span>⌛ Pinpointing GPS...</span>`;
+
+    try {
+        // Trigger Geolocation API
+        const mapLink = await getUserLocation();
+        currentOrderData.coordinates = mapLink;
+
+        // Move to Step 3: Database & Messenger
+        await processDeliveryStep3(currentOrderData);
+
+    } catch (err) {
+        console.error("Step 2 Error:", err);
+        alert("Could not get location. You can still proceed with manual address.");
+        currentOrderData.coordinates = "Location not shared";
+        await processDeliveryStep3(currentOrderData);
+    } finally {
+        confirmLocationBtn.disabled = false;
+        confirmLocationBtn.innerHTML = `📍 Confirm & Send Location`;
+    }
+}
+
+/**
+ * Step 3: Database & Messenger - Final step for Delivery
+ */
+async function processDeliveryStep3(orderData) {
+    try {
+        confirmLocationBtn.innerHTML = `<span>💾 Saving Order...</span>`;
+
+        // 1. Save to Supabase
+        const { error } = await window.supabaseClient
+            .from('orders')
+            .insert([{
+                customer_name: orderData.customer_name,
+                items: orderData.items,
+                total_price: orderData.total_price,
+                status: 'pending',
+                order_type: orderData.order_type,
+                delivery_address: orderData.delivery_address,
+                coordinates: orderData.coordinates
+            }]);
+
+        if (error) throw error;
+
+        // 2. Generate Receipt Text
+        const receiptText = generateReceiptText(
+            orderData.customer_name, 
+            orderData.items, 
+            orderData.total_price, 
+            orderData.order_type, 
+            orderData.delivery_address, 
+            orderData.coordinates
+        );
+
+        // 3. Update Modal to Success Mode
+        showOrderSuccess(orderData.total_price, orderData.coordinates, orderData.cartItems, true, receiptText);
+
+        // 4. Automatic Messenger Redirect
+        const fbPageId = "61580219733955";
+        const messengerUrl = `https://m.me/${fbPageId}?text=${encodeURIComponent(receiptText)}`;
+        window.open(messengerUrl, '_blank');
+
+    } catch (err) {
+        console.error("Step 3 Error:", err);
+        if (nameError) nameError.textContent = `Error: ${err.message}`;
+    }
+}
+
+/**
+ * Processes Dine-in orders directly
+ */
+async function processDineInOrder(orderData) {
+    checkoutBtn.disabled = true;
+    checkoutBtn.textContent = 'Processing...';
+
+    try {
+        const { error } = await window.supabaseClient
+            .from('orders')
+            .insert([{
+                customer_name: orderData.customer_name,
+                items: orderData.items,
+                total_price: orderData.total_price,
+                status: 'pending',
+                order_type: orderData.order_type,
+                delivery_address: 'N/A',
+                coordinates: 'N/A'
+            }]);
+
+        if (error) throw error;
+
+        const receiptText = generateReceiptText(orderData.customer_name, orderData.items, orderData.total_price, orderData.order_type, 'N/A', 'N/A');
+        showOrderSuccess(orderData.total_price, 'N/A', orderData.cartItems, false, receiptText);
+
+    } catch (err) {
+        console.error("Dine-in Error:", err);
+        if (nameError) nameError.textContent = `Error: ${err.message}`;
+    } finally {
+        checkoutBtn.disabled = false;
+        checkoutBtn.textContent = 'Place Order';
+    }
+}
 
 /**
  * Shows the success modal and configures the Messenger confirmation button
  */
 function showOrderSuccess(total, mapLink, cartItems, isDelivery = false, receiptText = '') {
-    const messengerBtn = document.getElementById('messengerConfirmBtn');
-    const copyReceiptBtn = document.getElementById('copyReceiptBtn');
-    const fbPageId = "61580219733955";
+    // 1. Set Modal to Success Mode
+    modalHeaderPreview.classList.add('hidden');
+    modalHeaderSuccess.classList.remove('hidden');
+    confirmLocationBtn.classList.add('hidden');
+    deliveryInfoPreview.classList.toggle('hidden', !isDelivery);
+    modalInstruction.textContent = isDelivery 
+        ? "Your order has been recorded! We've opened Messenger so you can send your receipt to our team."
+        : "Please proceed to the counter and show this screen to pay and collect your order.";
 
-    // 1. Configure Messenger Button
-    if (messengerBtn) {
+    // 2. Configure Messenger Button
+    if (messengerConfirmBtn) {
+        const fbPageId = "61580219733955";
         const messengerUrl = `https://m.me/${fbPageId}?text=${encodeURIComponent(receiptText)}`;
-        messengerBtn.onclick = () => window.open(messengerUrl, '_blank');
-        messengerBtn.parentElement.style.display = 'flex';
-        messengerBtn.style.display = isDelivery ? 'block' : 'none';
+        messengerConfirmBtn.onclick = () => window.open(messengerUrl, '_blank');
+        messengerConfirmBtn.classList.toggle('hidden', !isDelivery);
     }
 
-    // 2. Configure Copy Button
+    // 3. Configure Copy Button
     if (copyReceiptBtn) {
         copyReceiptBtn.onclick = async () => {
             try {
                 await navigator.clipboard.writeText(receiptText);
                 const originalText = copyReceiptBtn.textContent;
-                copyReceiptBtn.textContent = '✅ Copied!';
-                setTimeout(() => copyReceiptBtn.textContent = originalText, 2000);
+                copyReceiptBtn.innerHTML = '📋 Copied!';
+                setTimeout(() => copyReceiptBtn.innerHTML = '📋 Copy Receipt to Clipboard', 2000);
             } catch (err) {
                 console.error('Copy failed:', err);
             }
         };
     }
 
-    // 3. Update Success Modal UI
+    // 4. Update Order Summary
     orderSummaryList.innerHTML = cartItems.map(item => `
         <div class="summary-item">
             <span>${item.name} (${item.selectedSize})</span>
             <span>₱${item.selectedPrice.toFixed(0)}</span>
         </div>
     `).join('');
-
     summaryTotalLabel.textContent = `₱${total.toFixed(0)}`;
     
-    // 3. Reset Cart
+    // 5. Reset Cart & UI
     cart = [];
     const customerNameInput = document.getElementById('customer-name-input');
     const deliveryAddressInput = document.getElementById('delivery-address-input');
@@ -341,7 +458,7 @@ function showOrderSuccess(total, mapLink, cartItems, isDelivery = false, receipt
     updateCartUI();
     closeCart();
 
-    // 4. Show Modal
+    // 6. Final Show Modal
     orderModal.classList.remove('hidden');
     orderModal.style.display = 'flex';
 }

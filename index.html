@@ -116,21 +116,53 @@
         <!-- Order Confirmation Modal -->
         <div id="order-modal" class="modal hidden" style="display: none;">
             <div class="modal-content">
-                <div class="success-icon">✓</div>
-                <h2>Order Sent!</h2>
+                <!-- Success Header (Dine-in or Post-Delivery) -->
+                <div id="modal-header-success" class="modal-header-section">
+                    <div class="success-icon">✓</div>
+                    <h2 id="modal-title">Order Sent!</h2>
+                </div>
+
+                <!-- Preview Header (Delivery Step 1) -->
+                <div id="modal-header-preview" class="modal-header-section hidden">
+                    <div class="preview-icon">📋</div>
+                    <h2>Order Preview</h2>
+                    <p class="subtitle">Review your delivery details before sending.</p>
+                </div>
+
                 <div id="order-summary-list" class="order-summary-list"></div>
                 <div class="order-total-row">
                     <span>Total Amount</span>
                     <span id="summary-total">₱0.00</span>
                 </div>
-                <p class="instruction-text">Please proceed to the counter and show this screen to pay and collect your order.</p>
+
+                <!-- Delivery Info Preview -->
+                <div id="delivery-info-preview" class="delivery-info-preview hidden">
+                    <div class="preview-row">
+                        <span class="label">Customer:</span>
+                        <span id="preview-customer-name">--</span>
+                    </div>
+                    <div class="preview-row">
+                        <span class="label">Address/Landmark:</span>
+                        <span id="preview-address">--</span>
+                    </div>
+                </div>
+
+                <p id="modal-instruction" class="instruction-text">Please proceed to the counter and show this screen to pay and collect your order.</p>
+                
                 <div class="modal-actions" style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
-                    <button id="messengerConfirmBtn" class="btn-primary btn-messenger" type="button">
+                    <!-- Step 2 Button (Location Trigger) -->
+                    <button id="confirmLocationBtn" class="btn-primary hidden" type="button">
+                        📍 Confirm & Send Location
+                    </button>
+
+                    <!-- Step 3 Button (Messenger Redirect) -->
+                    <button id="messengerConfirmBtn" class="btn-primary btn-messenger hidden" type="button">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white" style="margin-right: 8px; vertical-align: middle;">
                             <path d="M12 2C6.477 2 2 6.145 2 11.258c0 2.908 1.464 5.503 3.746 7.158V22l3.43-1.881c.882.244 1.815.378 2.824.378 5.523 0 10-4.145 10-9.258S17.523 2 12 2zm1.286 12.355l-2.571-2.742-5.02 2.742 5.514-5.855 2.572 2.742 5.018-2.742-5.513 5.855z"/>
                         </svg>
-                        Confirm via Messenger
+                        Open in Messenger
                     </button>
+
                     <button id="copyReceiptBtn" class="btn-secondary" type="button">
                         📋 Copy Receipt to Clipboard
                     </button>

@@ -881,6 +881,79 @@ body {
     margin: 0 auto var(--space-3);
 }
 
+.preview-icon {
+    width: 72px;
+    height: 72px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 2.5rem;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--space-3);
+    border: 2px solid var(--accent);
+}
+
+.modal-header-section.hidden {
+    display: none !important;
+}
+
+.subtitle {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    margin-top: -10px;
+    margin-bottom: 20px;
+}
+
+.delivery-info-preview {
+    background: var(--accent-soft);
+    padding: var(--space-2);
+    border-radius: var(--radius-sm);
+    margin: var(--space-2) 0;
+    text-align: left;
+    border: 1px dashed var(--accent);
+}
+
+.delivery-info-preview.hidden {
+    display: none !important;
+}
+
+.preview-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 8px;
+}
+
+.preview-row:last-child {
+    margin-bottom: 0;
+}
+
+.preview-row .label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+}
+
+.preview-row span:not(.label) {
+    font-size: 0.95rem;
+    color: var(--text-main);
+}
+
+.modal-actions .btn-primary.hidden {
+    display: none !important;
+}
+
+.btn-messenger {
+    background-color: #0084FF !important;
+    color: white !important;
+}
+
+.btn-messenger:hover {
+    background-color: #0073e6 !important;
+}
+
 .modal-content h2 {
     font-family: var(--font-serif);
     font-size: 1.75rem;
