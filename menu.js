@@ -27,13 +27,6 @@ window.toggleMenu = () => {
     backdrop?.classList.toggle('visible', isOpen);
 };
 
-// ─── Messenger Link ────────────────────────────────────────────────────────────
-function buildMessengerLink(totalPrice, mapLink) {
-  const message = `☕ New Order Confirmation\n\nTotal: ₱${totalPrice.toFixed(0)}\n${mapLink ? `Location: ${mapLink}` : 'Location: Not shared'}`;
-  const encodedMessage = encodeURIComponent(message);
-  return `https://m.me/61580219733955?text=${encodedMessage}`;
-}
-
 // ─── Cart Toggle ──────────────────────────────────────────────────────────────
 window.toggleCart = () => {
     const isHidden = cartDrawer.classList.toggle('hidden');
@@ -61,7 +54,6 @@ window.filterByCategory = (category) => {
 // ─── Order Modal State & Elements ───────────────────────────────────────────
 const captureLocationBtn   = document.getElementById('captureLocationBtn');
 const saveOrderBtn          = document.getElementById('saveOrderBtn');
-const messengerConfirmBtn  = document.getElementById('messengerConfirmBtn');
 const copyReceiptBtn       = document.getElementById('copyReceiptBtn');
 const modalError           = document.getElementById('modal-error');
 const modalHeaderSuccess   = document.getElementById('modal-header-success');
@@ -137,14 +129,8 @@ function updateCartUI() {
     cartFab.classList.toggle('hidden', cart.length === 0);
 }
 
-function showCartFAB() {
-    cartFab.classList.remove('hidden');
-    cartFab.style.transform = 'scale(1.2)';
-    setTimeout(() => cartFab.style.transform = '', 200);
-}
-
 /**
- * Generates a formatted receipt string for Messenger or Clipboard
+ * Generates a formatted receipt string
  */
 function generateReceiptText(customerName, groupedItems, total, orderType, deliveryAddress, coordinates) {
     const isDelivery = orderType === 'delivery';
@@ -163,9 +149,8 @@ function generateReceiptText(customerName, groupedItems, total, orderType, deliv
     
     if (isDelivery) {
         text += `📍 Landmark: ${deliveryAddress}\n`;
-        if (coordinates && coordinates !== "Location not shared" && coordinates !== "Location not supported") {
+        if (coordinates && coordinates !== "Location not shared" && coordinates !== "Location not supported" && coordinates !== "N/A") {
             const cleanCoords = coordinates.replace(/\s/g, '');
-            // Precise URL format: https://www.google.com/maps?q=${lat},${long}.
             text += `🗺️ Maps: https://www.google.com/maps?q=${cleanCoords}.\n`;
         } else {
             text += `🗺️ Maps: Location not shared\n`;
@@ -173,15 +158,14 @@ function generateReceiptText(customerName, groupedItems, total, orderType, deliv
     }
     
     text += `━━━━━━━━━━━━━━━━━━━━\n`;
-    text += `Please confirm my order! Thank you!`;
+    text += `Thank you for choosing Capibrews!`;
     return text;
 }
 
 // ─── Helper Functions ───────────────────────────────────────────────────────
 
 /**
- * Gets the user's current location and returns a Google Maps link.
- * Falls back to 'Location not shared' if permission is denied.
+ * Gets the user's current location
  */
 async function getUserLocation() {
     return new Promise((resolve) => {
@@ -193,7 +177,6 @@ async function getUserLocation() {
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
-                // Format for database: "lat, long"
                 resolve(`${latitude}, ${longitude}`);
             },
             (error) => {
@@ -206,17 +189,8 @@ async function getUserLocation() {
 }
 
 /**
- * Main checkout handler - processes both Dine-in and Delivery
- * For Delivery, it triggers Step 1: Receipt Preview
+ * Main checkout handler
  */
-/**
- * Refactored Workflow:
- * Step 1: Place Order First (Save to DB)
- * Step 2: Get Location (For Delivery)
- * Step 3: Copy to Clipboard
- * Step 4: Send to Messenger
- */
-
 async function handleCheckout(e) {
     if (e) e.preventDefault();
 
@@ -272,26 +246,78 @@ async function handleCheckout(e) {
         order_type: orderType,
         delivery_address: isDelivery ? deliveryAddress : 'N/A',
         cartItems: currentCart,
-        coordinates: 'N/A' // Default
+        coordinates: 'N/A' 
     };
 
-    // STEP 1: Send/Place Order Immediately (Prioritize Save)
-    await processStep1Save(currentOrderData);
+    // Show Preview Modal
+    showOrderPreview(currentOrderData);
 }
 
 /**
- * Step 1: Send/Place Order (Database Save)
+ * Step 1: Display Receipt Preview
  */
-async function processStep1Save(orderData) {
+function showOrderPreview(orderData) {
     const isDelivery = orderData.order_type === 'delivery';
     
-    if (checkoutBtn) {
-        checkoutBtn.disabled = true;
-        checkoutBtn.innerHTML = `<span>💾 Saving Order...</span>`;
+    modalHeaderSuccess.classList.add('hidden');
+    modalHeaderPreview.classList.remove('hidden');
+    deliveryInfoPreview.classList.toggle('hidden', !isDelivery);
+    
+    // Configure buttons
+    captureLocationBtn.classList.toggle('hidden', !isDelivery);
+    saveOrderBtn.classList.remove('hidden'); 
+    
+    modalInstruction.textContent = isDelivery 
+        ? "Review your delivery details. You can also capture your GPS location for better accuracy."
+        : "Review your order details before confirming.";
+    
+    document.getElementById('preview-customer-name').textContent = orderData.customer_name;
+    document.getElementById('preview-address').textContent = isDelivery ? orderData.delivery_address : "Dine-in Order";
+    
+    if (previewCoordsRow) previewCoordsRow.classList.toggle('hidden', !isDelivery);
+    if (previewCoordinates) previewCoordinates.textContent = orderData.coordinates;
+    
+    orderSummaryList.innerHTML = orderData.cartItems.map(item => `
+        <div class="summary-item">
+            <span>${item.name} (${item.selectedSize})</span>
+            <span>₱${item.selectedPrice.toFixed(0)}</span>
+        </div>
+    `).join('');
+    
+    summaryTotalLabel.textContent = `₱${orderData.total_price.toFixed(0)}`;
+
+    // Configure actions
+    if (isDelivery) {
+        captureLocationBtn.disabled = false;
+        captureLocationBtn.innerHTML = `📍 Capture My Location`;
+        captureLocationBtn.onclick = async () => {
+            captureLocationBtn.disabled = true;
+            captureLocationBtn.innerHTML = `⌛ Pinpointing...`;
+            const coords = await getUserLocation();
+            currentOrderData.coordinates = coords;
+            if (previewCoordinates) previewCoordinates.textContent = coords;
+            captureLocationBtn.innerHTML = `📍 Location Captured`;
+        };
     }
 
+    saveOrderBtn.disabled = false;
+    saveOrderBtn.innerHTML = `💾 Confirm Order`;
+    saveOrderBtn.onclick = () => processFinalSave(orderData);
+    
+    if (modalError) modalError.textContent = '';
+    
+    orderModal.classList.remove('hidden');
+    orderModal.style.display = 'flex';
+}
+
+/**
+ * Step 2: Database Save & Receipt
+ */
+async function processFinalSave(orderData) {
+    saveOrderBtn.disabled = true;
+    saveOrderBtn.innerHTML = `<span>💾 Saving...</span>`;
+
     try {
-        // 1. Save to Supabase (PGRST204 fix: exact column names)
         const { error } = await window.supabaseClient
             .from('orders')
             .insert([{
@@ -306,191 +332,54 @@ async function processStep1Save(orderData) {
 
         if (error) throw error;
 
-        // STEP 2: Display Receipt Modal (Only after save)
-        showOrderPreview(orderData);
-
-    } catch (err) {
-        console.error("Step 1 Save Error:", err);
-        if (nameError) {
-            nameError.textContent = `Database Error: ${err.message}. Please try again.`;
-            nameError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    } finally {
-        if (checkoutBtn) {
-            checkoutBtn.disabled = false;
-            checkoutBtn.innerHTML = isDelivery ? 'Send via Messenger' : 'Place Order';
-        }
-    }
-}
-
-/**
- * Step 2: Display Receipt Modal
- */
-function showOrderPreview(orderData) {
-    const isDelivery = orderData.order_type === 'delivery';
-    
-    // 1. Set Modal to Preview Mode
-    modalHeaderSuccess.classList.add('hidden');
-    modalHeaderPreview.classList.remove('hidden');
-    deliveryInfoPreview.classList.toggle('hidden', !isDelivery);
-    
-    // Configure buttons: Location for delivery, or Finalize for dine-in
-    captureLocationBtn.classList.toggle('hidden', !isDelivery);
-    saveOrderBtn.classList.toggle('hidden', isDelivery); 
-    messengerConfirmBtn.classList.add('hidden'); // Hidden until Step 5
-    
-    modalInstruction.textContent = isDelivery 
-        ? "Order Saved! Step 3: Please capture your location for our delivery team."
-        : "Order Saved! Step 3: Copy your receipt before heading to the counter.";
-    
-    // 2. Populate Preview Data
-    document.getElementById('preview-customer-name').textContent = orderData.customer_name;
-    document.getElementById('preview-address').textContent = isDelivery ? orderData.delivery_address : "Dine-in Order";
-    
-    if (previewCoordsRow) previewCoordsRow.classList.add('hidden');
-    if (previewCoordinates) previewCoordinates.textContent = '--';
-    
-    orderSummaryList.innerHTML = orderData.cartItems.map(item => `
-        <div class="summary-item">
-            <span>${item.name} (${item.selectedSize})</span>
-            <span>₱${item.selectedPrice.toFixed(0)}</span>
-        </div>
-    `).join('');
-    
-    summaryTotalLabel.textContent = `₱${orderData.total_price.toFixed(0)}`;
-
-    // 3. Configure Buttons for Next Steps
-    if (isDelivery) {
-        captureLocationBtn.disabled = false;
-        captureLocationBtn.innerHTML = `📍 Capture My Location`;
-        captureLocationBtn.onclick = () => handleDeliveryStep3();
-    } else {
-        // Dine-in: Just Copy and show success (Skip location/messenger)
-        saveOrderBtn.disabled = false;
-        saveOrderBtn.innerHTML = `📋 Copy Receipt & Finish`;
-        saveOrderBtn.onclick = () => processDineInFinalize(orderData);
-    }
-    
-    if (modalError) modalError.textContent = '';
-    
-    // 4. Show Modal
-    orderModal.classList.remove('hidden');
-    orderModal.style.display = 'flex';
-}
-
-/**
- * Step 3 & 4: Get Location & Auto-Copy (Delivery Only)
- */
-async function handleDeliveryStep3() {
-    if (!currentOrderData) return;
-
-    captureLocationBtn.disabled = true;
-    captureLocationBtn.innerHTML = `<span>⌛ Pinpointing GPS...</span>`;
-
-    try {
-        // Step 3: Get Location
-        const coords = await getUserLocation();
-        currentOrderData.coordinates = coords;
-        
-        if (previewCoordinates) previewCoordinates.textContent = coords;
-        if (previewCoordsRow) previewCoordsRow.classList.remove('hidden');
-        
-        // Step 4: Auto-copy to Clipboard immediately after location
-        const receiptText = generateReceiptText(
-            currentOrderData.customer_name, 
-            currentOrderData.items, 
-            currentOrderData.total_price, 
-            currentOrderData.order_type, 
-            currentOrderData.delivery_address, 
-            currentOrderData.coordinates
-        );
-
-        await navigator.clipboard.writeText(receiptText);
-        
-        // Success: Move to Step 5
-        showOrderSuccess(currentOrderData.total_price, currentOrderData.coordinates, currentOrderData.cartItems, true, receiptText);
-
-    } catch (err) {
-        console.warn("Location/Clipboard Error:", err);
-        currentOrderData.coordinates = "Location not shared";
-        if (previewCoordinates) previewCoordinates.textContent = "Location not shared";
-        if (previewCoordsRow) previewCoordsRow.classList.remove('hidden');
-        
-        // If GPS fails, still try to copy receipt with landmark
-        const receiptText = generateReceiptText(
-            currentOrderData.customer_name, 
-            currentOrderData.items, 
-            currentOrderData.total_price, 
-            currentOrderData.order_type, 
-            currentOrderData.delivery_address, 
-            "N/A"
-        );
-        await navigator.clipboard.writeText(receiptText).catch(() => {});
-        
-        showOrderSuccess(currentOrderData.total_price, "N/A", currentOrderData.cartItems, true, receiptText);
-    }
-}
-
-/**
- * Special Logic for Dine-in Finalize
- */
-async function processDineInFinalize(orderData) {
-    saveOrderBtn.disabled = true;
-    saveOrderBtn.innerHTML = `<span>📋 Copying...</span>`;
-
-    try {
+        // Auto-copy receipt
         const receiptText = generateReceiptText(
             orderData.customer_name, 
             orderData.items, 
             orderData.total_price, 
             orderData.order_type, 
-            'N/A', 
-            'N/A'
+            orderData.delivery_address, 
+            orderData.coordinates
         );
         await navigator.clipboard.writeText(receiptText);
-        showOrderSuccess(orderData.total_price, 'N/A', orderData.cartItems, false, receiptText);
+
+        showOrderSuccess(orderData.total_price, orderData.cartItems, receiptText);
+
     } catch (err) {
-        console.error("Dine-in Finalize Error:", err);
-        showOrderSuccess(orderData.total_price, 'N/A', orderData.cartItems, false, "");
+        console.error("Save Error:", err);
+        if (modalError) modalError.textContent = `Error: ${err.message}. Please try again.`;
+    } finally {
+        saveOrderBtn.disabled = false;
+        saveOrderBtn.innerHTML = `💾 Confirm Order`;
     }
 }
 
 /**
- * Step 5: Go to Messenger (Reveal button only after copy)
+ * Step 3: Success Screen
  */
-function showOrderSuccess(total, mapLink, cartItems, isDelivery = false, receiptText = '') {
+function showOrderSuccess(total, cartItems, receiptText) {
     modalHeaderPreview.classList.add('hidden');
     modalHeaderSuccess.classList.remove('hidden');
     captureLocationBtn.classList.add('hidden');
     saveOrderBtn.classList.add('hidden');
-    deliveryInfoPreview.classList.toggle('hidden', !isDelivery);
     
-    modalInstruction.textContent = isDelivery 
-        ? "Order Saved & Receipt Copied! Step 5: Click below to send your details via Messenger."
-        : "Order Saved & Receipt Copied! Please show this screen at the counter.";
+    modalInstruction.textContent = "Order Placed Successfully! Your receipt has been copied to the clipboard. Please show it at the counter.";
 
-    if (messengerConfirmBtn) {
-        const fbPageId = "61580219733955";
-        const messengerUrl = `https://m.me/${fbPageId}?text=${encodeURIComponent(receiptText)}`;
-        messengerConfirmBtn.onclick = () => window.open(messengerUrl, '_blank');
-        
-        // Step 5: Reveal Messenger button ONLY for delivery and ONLY after copy
-        messengerConfirmBtn.classList.toggle('hidden', !isDelivery);
-        if (isDelivery) {
-            messengerConfirmBtn.style.display = 'flex'; // Ensure visibility
-        }
-    }
+    copyReceiptBtn.onclick = async () => {
+        await navigator.clipboard.writeText(receiptText);
+        const orig = copyReceiptBtn.textContent;
+        copyReceiptBtn.textContent = "Copied! ✓";
+        setTimeout(() => copyReceiptBtn.textContent = orig, 2000);
+    };
 
-    // 3. Reset Cart & UI
+    // Reset Cart
     cart = [];
-    const customerNameInput = document.getElementById('customer-name-input');
+    document.getElementById('customer-name-input').value = '';
     const deliveryAddressInput = document.getElementById('delivery-address-input');
-    if (customerNameInput) customerNameInput.value = '';
     if (deliveryAddressInput) deliveryAddressInput.value = '';
     updateCartUI();
     closeCart();
 
-    // 4. Update Order Summary in the success modal
     orderSummaryList.innerHTML = cartItems.map(item => `
         <div class="summary-item">
             <span>${item.name} (${item.selectedSize})</span>
@@ -498,294 +387,11 @@ function showOrderSuccess(total, mapLink, cartItems, isDelivery = false, receipt
         </div>
     `).join('');
     summaryTotalLabel.textContent = `₱${total.toFixed(0)}`;
-
-    // 5. Ensure modal is visible
-    orderModal.classList.remove('hidden');
-    orderModal.style.display = 'flex';
 }
 
-// Clear error state when user types
+// Event Listeners
+document.getElementById('checkout-btn')?.addEventListener('click', handleCheckout);
 document.getElementById('customer-name-input')?.addEventListener('input', () => {
     if (nameError) nameError.textContent = '';
     document.getElementById('customer-name-input').classList.remove('input-error');
 });
-
-// ─── Order Type Selection ─────────────────────────────────────────────────────
-const orderTypeRadios = document.querySelectorAll('input[name="order-type"]');
-const deliveryAddressContainer = document.getElementById('delivery-address-container');
-
-orderTypeRadios.forEach(radio => {
-    radio.addEventListener('change', (e) => {
-        const isDelivery = e.target.value === 'delivery';
-        
-        // 1. Toggle address field
-        deliveryAddressContainer?.classList.toggle('hidden', !isDelivery);
-        
-        // 2. Update checkout button text and icon
-        if (checkoutBtn) {
-            const messengerSvg = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white" style="margin-right: 8px; vertical-align: middle;">
-                    <path d="M12 2C6.477 2 2 6.145 2 11.258c0 2.908 1.464 5.503 3.746 7.158V22l3.43-1.881c.882.244 1.815.378 2.824.378 5.523 0 10-4.145 10-9.258S17.523 2 12 2zm1.286 12.355l-2.571-2.742-5.02 2.742 5.514-5.855 2.572 2.742 5.018-2.742-5.513 5.855z"/>
-                </svg>`;
-            
-            checkoutBtn.innerHTML = isDelivery ? `${messengerSvg} Send via Messenger` : 'Place Order';
-            checkoutBtn.classList.toggle('btn-messenger', isDelivery);
-        }
-        
-        // 3. Optional: Request location early if delivery
-        if (isDelivery) {
-            // Trigger a quiet location request to warm up the GPS
-            navigator.geolocation?.getCurrentPosition(() => {}, () => {}, { timeout: 1000 });
-        }
-    });
-});
-
-// ─── Menu State ───────────────────────────────────────────────────────────────
-let allItems = [];
-let currentCategory = 'All';
-let searchTerm = '';
-
-// ─── Scroll Header Hide ───────────────────────────────────────────────────────
-let lastScrollY = window.scrollY;
-window.addEventListener('scroll', () => {
-    const currentScrollY = window.scrollY;
-    if (currentScrollY > 20) {
-        mainHeader.classList.add('scrolled');
-    } else {
-        mainHeader.classList.remove('scrolled');
-    }
-    if (Math.abs(currentScrollY - lastScrollY) < 10) return;
-    if (currentScrollY > lastScrollY && currentScrollY > mainHeader.offsetHeight) {
-        mainHeader.classList.add('header-hidden');
-    } else if (currentScrollY < lastScrollY) {
-        mainHeader.classList.remove('header-hidden');
-    }
-    lastScrollY = currentScrollY;
-});
-
-// ─── Search ───────────────────────────────────────────────────────────────────
-function debounce(fn, wait) {
-    let t;
-    return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
-}
-
-searchInput.addEventListener('input', debounce((e) => {
-    searchTerm = e.target.value.toLowerCase();
-    filterAndRenderItems();
-}, 250));
-
-function filterAndRenderItems() {
-    let filtered = allItems;
-    if (currentCategory !== 'All') {
-        filtered = filtered.filter(item =>
-            item.category?.toLowerCase() === currentCategory.toLowerCase()
-        );
-    }
-    if (searchTerm) {
-        filtered = filtered.filter(item =>
-            item.name.toLowerCase().includes(searchTerm) ||
-            (item.description?.toLowerCase().includes(searchTerm))
-        );
-    }
-    renderItems(filtered);
-}
-
-// ─── Render Items ─────────────────────────────────────────────────────────────
-function renderItems(items) {
-    menuGrid.innerHTML = '';
-
-    if (items.length === 0) {
-        menuGrid.classList.remove('accordion-mode');
-        menuGrid.classList.remove('item-grid');
-        menuGrid.innerHTML = `
-            <div class="loading-state">
-                <div style="font-size: 2.5rem; margin-bottom: 12px; opacity: 0.4;">☕</div>
-                <p>No items found. Try a different search or category.</p>
-            </div>`;
-        return;
-    }
-
-    if (currentCategory === 'All') {
-        menuGrid.classList.remove('item-grid');
-        menuGrid.classList.add('accordion-mode');
-        const groups = items.reduce((acc, item) => {
-            if (!acc[item.category]) acc[item.category] = [];
-            acc[item.category].push(item);
-            return acc;
-        }, {});
-
-        Object.entries(groups).forEach(([category, catItems], index) => {
-            const details = document.createElement('details');
-            details.className = 'category-accordion';
-            // Open the first category by default
-            if (index === 0 && !searchTerm) details.open = true;
-
-            details.innerHTML = `
-                <summary class="category-summary">
-                    <h2 class="category-title">${category}</h2>
-                    <span class="category-count">${catItems.length} items</span>
-                    <span class="accordion-icon">▾</span>
-                </summary>
-            `;
-            
-            const grid = document.createElement('div');
-            grid.className = 'item-grid';
-            catItems.forEach((item, i) => grid.appendChild(createItemCard(item, i)));
-            
-            details.appendChild(grid);
-            menuGrid.appendChild(details);
-        });
-    } else {
-        menuGrid.classList.remove('accordion-mode');
-        // Ensure menuGrid itself acts as the grid for item cards
-        menuGrid.classList.add('item-grid');
-        items.forEach((item, i) => menuGrid.appendChild(createItemCard(item, i)));
-    }
-}
-
-function createItemCard(item, index) {
-    const card = document.createElement('div');
-    card.className = `menu-card${item.available === false ? ' sold-out' : ''}`;
-    card.style.animationDelay = `${index * 0.05}s`;
-
-    const isSoldOut = item.available === false;
-    const placeholder = 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=400';
-    const itemImage = item.image || item.image_url || placeholder;
-
-    let priceHtml = '';
-    let addBtnHtml = '';
-    const qtySelectorHtml = `
-        <div class="qty-selector">
-            <button class="qty-btn" onclick="changeQty('${item.id}', -1)" aria-label="Decrease quantity">−</button>
-            <input type="number" id="qty-${item.id}" class="qty-input" value="1" min="1" readonly>
-            <button class="qty-btn" onclick="changeQty('${item.id}', 1)" aria-label="Increase quantity">+</button>
-        </div>
-    `;
-
-    if (item.prices && Object.keys(item.prices).length > 0) {
-        const sizes = Object.entries(item.prices);
-        priceHtml = `
-            <div class="price-grid">
-                ${sizes.map(([size, price], i) => `
-                    <div class="price-item">
-                        <label class="size-selector">
-                            <input type="radio" name="size-${item.id}" value="${size}" data-price="${price}" ${i === 0 ? 'checked' : ''}>
-                            <span class="size-pill">
-                                <span class="size-label">${size}</span>
-                                <span class="price-value">₱${Number(price).toFixed(0)}</span>
-                            </span>
-                        </label>
-                    </div>
-                `).join('')}
-            </div>`;
-        addBtnHtml = `<button class="add-to-cart-btn" onclick="handleAddToCart('${item.id}', event)">Add to Order</button>`;
-    } else {
-        const price = Number(item.price || 0);
-        priceHtml = `
-            <div class="price-single">
-                <span class="price-value">₱${price.toFixed(0)}</span>
-            </div>`;
-        // Pass item ID to handleAddToCart for consistency, or we can pass a simplified object
-        addBtnHtml = `<button class="add-to-cart-btn" onclick="handleAddToCart('${item.id}', event)">Add to Order</button>`;
-    }
-
-    const tempTag = item.temp && item.temp !== 'both' 
-        ? `<span class="temp-tag-mini ${item.temp}">${item.temp.toUpperCase()}</span>` 
-        : '';
-
-    card.innerHTML = `
-        <div class="card-img-wrapper">
-            <img src="${itemImage}" alt="${item.name}" class="card-img"
-                 onerror="this.src='${placeholder}'; this.onerror=null;"
-                 onload="this.classList.add('loaded')">
-            ${isSoldOut ? '<div class="sold-out-overlay"><span class="sold-out-tag">SOLD OUT</span></div>' : ''}
-        </div>
-        <div class="card-content">
-            <div class="card-header">
-                <h3 class="card-title">${item.name} ${tempTag}</h3>
-                <div class="dietary-icons">
-                    ${item.dietary?.includes('vegan') ? '<span class="dietary-dot v-dot" title="Vegan">🌱</span>' : ''}
-                    ${item.dietary?.includes('gluten-free') ? '<span class="dietary-dot gf-dot" title="Gluten Free">🌾</span>' : ''}
-                </div>
-            </div>
-            <p class="card-desc">${item.description || 'Crafted with premium ingredients for the perfect sip.'}</p>
-            ${priceHtml}
-            ${!isSoldOut ? qtySelectorHtml + addBtnHtml : ''}
-        </div>
-    `;
-    return card;
-}
-
-window.changeQty = (itemId, delta) => {
-    const input = document.getElementById(`qty-${itemId}`);
-    if (input) {
-        let val = parseInt(input.value) + delta;
-        if (val < 1) val = 1;
-        input.value = val;
-    }
-};
-
-window.handleAddToCart = (itemId, event) => {
-    const item = allItems.find(i => String(i.id) === String(itemId));
-    if (!item) {
-        console.error('Item not found:', itemId);
-        return;
-    }
-
-    const qtyInput = document.getElementById(`qty-${itemId}`);
-    const quantity = qtyInput ? parseInt(qtyInput.value) : 1;
-
-    let size = 'Standard';
-    let price = item.price || 0;
-
-    const selected = document.querySelector(`input[name="size-${itemId}"]:checked`);
-    if (selected) {
-        size = selected.value;
-        price = parseFloat(selected.dataset.price);
-    }
-    
-    // Add to cart 'quantity' times
-    for (let i = 0; i < quantity; i++) {
-        addToCart(item, size, price, event);
-    }
-    
-    // Reset quantity to 1 after adding
-    if (qtyInput) qtyInput.value = 1;
-};
-
-window.removeFromCart = removeFromCart;
-
-// ─── Initialize ───────────────────────────────────────────────────────────────
-if (typeof initialMenuData !== 'undefined') {
-    // Ensure local data has IDs for cart logic
-    allItems = initialMenuData.map((item, idx) => ({
-        id: 'local-' + idx,
-        ...item
-    }));
-    filterAndRenderItems();
-}
-
-async function displayMenu() {
-    if (typeof window.supabaseClient === 'undefined') return;
-
-    const { data, error } = await window.supabaseClient
-        .from('menu')
-        .select('*')
-        .order('sort_order', { ascending: true });
-
-    if (error) { console.warn('Supabase menu fetch error, using local data:', error); return; }
-
-    if (data?.length > 0) {
-        // Items from DB already have IDs
-        allItems = data.map(item => ({ ...item, image: item.image_url }));
-        filterAndRenderItems();
-    }
-}
-
-if (typeof window.supabaseClient !== 'undefined') {
-    displayMenu();
-    window.supabaseClient
-        .channel('menu-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'menu' }, () => displayMenu())
-        .subscribe();
-}

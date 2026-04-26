@@ -155,22 +155,14 @@
                 <p id="modal-error" class="name-error-msg" style="text-align: center; margin-top: 0;"></p>
                 
                 <div class="modal-actions" style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
-                    <!-- Step 2: Capture Location -->
+                    <!-- Step 2: Capture Location (Delivery Only) -->
                     <button id="captureLocationBtn" class="btn-primary hidden" type="button">
                         📍 Capture My Location
                     </button>
 
-                    <!-- Step 3: Save & Copy -->
-                    <button id="saveOrderBtn" class="btn-primary hidden" type="button">
-                        💾 Confirm & Save Order
-                    </button>
-
-                    <!-- Step 4: Messenger Redirect -->
-                    <button id="messengerConfirmBtn" class="btn-primary btn-messenger hidden" type="button">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white" style="margin-right: 8px; vertical-align: middle;">
-                            <path d="M12 2C6.477 2 2 6.145 2 11.258c0 2.908 1.464 5.503 3.746 7.158V22l3.43-1.881c.882.244 1.815.378 2.824.378 5.523 0 10-4.145 10-9.258S17.523 2 12 2zm1.286 12.355l-2.571-2.742-5.02 2.742 5.514-5.855 2.572 2.742 5.018-2.742-5.513 5.855z"/>
-                        </svg>
-                        Send to Messenger
+                    <!-- Step 3: Save & Copy (Unified) -->
+                    <button id="saveOrderBtn" class="btn-primary" type="button">
+                        💾 Confirm Order
                     </button>
 
                     <button id="copyReceiptBtn" class="btn-secondary" type="button">
