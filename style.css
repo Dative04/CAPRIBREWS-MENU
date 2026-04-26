@@ -940,31 +940,12 @@ body {
 
 .btn-primary:hover { background: var(--accent-light); }
 
-.btn-secondary {
-    display: inline-block;
-    background: transparent;
-    color: var(--text-dim);
-    border: 1px solid var(--border);
-    padding: 13px 32px;
-    border-radius: var(--radius-full);
-    font-weight: 600;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: var(--font-sans);
-}
-
-.btn-secondary:hover {
-    background: var(--accent-soft);
-    color: var(--accent);
-    border-color: var(--accent);
-}
-
-/* Order Type Selection */
+/* ✅ FIX: Order type selection */
 .order-type-selection {
     margin-bottom: var(--space-3);
-    padding-bottom: var(--space-3);
+    padding: var(--space-2) var(--space-3);
     border-bottom: 1px solid var(--border);
+    background: white;
 }
 
 .selection-label {
@@ -974,7 +955,7 @@ body {
     color: var(--text-dim);
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 
 .radio-group {
@@ -985,16 +966,7 @@ body {
 .radio-option {
     flex: 1;
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 12px;
-    background: white;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: all 0.2s;
-    user-select: none;
 }
 
 .radio-option input {
@@ -1004,33 +976,63 @@ body {
 }
 
 .radio-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--text-dim);
-    z-index: 1;
+    transition: all 0.2s;
+    gap: 8px;
 }
 
-.radio-option:has(input:checked) {
+.radio-option input:checked + .radio-label {
     border-color: var(--accent);
     background: var(--accent-soft);
+    color: var(--accent);
 }
 
-.radio-option:has(input:checked) .radio-label {
-    color: var(--accent);
+#delivery-address-container {
+    padding: var(--space-2) var(--space-3);
+    background: #fff9f0; /* Slight tint for delivery area */
+    border-bottom: 1px solid var(--border);
+}
+
+#delivery-address-input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    outline: none;
+    font-family: var(--font-sans);
+    resize: none;
 }
 
 .hidden {
     display: none !important;
 }
 
+/* Messenger Button Styling */
 .btn-messenger {
-    background-color: #0084ff !important;
-    border: none !important;
+    background-color: #0084FF !important; /* Official Messenger Blue */
     color: white !important;
 }
 
 .btn-messenger:hover {
     background-color: #0073e6 !important;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 132, 255, 0.3);
+}
+
+.btn-secondary {
+    background-color: transparent;
+    border: 1.5px solid var(--border);
+    color: var(--text-main);
+}
+
+.btn-secondary:hover {
+    background-color: var(--bg);
+    border-color: var(--text-dim);
 }

@@ -178,7 +178,10 @@ function generateReceiptText(customerName, groupedItems, total, orderType, deliv
 }
 
 // ─── Checkout ─────────────────────────────────────────────────────────────────
-checkoutBtn.onclick = async () => {
+checkoutBtn.onclick = async (e) => {
+    // Prevents potential issues in some browsers or if wrapped in a form
+    if (e) e.preventDefault(); 
+    
     if (cart.length === 0) {
         console.warn('Checkout attempted with empty cart');
         return;
@@ -198,7 +201,7 @@ checkoutBtn.onclick = async () => {
         return;
     }
 
-    // Delivery validation: Check if they provided a landmark if they chose delivery
+    // Delivery validation
     const deliveryAddressInput = document.getElementById('delivery-address-input');
     const deliveryAddress = deliveryAddressInput?.value.trim();
     
@@ -208,24 +211,25 @@ checkoutBtn.onclick = async () => {
         return;
     }
 
+    // Clear previous errors
     if (nameError) nameError.textContent = '';
     customerNameInput?.classList.remove('input-error');
 
+    // Disable button to prevent double clicks
     checkoutBtn.disabled = true;
-    const originalBtnText = checkoutBtn.textContent;
+    const originalBtnContent = checkoutBtn.innerHTML;
     checkoutBtn.textContent = isDelivery ? '📍 Getting Location...' : 'Processing...';
 
     try {
         let mapLink = null;
         if (isDelivery) {
-            // Only request location for delivery
             mapLink = await getLocationMapLink();
         }
 
         const currentCart = [...cart];
         const total = currentCart.reduce((sum, item) => sum + item.selectedPrice, 0);
 
-        // Group items for the database and message
+        // Group items
         const groupedItems = currentCart.reduce((acc, item) => {
             const key = `${item.name}-${item.selectedSize}`;
             if (!acc[key]) {
@@ -241,21 +245,20 @@ checkoutBtn.onclick = async () => {
             return acc;
         }, {});
 
-        // 1. Save to Supabase
+        // 1. Save to Supabase (using the suggested column names)
         const orderData = {
             customer_name: customerName,
             items: Object.values(groupedItems),
             total_price: total,
             status: 'pending',
-            map_link: mapLink,
-            order_type: orderType,
-            delivery_address: isDelivery ? deliveryAddress : null
+            coordinates: mapLink, // SQL: ADD COLUMN coordinates TEXT
+            order_type: orderType, // SQL: ADD COLUMN order_type TEXT
+            delivery_address: isDelivery ? deliveryAddress : 'N/A' // SQL: ADD COLUMN delivery_address TEXT
         };
 
         const { error } = await window.supabaseClient
             .from('orders')
-            .insert([orderData])
-            .select();
+            .insert([orderData]);
 
         if (error) throw error;
 
@@ -273,14 +276,14 @@ checkoutBtn.onclick = async () => {
         showOrderSuccess(total, mapLink, currentCart, isDelivery, receiptText);
 
     } catch (err) {
-        console.error('Order failed:', err);
+        console.error('Checkout Error:', err.message);
         if (nameError) {
-            nameError.textContent = 'Failed to send order. Check your connection and try again.';
-            nameError.style.color = '#e63946';
+            nameError.textContent = `Error: ${err.message}`;
+            nameError.style.color = 'var(--error)';
         }
     } finally {
         checkoutBtn.disabled = false;
-        checkoutBtn.textContent = originalBtnText;
+        checkoutBtn.innerHTML = originalBtnContent;
     }
 };
 
@@ -378,9 +381,14 @@ orderTypeRadios.forEach(radio => {
         // 1. Toggle address field
         deliveryAddressContainer?.classList.toggle('hidden', !isDelivery);
         
-        // 2. Update checkout button text
+        // 2. Update checkout button text and icon
         if (checkoutBtn) {
-            checkoutBtn.textContent = isDelivery ? '🚀 Send Order via Messenger' : 'Place Order';
+            const messengerSvg = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white" style="margin-right: 8px; vertical-align: middle;">
+                    <path d="M12 2C6.477 2 2 6.145 2 11.258c0 2.908 1.464 5.503 3.746 7.158V22l3.43-1.881c.882.244 1.815.378 2.824.378 5.523 0 10-4.145 10-9.258S17.523 2 12 2zm1.286 12.355l-2.571-2.742-5.02 2.742 5.514-5.855 2.572 2.742 5.018-2.742-5.513 5.855z"/>
+                </svg>`;
+            
+            checkoutBtn.innerHTML = isDelivery ? `${messengerSvg} Send via Messenger` : 'Place Order';
             checkoutBtn.classList.toggle('btn-messenger', isDelivery);
         }
         
