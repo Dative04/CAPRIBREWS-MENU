@@ -154,59 +154,84 @@ function generateReceiptText(customerName, groupedItems, total, orderType, deliv
     return text;
 }
 
-// ─── Checkout ─────────────────────────────────────────────────────────────────
-checkoutBtn.onclick = async (e) => {
-    // Prevents potential issues in some browsers or if wrapped in a form
-    if (e) e.preventDefault(); 
-    
-    if (cart.length === 0) {
-        console.warn('Checkout attempted with empty cart');
-        return;
-    }
+// ─── Helper Functions ───────────────────────────────────────────────────────
+
+/**
+ * Gets the user's current location and returns a Google Maps link.
+ * Falls back to 'Location not shared' if permission is denied.
+ */
+async function getUserLocation() {
+    return new Promise((resolve) => {
+        if (!navigator.geolocation) {
+            resolve("Location not supported");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                // Reliable pin drop format: https://www.google.com/maps?q=${lat},${long}
+                resolve(`https://www.google.com/maps?q=${latitude},${longitude}`);
+            },
+            (error) => {
+                console.warn("Location error:", error.message);
+                resolve("Location not shared");
+            },
+            { timeout: 10000, enableHighAccuracy: true }
+        );
+    });
+}
+
+/**
+ * Main checkout handler - processes both Dine-in and Delivery
+ */
+async function handleCheckout(e) {
+    if (e) e.preventDefault(); // Critical: Prevents "Message channel closed" error
+
+    if (cart.length === 0) return;
 
     const customerNameInput = document.getElementById('customer-name-input');
     const customerName = customerNameInput?.value.trim();
     const orderType = document.querySelector('input[name="order-type"]:checked')?.value;
     const isDelivery = orderType === 'delivery';
 
+    // 1. Validation with inline error messages (Replacing alert())
     if (!customerName) {
-        if (nameError) {
-            nameError.textContent = 'Please enter your name so we know who the order is for!';
-        }
+        if (nameError) nameError.textContent = 'Please enter your name for the order!';
         customerNameInput?.focus();
         customerNameInput?.classList.add('input-error');
         return;
     }
 
-    // Delivery validation
     const deliveryAddressInput = document.getElementById('delivery-address-input');
     const deliveryAddress = deliveryAddressInput?.value.trim();
     
     if (isDelivery && !deliveryAddress) {
-        if (nameError) nameError.textContent = 'Please provide a landmark or address for delivery!';
+        if (nameError) nameError.textContent = 'Please provide a landmark for delivery!';
         deliveryAddressInput?.focus();
         return;
     }
 
-    // Clear previous errors
+    // Clear previous error state
     if (nameError) nameError.textContent = '';
     customerNameInput?.classList.remove('input-error');
 
-    // Disable button to prevent double clicks
+    // 2. Manage Button State
     checkoutBtn.disabled = true;
     const originalBtnContent = checkoutBtn.innerHTML;
-    checkoutBtn.textContent = isDelivery ? '📍 Getting Location...' : 'Processing...';
+    checkoutBtn.textContent = isDelivery ? '📍 Pinpointing Location...' : 'Processing...';
 
     try {
+        // 3. Geolocation Logic
         let mapLink = 'N/A';
         if (isDelivery) {
-            mapLink = await getLocationMapLink();
+            mapLink = await getUserLocation();
         }
 
         const currentCart = [...cart];
         const total = currentCart.reduce((sum, item) => sum + item.selectedPrice, 0);
 
-        // Group items
+        // Group items for the database
         const groupedItems = currentCart.reduce((acc, item) => {
             const key = `${item.name}-${item.selectedSize}`;
             if (!acc[key]) {
@@ -222,15 +247,15 @@ checkoutBtn.onclick = async (e) => {
             return acc;
         }, {});
 
-        // 1. Save to Supabase (using the suggested column names)
+        // 4. Data Schema & Supabase Alignment
         const orderData = {
             customer_name: customerName,
             items: Object.values(groupedItems),
             total_price: total,
             status: 'pending',
-            coordinates: mapLink, // SQL: ADD COLUMN coordinates TEXT
-            order_type: orderType, // SQL: ADD COLUMN order_type TEXT
-            delivery_address: isDelivery ? deliveryAddress : 'N/A' // SQL: ADD COLUMN delivery_address TEXT
+            order_type: orderType,
+            delivery_address: isDelivery ? deliveryAddress : 'N/A',
+            coordinates: mapLink // Correctly maps to coordinates column
         };
 
         const { error } = await window.supabaseClient
@@ -239,21 +264,21 @@ checkoutBtn.onclick = async (e) => {
 
         if (error) throw error;
 
-        // 2. Prepare receipt text
+        // 5. Messenger Redirect Logic (If Delivery)
         const receiptText = generateReceiptText(customerName, groupedItems, total, orderType, deliveryAddress, mapLink);
-
-        // 3. If Delivery, open Messenger
+        
         if (isDelivery) {
             const fbPageId = "61580219733955";
+            // Critical: Use encodeURIComponent() for URL safety
             const messengerUrl = `https://m.me/${fbPageId}?text=${encodeURIComponent(receiptText)}`;
             window.open(messengerUrl, '_blank');
         }
 
-        // 4. Show Success Modal
+        // 6. UI Update
         showOrderSuccess(total, mapLink, currentCart, isDelivery, receiptText);
 
     } catch (err) {
-        console.error('Checkout Error:', err.message);
+        console.error('Final Error:', err.message);
         if (nameError) {
             nameError.textContent = `Error: ${err.message}`;
             nameError.style.color = 'var(--error)';
@@ -262,7 +287,10 @@ checkoutBtn.onclick = async (e) => {
         checkoutBtn.disabled = false;
         checkoutBtn.innerHTML = originalBtnContent;
     }
-};
+}
+
+// Bind checkout button to handler
+checkoutBtn.onclick = handleCheckout;
 
 /**
  * Shows the success modal and configures the Messenger confirmation button
@@ -316,29 +344,6 @@ function showOrderSuccess(total, mapLink, cartItems, isDelivery = false, receipt
     // 4. Show Modal
     orderModal.classList.remove('hidden');
     orderModal.style.display = 'flex';
-}
-
-// ─── Helper Functions ───────────────────────────────────────────────────────
-
-async function getLocationMapLink() {
-    return new Promise((resolve) => {
-        if (!navigator.geolocation) {
-            resolve("Location not supported");
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-                resolve(`https://www.google.com/maps?q=${latitude},${longitude}`);
-            },
-            (error) => {
-                console.warn("Location error:", error);
-                resolve("Location not shared");
-            },
-            { timeout: 10000 }
-        );
-    });
 }
 
 // Clear error state when user types
