@@ -27,29 +27,6 @@ window.toggleMenu = () => {
     backdrop?.classList.toggle('visible', isOpen);
 };
 
-// ─── Geolocation ───────────────────────────────────────────────────────────────
-// Returns a Google Maps URL from coordinates
-async function getLocationMapLink() {
-  return new Promise((resolve) => {
-    if (!navigator.geolocation) {
-      resolve(null);
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        const mapLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
-        resolve(mapLink);
-      },
-      (error) => {
-        console.warn('Geolocation error:', error.message);
-        resolve(null);
-      },
-      { timeout: 5000, enableHighAccuracy: true }
-    );
-  });
-}
-
 // ─── Messenger Link ────────────────────────────────────────────────────────────
 function buildMessengerLink(totalPrice, mapLink) {
   const message = `☕ New Order Confirmation\n\nTotal: ₱${totalPrice.toFixed(0)}\n${mapLink ? `Location: ${mapLink}` : 'Location: Not shared'}`;
@@ -221,7 +198,7 @@ checkoutBtn.onclick = async (e) => {
     checkoutBtn.textContent = isDelivery ? '📍 Getting Location...' : 'Processing...';
 
     try {
-        let mapLink = null;
+        let mapLink = 'N/A';
         if (isDelivery) {
             mapLink = await getLocationMapLink();
         }
