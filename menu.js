@@ -275,12 +275,56 @@ async function handleCheckout(e) {
         coordinates: 'N/A' // Default
     };
 
-    // Unified flow: Show Preview first, then save/clipboard/messenger
-    showOrderPreview(currentOrderData);
+    // STEP 1: Send/Place Order Immediately (Prioritize Save)
+    await processStep1Save(currentOrderData);
 }
 
 /**
- * Step 1: Shows the Receipt Preview modal
+ * Step 1: Send/Place Order (Database Save)
+ */
+async function processStep1Save(orderData) {
+    const isDelivery = orderData.order_type === 'delivery';
+    
+    if (checkoutBtn) {
+        checkoutBtn.disabled = true;
+        checkoutBtn.innerHTML = `<span>💾 Saving Order...</span>`;
+    }
+
+    try {
+        // 1. Save to Supabase (PGRST204 fix: exact column names)
+        const { error } = await window.supabaseClient
+            .from('orders')
+            .insert([{
+                customer_name: orderData.customer_name,
+                items: orderData.items,
+                total_price: orderData.total_price,
+                status: 'pending',
+                order_type: orderData.order_type,
+                delivery_address: orderData.delivery_address,
+                coordinates: orderData.coordinates
+            }]);
+
+        if (error) throw error;
+
+        // STEP 2: Display Receipt Modal (Only after save)
+        showOrderPreview(orderData);
+
+    } catch (err) {
+        console.error("Step 1 Save Error:", err);
+        if (nameError) {
+            nameError.textContent = `Database Error: ${err.message}. Please try again.`;
+            nameError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    } finally {
+        if (checkoutBtn) {
+            checkoutBtn.disabled = false;
+            checkoutBtn.innerHTML = isDelivery ? 'Send via Messenger' : 'Place Order';
+        }
+    }
+}
+
+/**
+ * Step 2: Display Receipt Modal
  */
 function showOrderPreview(orderData) {
     const isDelivery = orderData.order_type === 'delivery';
@@ -290,14 +334,14 @@ function showOrderPreview(orderData) {
     modalHeaderPreview.classList.remove('hidden');
     deliveryInfoPreview.classList.toggle('hidden', !isDelivery);
     
-    // Configure buttons: Location for delivery, or just Save & Copy for dine-in
+    // Configure buttons: Location for delivery, or Finalize for dine-in
     captureLocationBtn.classList.toggle('hidden', !isDelivery);
     saveOrderBtn.classList.toggle('hidden', isDelivery); 
-    messengerConfirmBtn.classList.add('hidden');
+    messengerConfirmBtn.classList.add('hidden'); // Hidden until Step 5
     
     modalInstruction.textContent = isDelivery 
-        ? "Review your order details. Next, capture your location to help our delivery team."
-        : "Review your order details below. Click the button to confirm and save.";
+        ? "Order Saved! Step 3: Please capture your location for our delivery team."
+        : "Order Saved! Step 3: Copy your receipt before heading to the counter.";
     
     // 2. Populate Preview Data
     document.getElementById('preview-customer-name').textContent = orderData.customer_name;
@@ -315,15 +359,16 @@ function showOrderPreview(orderData) {
     
     summaryTotalLabel.textContent = `₱${orderData.total_price.toFixed(0)}`;
 
-    // 3. Configure Buttons
+    // 3. Configure Buttons for Next Steps
     if (isDelivery) {
         captureLocationBtn.disabled = false;
         captureLocationBtn.innerHTML = `📍 Capture My Location`;
-        captureLocationBtn.onclick = () => handleDeliveryStep2();
+        captureLocationBtn.onclick = () => handleDeliveryStep3();
     } else {
+        // Dine-in: Just Copy and show success (Skip location/messenger)
         saveOrderBtn.disabled = false;
-        saveOrderBtn.innerHTML = `💾 Confirm & Save Order`;
-        saveOrderBtn.onclick = () => processOrderPlacement(orderData);
+        saveOrderBtn.innerHTML = `📋 Copy Receipt & Finish`;
+        saveOrderBtn.onclick = () => processDineInFinalize(orderData);
     }
     
     if (modalError) modalError.textContent = '';
@@ -334,85 +379,84 @@ function showOrderPreview(orderData) {
 }
 
 /**
- * Step 2: Get Location (Delivery Only)
+ * Step 3 & 4: Get Location & Auto-Copy (Delivery Only)
  */
-async function handleDeliveryStep2() {
+async function handleDeliveryStep3() {
     if (!currentOrderData) return;
 
     captureLocationBtn.disabled = true;
     captureLocationBtn.innerHTML = `<span>⌛ Pinpointing GPS...</span>`;
 
     try {
+        // Step 3: Get Location
         const coords = await getUserLocation();
         currentOrderData.coordinates = coords;
         
         if (previewCoordinates) previewCoordinates.textContent = coords;
         if (previewCoordsRow) previewCoordsRow.classList.remove('hidden');
         
-        modalInstruction.textContent = "Location captured! Click below to save your order and copy the receipt.";
+        // Step 4: Auto-copy to Clipboard immediately after location
+        const receiptText = generateReceiptText(
+            currentOrderData.customer_name, 
+            currentOrderData.items, 
+            currentOrderData.total_price, 
+            currentOrderData.order_type, 
+            currentOrderData.delivery_address, 
+            currentOrderData.coordinates
+        );
+
+        await navigator.clipboard.writeText(receiptText);
         
+        // Success: Move to Step 5
+        showOrderSuccess(currentOrderData.total_price, currentOrderData.coordinates, currentOrderData.cartItems, true, receiptText);
+
     } catch (err) {
-        console.warn("Location Error:", err);
+        console.warn("Location/Clipboard Error:", err);
         currentOrderData.coordinates = "Location not shared";
         if (previewCoordinates) previewCoordinates.textContent = "Location not shared";
         if (previewCoordsRow) previewCoordsRow.classList.remove('hidden');
-        modalInstruction.textContent = "GPS Access Denied. Click below to save using your manual landmark.";
-    } finally {
-        captureLocationBtn.classList.add('hidden');
-        saveOrderBtn.classList.remove('hidden');
-        saveOrderBtn.innerHTML = `💾 Save & Copy Receipt`;
-        saveOrderBtn.onclick = () => processOrderPlacement(currentOrderData);
+        
+        // If GPS fails, still try to copy receipt with landmark
+        const receiptText = generateReceiptText(
+            currentOrderData.customer_name, 
+            currentOrderData.items, 
+            currentOrderData.total_price, 
+            currentOrderData.order_type, 
+            currentOrderData.delivery_address, 
+            "N/A"
+        );
+        await navigator.clipboard.writeText(receiptText).catch(() => {});
+        
+        showOrderSuccess(currentOrderData.total_price, "N/A", currentOrderData.cartItems, true, receiptText);
     }
 }
 
 /**
- * Step 3: Database Save & Clipboard (Unified for both)
+ * Special Logic for Dine-in Finalize
  */
-async function processOrderPlacement(orderData) {
+async function processDineInFinalize(orderData) {
     saveOrderBtn.disabled = true;
-    saveOrderBtn.innerHTML = `<span>💾 Saving & Copying...</span>`;
+    saveOrderBtn.innerHTML = `<span>📋 Copying...</span>`;
 
     try {
-        // 1. Save to Supabase
-        const { error } = await window.supabaseClient
-            .from('orders')
-            .insert([{
-                customer_name: orderData.customer_name,
-                items: orderData.items,
-                total_price: orderData.total_price,
-                status: 'pending',
-                order_type: orderData.order_type,
-                delivery_address: orderData.delivery_address,
-                coordinates: orderData.coordinates
-            }]);
-
-        if (error) throw error;
-
-        // 2. Generate and Copy Receipt
         const receiptText = generateReceiptText(
             orderData.customer_name, 
             orderData.items, 
             orderData.total_price, 
             orderData.order_type, 
-            orderData.delivery_address, 
-            orderData.coordinates
+            'N/A', 
+            'N/A'
         );
-
         await navigator.clipboard.writeText(receiptText);
-        
-        // Success State
-        showOrderSuccess(orderData.total_price, orderData.coordinates, orderData.cartItems, orderData.order_type === 'delivery', receiptText);
-
+        showOrderSuccess(orderData.total_price, 'N/A', orderData.cartItems, false, receiptText);
     } catch (err) {
-        console.error("Placement Error:", err);
-        if (modalError) modalError.textContent = `Database Error: ${err.message}. Ensure your schema columns match exactly!`;
-        saveOrderBtn.disabled = false;
-        saveOrderBtn.innerHTML = `💾 Try Saving Again`;
+        console.error("Dine-in Finalize Error:", err);
+        showOrderSuccess(orderData.total_price, 'N/A', orderData.cartItems, false, "");
     }
 }
 
 /**
- * Step 4: Finalize via Messenger
+ * Step 5: Go to Messenger (Reveal button only after copy)
  */
 function showOrderSuccess(total, mapLink, cartItems, isDelivery = false, receiptText = '') {
     modalHeaderPreview.classList.add('hidden');
@@ -422,14 +466,19 @@ function showOrderSuccess(total, mapLink, cartItems, isDelivery = false, receipt
     deliveryInfoPreview.classList.toggle('hidden', !isDelivery);
     
     modalInstruction.textContent = isDelivery 
-        ? "Order saved and receipt copied! Click below to send your details via Messenger."
-        : "Order saved and receipt copied! Please show this screen at the counter.";
+        ? "Order Saved & Receipt Copied! Step 5: Click below to send your details via Messenger."
+        : "Order Saved & Receipt Copied! Please show this screen at the counter.";
 
     if (messengerConfirmBtn) {
         const fbPageId = "61580219733955";
         const messengerUrl = `https://m.me/${fbPageId}?text=${encodeURIComponent(receiptText)}`;
         messengerConfirmBtn.onclick = () => window.open(messengerUrl, '_blank');
+        
+        // Step 5: Reveal Messenger button ONLY for delivery and ONLY after copy
         messengerConfirmBtn.classList.toggle('hidden', !isDelivery);
+        if (isDelivery) {
+            messengerConfirmBtn.style.display = 'flex'; // Ensure visibility
+        }
     }
 
     // 3. Reset Cart & UI
