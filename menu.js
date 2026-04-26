@@ -59,16 +59,19 @@ window.filterByCategory = (category) => {
 };
 
 // ─── Order Modal State & Elements ───────────────────────────────────────────
-const confirmLocationBtn = document.getElementById('confirmLocationBtn');
-const messengerConfirmBtn = document.getElementById('messengerConfirmBtn');
-const copyReceiptBtn = document.getElementById('copyReceiptBtn');
-const modalError = document.getElementById('modal-error');
-const modalHeaderSuccess = document.getElementById('modal-header-success');
-const modalHeaderPreview = document.getElementById('modal-header-preview');
-const deliveryInfoPreview = document.getElementById('delivery-info-preview');
-const modalInstruction = document.getElementById('modal-instruction');
+const captureLocationBtn   = document.getElementById('captureLocationBtn');
+const saveOrderBtn          = document.getElementById('saveOrderBtn');
+const messengerConfirmBtn  = document.getElementById('messengerConfirmBtn');
+const copyReceiptBtn       = document.getElementById('copyReceiptBtn');
+const modalError           = document.getElementById('modal-error');
+const modalHeaderSuccess   = document.getElementById('modal-header-success');
+const modalHeaderPreview   = document.getElementById('modal-header-preview');
+const deliveryInfoPreview  = document.getElementById('delivery-info-preview');
+const modalInstruction     = document.getElementById('modal-instruction');
+const previewCoordinates   = document.getElementById('preview-coordinates');
+const previewCoordsRow     = document.getElementById('preview-coords-row');
 
-let currentOrderData = null; // Stores data between steps
+let currentOrderData       = null; // Stores data between steps
 
 // ─── Order Modal ──────────────────────────────────────────────────────────────
 const closeOrderModal = () => {
@@ -162,7 +165,8 @@ function generateReceiptText(customerName, groupedItems, total, orderType, deliv
         text += `📍 Landmark: ${deliveryAddress}\n`;
         if (coordinates && coordinates !== "Location not shared" && coordinates !== "Location not supported") {
             const cleanCoords = coordinates.replace(/\s/g, '');
-            text += `🗺️ Maps: https://www.google.com/maps?q=${cleanCoords}\n`;
+            // Precise URL format: https://www.google.com/maps?q=${lat},${long}.
+            text += `🗺️ Maps: https://www.google.com/maps?q=${cleanCoords}.\n`;
         } else {
             text += `🗺️ Maps: Location not shared\n`;
         }
@@ -272,7 +276,7 @@ async function handleCheckout(e) {
 }
 
 /**
- * Step 1: Shows the Receipt Preview modal for Delivery orders
+ * Step 1: Shows the Receipt Preview modal (Receipt Generation)
  */
 function showOrderPreview(orderData) {
     const isDelivery = orderData.order_type === 'delivery';
@@ -281,16 +285,23 @@ function showOrderPreview(orderData) {
     modalHeaderSuccess.classList.add('hidden');
     modalHeaderPreview.classList.remove('hidden');
     deliveryInfoPreview.classList.toggle('hidden', !isDelivery);
-    confirmLocationBtn.classList.remove('hidden');
+    
+    // Step 2 & 3 buttons hidden initially for Step 1
+    captureLocationBtn.classList.toggle('hidden', !isDelivery);
+    saveOrderBtn.classList.toggle('hidden', isDelivery); // For Dine-in, skip to Step 3
     messengerConfirmBtn.classList.add('hidden');
     
     modalInstruction.textContent = isDelivery 
-        ? "Please review your order. Clicking the button below will record your location to help our delivery team."
-        : "Please review your order summary before confirming.";
+        ? "Step 1: Review your receipt details below. Next, we'll need to capture your location for delivery."
+        : "Step 1: Review your order details before confirming.";
     
     // 2. Populate Preview Data
     document.getElementById('preview-customer-name').textContent = orderData.customer_name;
     document.getElementById('preview-address').textContent = isDelivery ? orderData.delivery_address : "Dine-in Order";
+    
+    // Reset Coordinates display for Step 2
+    if (previewCoordsRow) previewCoordsRow.classList.add('hidden');
+    if (previewCoordinates) previewCoordinates.textContent = '--';
     
     orderSummaryList.innerHTML = orderData.cartItems.map(item => `
         <div class="summary-item">
@@ -302,14 +313,16 @@ function showOrderPreview(orderData) {
     summaryTotalLabel.textContent = `₱${orderData.total_price.toFixed(0)}`;
 
     // 3. Configure Buttons
-    confirmLocationBtn.innerHTML = `📍 Confirm Order`;
-    confirmLocationBtn.onclick = () => {
-        if (isDelivery) {
-            handleDeliveryStep2();
-        } else {
-            processDineInOrder(orderData);
-        }
-    };
+    if (isDelivery) {
+        captureLocationBtn.disabled = false;
+        captureLocationBtn.innerHTML = `📍 Capture My Location`;
+        captureLocationBtn.onclick = () => handleDeliveryStep2();
+    } else {
+        saveOrderBtn.disabled = false;
+        saveOrderBtn.innerHTML = `💾 Confirm & Save Order`;
+        saveOrderBtn.onclick = () => processDineInOrder(orderData);
+    }
+    
     if (modalError) modalError.textContent = '';
     
     // 4. Show Modal
@@ -318,42 +331,54 @@ function showOrderPreview(orderData) {
 }
 
 /**
- * Step 2: Location Trigger - Only called after user confirms preview
+ * Step 2: Location Acquisition
  */
 async function handleDeliveryStep2() {
     if (!currentOrderData) return;
 
-    // Loading State
-    confirmLocationBtn.disabled = true;
-    confirmLocationBtn.innerHTML = `<span>⌛ Pinpointing GPS...</span>`;
+    captureLocationBtn.disabled = true;
+    captureLocationBtn.innerHTML = `<span>⌛ Pinpointing GPS...</span>`;
 
     try {
-        // Trigger Geolocation API
-        const mapLink = await getUserLocation();
-        currentOrderData.coordinates = mapLink;
-
-        // Move to Step 3: Database & Clipboard
-        await processDeliveryStep3(currentOrderData);
+        const coords = await getUserLocation();
+        currentOrderData.coordinates = coords;
+        
+        // Display coordinates on receipt (Requirement Step 2)
+        if (previewCoordinates) previewCoordinates.textContent = coords;
+        if (previewCoordsRow) previewCoordsRow.classList.remove('hidden');
+        
+        modalInstruction.textContent = "Step 2: Location captured! Now, click below to save your order and copy your receipt.";
+        
+        // Move to Step 3 button
+        captureLocationBtn.classList.add('hidden');
+        saveOrderBtn.classList.remove('hidden');
+        saveOrderBtn.innerHTML = `💾 Save & Copy Receipt`;
+        saveOrderBtn.onclick = () => processDeliveryStep3(currentOrderData);
 
     } catch (err) {
         console.warn("Step 2 Location Error:", err);
-        // Fallback: If denied, the user can still proceed. 
-        // We'll use the landmark they already provided.
         currentOrderData.coordinates = "Location not shared";
-        await processDeliveryStep3(currentOrderData);
-    } finally {
-        confirmLocationBtn.disabled = false;
-        confirmLocationBtn.innerHTML = `📍 Confirm Order`;
+        
+        if (previewCoordinates) previewCoordinates.textContent = "Location not shared (Using manual landmark)";
+        if (previewCoordsRow) previewCoordsRow.classList.remove('hidden');
+        
+        modalInstruction.textContent = "Location access denied. We'll use your manual landmark instead. Proceed to save.";
+        
+        captureLocationBtn.classList.add('hidden');
+        saveOrderBtn.classList.remove('hidden');
+        saveOrderBtn.innerHTML = `💾 Save & Copy Receipt`;
+        saveOrderBtn.onclick = () => processDeliveryStep3(currentOrderData);
     }
 }
 
 /**
- * Step 3: Database & Clipboard - Final step for Delivery
+ * Step 3: Clipboard & Database Save
  */
 async function processDeliveryStep3(orderData) {
-    try {
-        confirmLocationBtn.innerHTML = `<span>💾 Saving Order...</span>`;
+    saveOrderBtn.disabled = true;
+    saveOrderBtn.innerHTML = `<span>💾 Saving...</span>`;
 
+    try {
         // 1. Save to Supabase
         const { error } = await window.supabaseClient
             .from('orders')
@@ -369,7 +394,7 @@ async function processDeliveryStep3(orderData) {
 
         if (error) throw error;
 
-        // 2. Generate Receipt Text
+        // 2. Copy to Clipboard
         const receiptText = generateReceiptText(
             orderData.customer_name, 
             orderData.items, 
@@ -379,31 +404,29 @@ async function processDeliveryStep3(orderData) {
             orderData.coordinates
         );
 
-        // 3. Copy to Clipboard (Master Requirement Step 3)
         try {
             await navigator.clipboard.writeText(receiptText);
-            console.log("Receipt copied to clipboard automatically.");
         } catch (clipErr) {
             console.warn("Auto-copy failed:", clipErr);
         }
 
-        // 4. Update Modal to Success Mode (Step 4: Show Messenger button)
+        // 3. Move to Step 4: Messenger
         showOrderSuccess(orderData.total_price, orderData.coordinates, orderData.cartItems, true, receiptText);
 
     } catch (err) {
         console.error("Step 3 Error:", err);
-        if (modalError) {
-            modalError.textContent = `Database Error: ${err.message}. Please try again.`;
-        }
+        if (modalError) modalError.textContent = `PGRST204 Error: ${err.message}. Check column names!`;
+        saveOrderBtn.disabled = false;
+        saveOrderBtn.innerHTML = `💾 Try Saving Again`;
     }
 }
 
 /**
- * Processes Dine-in orders directly
+ * Step 3 for Dine-in (No Step 2)
  */
 async function processDineInOrder(orderData) {
-    confirmLocationBtn.disabled = true;
-    confirmLocationBtn.innerHTML = `<span>💾 Saving Order...</span>`;
+    saveOrderBtn.disabled = true;
+    saveOrderBtn.innerHTML = `<span>💾 Saving...</span>`;
 
     try {
         const { error } = await window.supabaseClient
@@ -422,7 +445,6 @@ async function processDineInOrder(orderData) {
 
         const receiptText = generateReceiptText(orderData.customer_name, orderData.items, orderData.total_price, orderData.order_type, 'N/A', 'N/A');
         
-        // Automatic copy for Dine-in too
         try {
             await navigator.clipboard.writeText(receiptText);
         } catch (clipErr) {
@@ -433,27 +455,26 @@ async function processDineInOrder(orderData) {
 
     } catch (err) {
         console.error("Dine-in Error:", err);
-        if (modalError) modalError.textContent = `Database Error: ${err.message}. Please try again.`;
-    } finally {
-        confirmLocationBtn.disabled = false;
-        confirmLocationBtn.innerHTML = `📍 Confirm Order`;
+        if (modalError) modalError.textContent = `Database Error: ${err.message}.`;
+        saveOrderBtn.disabled = false;
+        saveOrderBtn.innerHTML = `💾 Try Saving Again`;
     }
 }
 
 /**
- * Shows the success modal and configures the Messenger confirmation button
+ * Step 4: Finalize via Messenger
  */
 function showOrderSuccess(total, mapLink, cartItems, isDelivery = false, receiptText = '') {
     // 1. Set Modal to Success Mode
     modalHeaderPreview.classList.add('hidden');
     modalHeaderSuccess.classList.remove('hidden');
-    confirmLocationBtn.classList.add('hidden');
+    captureLocationBtn.classList.add('hidden');
+    saveOrderBtn.classList.add('hidden');
     deliveryInfoPreview.classList.toggle('hidden', !isDelivery);
     
-    // Step 4: Messenger Handoff instruction
     modalInstruction.textContent = isDelivery 
-        ? "Order saved! Your receipt has been automatically copied to your clipboard. Click the button below to send it to us on Messenger."
-        : "Please proceed to the counter and show this screen to pay and collect your order.";
+        ? "Step 4: Order saved and receipt copied! Click below to send your details via Messenger."
+        : "Order confirmed! Please show this screen at the counter.";
 
     // 2. Configure Messenger Button (Step 4)
     if (messengerConfirmBtn) {
@@ -461,11 +482,6 @@ function showOrderSuccess(total, mapLink, cartItems, isDelivery = false, receipt
         const messengerUrl = `https://m.me/${fbPageId}?text=${encodeURIComponent(receiptText)}`;
         messengerConfirmBtn.onclick = () => window.open(messengerUrl, '_blank');
         messengerConfirmBtn.classList.toggle('hidden', !isDelivery);
-        messengerConfirmBtn.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white" style="margin-right: 8px; vertical-align: middle;">
-                <path d="M12 2C6.477 2 2 6.145 2 11.258c0 2.908 1.464 5.503 3.746 7.158V22l3.43-1.881c.882.244 1.815.378 2.824.378 5.523 0 10-4.145 10-9.258S17.523 2 12 2zm1.286 12.355l-2.571-2.742-5.02 2.742 5.514-5.855 2.572 2.742 5.018-2.742-5.513 5.855z"/>
-            </svg>
-            Proceed to Messenger`;
     }
 
     // 3. Configure Copy Button
