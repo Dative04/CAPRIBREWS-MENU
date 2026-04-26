@@ -150,6 +150,33 @@ function showCartFAB() {
     setTimeout(() => cartFab.style.transform = '', 200);
 }
 
+/**
+ * Generates a formatted receipt string for Messenger or Clipboard
+ */
+function generateReceiptText(customerName, groupedItems, total, orderType, deliveryAddress, mapLink) {
+    const isDelivery = orderType === 'delivery';
+    let text = `Capibrews Receipt\n`;
+    text += `Order Type: ${isDelivery ? '🛵 Delivery' : '🏠 Dine-in'}\n`;
+    text += `Customer: ${customerName}\n`;
+    text += `------------------\n`;
+    
+    Object.values(groupedItems).forEach(item => {
+        text += `${item.quantity}x ${item.name} (${item.selectedSize}) - ₱${item.selectedPrice.toFixed(0)}\n`;
+    });
+    
+    text += `------------------\n`;
+    text += `Total: ₱${total.toFixed(0)}\n`;
+    
+    if (isDelivery) {
+        text += `Landmark: ${deliveryAddress}\n`;
+        if (mapLink) text += `Location: ${mapLink}\n`;
+        else text += `Location: Not shared via GPS\n`;
+    }
+    
+    text += `\nPlease confirm my order!`;
+    return text;
+}
+
 // ─── Checkout ─────────────────────────────────────────────────────────────────
 checkoutBtn.onclick = async () => {
     if (cart.length === 0) {
@@ -158,11 +185,9 @@ checkoutBtn.onclick = async () => {
     }
 
     const customerNameInput = document.getElementById('customer-name-input');
-    if (!customerNameInput) {
-        console.error('Customer name input not found');
-        return;
-    }
-    const customerName = customerNameInput.value.trim();
+    const customerName = customerNameInput?.value.trim();
+    const orderType = document.querySelector('input[name="order-type"]:checked')?.value;
+    const isDelivery = orderType === 'delivery';
 
     if (!customerName) {
         if (nameError) {
@@ -173,19 +198,34 @@ checkoutBtn.onclick = async () => {
         return;
     }
 
+    // Delivery validation: Check if they provided a landmark if they chose delivery
+    const deliveryAddressInput = document.getElementById('delivery-address-input');
+    const deliveryAddress = deliveryAddressInput?.value.trim();
+    
+    if (isDelivery && !deliveryAddress) {
+        if (nameError) nameError.textContent = 'Please provide a landmark or address for delivery!';
+        deliveryAddressInput?.focus();
+        return;
+    }
+
     if (nameError) nameError.textContent = '';
     customerNameInput?.classList.remove('input-error');
 
     checkoutBtn.disabled = true;
-    checkoutBtn.textContent = 'Processing...';
+    const originalBtnText = checkoutBtn.textContent;
+    checkoutBtn.textContent = isDelivery ? '📍 Getting Location...' : 'Processing...';
 
     try {
-        // 1. Capture Location Map Link
-        const mapLink = await getLocationMapLink();
+        let mapLink = null;
+        if (isDelivery) {
+            // Only request location for delivery
+            mapLink = await getLocationMapLink();
+        }
 
         const currentCart = [...cart];
-        
-        // Group identical items for quantity
+        const total = currentCart.reduce((sum, item) => sum + item.selectedPrice, 0);
+
+        // Group items for the database and message
         const groupedItems = currentCart.reduce((acc, item) => {
             const key = `${item.name}-${item.selectedSize}`;
             if (!acc[key]) {
@@ -201,15 +241,15 @@ checkoutBtn.onclick = async () => {
             return acc;
         }, {});
 
-        const total = currentCart.reduce((sum, item) => sum + item.selectedPrice, 0);
-
-        // 2. Add map_link to the order data
+        // 1. Save to Supabase
         const orderData = {
             customer_name: customerName,
             items: Object.values(groupedItems),
             total_price: total,
             status: 'pending',
-            map_link: mapLink
+            map_link: mapLink,
+            order_type: orderType,
+            delivery_address: isDelivery ? deliveryAddress : null
         };
 
         const { error } = await window.supabaseClient
@@ -219,7 +259,18 @@ checkoutBtn.onclick = async () => {
 
         if (error) throw error;
 
-        showOrderSuccess(total, mapLink, currentCart);
+        // 2. Prepare receipt text
+        const receiptText = generateReceiptText(customerName, groupedItems, total, orderType, deliveryAddress, mapLink);
+
+        // 3. If Delivery, open Messenger
+        if (isDelivery) {
+            const fbPageId = "61580219733955";
+            const messengerUrl = `https://m.me/${fbPageId}?text=${encodeURIComponent(receiptText)}`;
+            window.open(messengerUrl, '_blank');
+        }
+
+        // 4. Show Success Modal
+        showOrderSuccess(total, mapLink, currentCart, isDelivery, receiptText);
 
     } catch (err) {
         console.error('Order failed:', err);
@@ -229,32 +280,41 @@ checkoutBtn.onclick = async () => {
         }
     } finally {
         checkoutBtn.disabled = false;
-        checkoutBtn.textContent = 'Place Order';
+        checkoutBtn.textContent = originalBtnText;
     }
 };
 
 /**
  * Shows the success modal and configures the Messenger confirmation button
  */
-function showOrderSuccess(total, mapLink, cartItems) {
+function showOrderSuccess(total, mapLink, cartItems, isDelivery = false, receiptText = '') {
     const messengerBtn = document.getElementById('messengerConfirmBtn');
+    const copyReceiptBtn = document.getElementById('copyReceiptBtn');
     const fbPageId = "61580219733955";
 
     // 1. Configure Messenger Button
     if (messengerBtn) {
-        const locationText = mapLink ? `My Location: ${mapLink}` : "Location: Not shared";
-        
-        const messageText = `Hi Capri Brews! 👋\n\n` + 
-                            `Order Total: ₱${total.toFixed(0)}\n` + 
-                            `${locationText}\n\n` + 
-                            `Please confirm my order!`;
-
-        const messengerUrl = `https://m.me/${fbPageId}?text=${encodeURIComponent(messageText)}`;
-        
+        const messengerUrl = `https://m.me/${fbPageId}?text=${encodeURIComponent(receiptText)}`;
         messengerBtn.onclick = () => window.open(messengerUrl, '_blank');
+        messengerBtn.parentElement.style.display = 'flex';
+        messengerBtn.style.display = isDelivery ? 'block' : 'none';
     }
 
-    // 2. Update Success Modal UI
+    // 2. Configure Copy Button
+    if (copyReceiptBtn) {
+        copyReceiptBtn.onclick = async () => {
+            try {
+                await navigator.clipboard.writeText(receiptText);
+                const originalText = copyReceiptBtn.textContent;
+                copyReceiptBtn.textContent = '✅ Copied!';
+                setTimeout(() => copyReceiptBtn.textContent = originalText, 2000);
+            } catch (err) {
+                console.error('Copy failed:', err);
+            }
+        };
+    }
+
+    // 3. Update Success Modal UI
     orderSummaryList.innerHTML = cartItems.map(item => `
         <div class="summary-item">
             <span>${item.name} (${item.selectedSize})</span>
@@ -267,7 +327,9 @@ function showOrderSuccess(total, mapLink, cartItems) {
     // 3. Reset Cart
     cart = [];
     const customerNameInput = document.getElementById('customer-name-input');
+    const deliveryAddressInput = document.getElementById('delivery-address-input');
     if (customerNameInput) customerNameInput.value = '';
+    if (deliveryAddressInput) deliveryAddressInput.value = '';
     updateCartUI();
     closeCart();
 
@@ -303,6 +365,31 @@ async function getLocationMapLink() {
 document.getElementById('customer-name-input')?.addEventListener('input', () => {
     if (nameError) nameError.textContent = '';
     document.getElementById('customer-name-input').classList.remove('input-error');
+});
+
+// ─── Order Type Selection ─────────────────────────────────────────────────────
+const orderTypeRadios = document.querySelectorAll('input[name="order-type"]');
+const deliveryAddressContainer = document.getElementById('delivery-address-container');
+
+orderTypeRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+        const isDelivery = e.target.value === 'delivery';
+        
+        // 1. Toggle address field
+        deliveryAddressContainer?.classList.toggle('hidden', !isDelivery);
+        
+        // 2. Update checkout button text
+        if (checkoutBtn) {
+            checkoutBtn.textContent = isDelivery ? '🚀 Send Order via Messenger' : 'Place Order';
+            checkoutBtn.classList.toggle('btn-messenger', isDelivery);
+        }
+        
+        // 3. Optional: Request location early if delivery
+        if (isDelivery) {
+            // Trigger a quiet location request to warm up the GPS
+            navigator.geolocation?.getCurrentPosition(() => {}, () => {}, { timeout: 1000 });
+        }
+    });
 });
 
 // ─── Menu State ───────────────────────────────────────────────────────────────

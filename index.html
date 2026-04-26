@@ -76,8 +76,31 @@
                 <!-- injected by menu.js -->
             </div>
             <div class="cart-customer-info">
+                <div class="order-type-selection">
+                    <label class="selection-label">Order Type</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="order-type" value="dine-in" checked>
+                            <span class="radio-custom"></span>
+                            <span class="radio-label">🏠 Dine-in</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="order-type" value="delivery">
+                            <span class="radio-custom"></span>
+                            <span class="radio-label">🛵 Delivery</span>
+                        </label>
+                    </div>
+                </div>
+
                 <label for="customer-name-input">Your Name</label>
                 <input type="text" id="customer-name-input" placeholder="e.g. Maria" required autocomplete="given-name">
+                
+                <!-- Delivery Address (Conditional) -->
+                <div id="delivery-address-container" class="hidden" style="margin-top: 16px;">
+                    <label for="delivery-address-input" class="selection-label">Delivery Address / Landmark</label>
+                    <textarea id="delivery-address-input" placeholder="e.g. Blk 1 Lot 2, Near the blue gate..." rows="2" style="width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-family: var(--font-sans); resize: none;"></textarea>
+                </div>
+
                 <!-- ✅ FIX: Inline error instead of alert() -->
                 <p id="name-error" class="name-error-msg" aria-live="polite"></p>
             </div>
@@ -104,6 +127,9 @@
                 <div class="modal-actions" style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
                     <button id="messengerConfirmBtn" class="btn-primary btn-messenger" type="button">
                         💬 Confirm via Messenger
+                    </button>
+                    <button id="copyReceiptBtn" class="btn-secondary" type="button">
+                        📋 Copy Receipt to Clipboard
                     </button>
                     <button id="close-order-modal" class="btn-secondary" type="button">Back to Menu</button>
                 </div>
