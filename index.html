@@ -23,12 +23,15 @@
             <button class="close-btn-drawer" onclick="toggleMenu()" aria-label="Close Menu">×</button>
         </div>
         <nav class="drawer-links">
-            <a href="#" onclick="filterByCategory('Soda Blends'); toggleMenu()">🥤 Soda Blends</a>
-            <a href="#" onclick="filterByCategory('Signature Blends'); toggleMenu()">✨ Signature Blends</a>
             <a href="#" onclick="filterByCategory('Coffee Selection'); toggleMenu()">☕ Coffee Selection</a>
+            <a href="#" onclick="filterByCategory('Signature Blends'); toggleMenu()">✨ Signature Blends</a>
+            <a href="#" onclick="filterByCategory('Soda Blends'); toggleMenu()">🥤 Soda Blends</a>
             <a href="#" onclick="filterByCategory('Frappe'); toggleMenu()">🍦 Frappe</a>
+            <a href="#" onclick="filterByCategory('Milkshakes'); toggleMenu()">🥛 Milkshakes</a>
+            <a href="#" onclick="filterByCategory('Savory Bites'); toggleMenu()">🍔 Savory Bites</a>
             <div class="drawer-divider"></div>
             <a href="#" onclick="filterByCategory('All'); toggleMenu()">📋 View All Menu</a>
+            <a href="#" onclick="showRecentOrders(); toggleMenu()">🕒 My Recent Orders</a>
         </nav>
     </div>
 
@@ -117,9 +120,16 @@
         <div id="order-modal" class="modal hidden" style="display: none;">
             <div class="modal-content">
                 <!-- Success Header (Dine-in or Post-Delivery) -->
-                <div id="modal-header-success" class="modal-header-section">
+                <div id="modal-header-success" class="modal-header-section hidden">
                     <div class="success-icon">✓</div>
                     <h2 id="modal-title">Order Sent!</h2>
+                </div>
+
+                <!-- Recent Orders Header -->
+                <div id="modal-header-history" class="modal-header-section hidden">
+                    <div class="history-icon">🕒</div>
+                    <h2>Recent Orders</h2>
+                    <p class="subtitle">Check the status of your recent orders.</p>
                 </div>
 
                 <!-- Preview Header (Delivery Step 1) -->
@@ -130,7 +140,7 @@
                 </div>
 
                 <div id="order-summary-list" class="order-summary-list"></div>
-                <div class="order-total-row">
+                <div id="modal-total-row" class="order-total-row">
                     <span>Total Amount</span>
                     <span id="summary-total">₱0.00</span>
                 </div>

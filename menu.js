@@ -2,6 +2,10 @@ const menuGrid          = document.getElementById('menu-grid');
 const searchInput       = document.getElementById('menu-search');
 const mainHeader        = document.getElementById('main-header');
 
+// Menu state
+let menuData = [];
+let currentCategory = 'All';
+
 // Cart state
 let cart = [];
 const cartFab           = document.getElementById('cart-fab');
@@ -51,25 +55,192 @@ window.filterByCategory = (category) => {
     filterAndRenderItems();
 };
 
-// ─── Order Modal State & Elements ───────────────────────────────────────────
-const captureLocationBtn   = document.getElementById('captureLocationBtn');
-const saveOrderBtn          = document.getElementById('saveOrderBtn');
-const copyReceiptBtn       = document.getElementById('copyReceiptBtn');
-const modalError           = document.getElementById('modal-error');
-const modalHeaderSuccess   = document.getElementById('modal-header-success');
-const modalHeaderPreview   = document.getElementById('modal-header-preview');
-const deliveryInfoPreview  = document.getElementById('delivery-info-preview');
-const modalInstruction     = document.getElementById('modal-instruction');
-const previewCoordinates   = document.getElementById('preview-coordinates');
-const previewCoordsRow     = document.getElementById('preview-coords-row');
+// ─── Menu Rendering Logic ─────────────────────────────────────────────────────
 
-let currentOrderData       = null; // Stores data between steps
+async function fetchMenuData() {
+    try {
+        const { data, error } = await window.supabaseClient
+            .from('menu')
+            .select('*')
+            .eq('available', true)
+            .order('sort_order', { ascending: true });
+
+        if (error) throw error;
+        menuData = data || [];
+        filterAndRenderItems();
+    } catch (err) {
+        console.error('Error fetching menu:', err);
+        menuGrid.innerHTML = `<p class="error-msg">Failed to load menu. Please refresh.</p>`;
+    }
+}
+
+function filterAndRenderItems() {
+    const searchTerm = searchInput?.value.toLowerCase() || '';
+    
+    const filtered = menuData.filter(item => {
+        const matchesCategory = currentCategory === 'All' || 
+                              item.category.toLowerCase() === currentCategory.toLowerCase();
+        const matchesSearch = item.name.toLowerCase().includes(searchTerm) || 
+                            item.description.toLowerCase().includes(searchTerm);
+        return matchesCategory && matchesSearch;
+    });
+
+    renderMenuItems(filtered);
+}
+
+function renderMenuItems(items) {
+    if (!menuGrid) return;
+    menuGrid.innerHTML = '';
+
+    if (items.length === 0) {
+        menuGrid.innerHTML = `
+            <div class="no-results">
+                <p>No items found in the menu.</p>
+                <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 8px;">
+                    If you are the admin, please seed the menu data from the admin panel.
+                </p>
+            </div>`;
+        return;
+    }
+
+    items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'menu-card';
+        
+        // Handle multi-pricing vs single price
+        let pricingHTML = '';
+        if (item.prices && Object.keys(item.prices).length > 0) {
+            pricingHTML = Object.entries(item.prices).map(([size, price]) => `
+                <button class="add-to-cart-btn" onclick="addToCart(${JSON.stringify(item).replace(/"/g, '&quot;')}, '${size}', ${price}, event)">
+                    ${size} - ₱${price}
+                </button>
+            `).join('');
+        } else {
+            pricingHTML = `
+                <button class="add-to-cart-btn" onclick="addToCart(${JSON.stringify(item).replace(/"/g, '&quot;')}, 'Standard', ${item.price}, event)">
+                    Add to Cart - ₱${item.price}
+                </button>
+            `;
+        }
+
+        card.innerHTML = `
+            ${item.image_url ? `<img src="${item.image_url}" alt="${item.name}" class="menu-card-img">` : ''}
+            <div class="menu-card-content">
+                <div class="menu-card-header">
+                    <h3>${item.name}</h3>
+                    <span class="category-tag">${item.category}</span>
+                </div>
+                <p class="menu-card-desc">${item.description}</p>
+                <div class="menu-card-actions">
+                    ${pricingHTML}
+                </div>
+            </div>
+        `;
+        menuGrid.appendChild(card);
+    });
+}
+
+    // ─── Order Modal State & Elements ───────────────────────────────────────────
+    const captureLocationBtn   = document.getElementById('captureLocationBtn');
+    const saveOrderBtn          = document.getElementById('saveOrderBtn');
+    const copyReceiptBtn       = document.getElementById('copyReceiptBtn');
+    const modalError           = document.getElementById('modal-error');
+    const modalHeaderSuccess   = document.getElementById('modal-header-success');
+    const modalHeaderPreview   = document.getElementById('modal-header-preview');
+    const modalHeaderHistory   = document.getElementById('modal-header-history');
+    const deliveryInfoPreview  = document.getElementById('delivery-info-preview');
+    const modalInstruction     = document.getElementById('modal-instruction');
+    const previewCoordinates   = document.getElementById('preview-coordinates');
+    const previewCoordsRow     = document.getElementById('preview-coords-row');
+    const modalTitle           = document.getElementById('modal-title');
+    const modalTotalRow        = document.getElementById('modal-total-row');
+    
+    let currentOrderData       = null; // Stores data between steps
+
+    // Exposed to window for sidebar access
+    window.showRecentOrders = async () => {
+        // Hide other modal sections
+        modalHeaderSuccess.classList.add('hidden');
+        modalHeaderPreview.classList.add('hidden');
+        deliveryInfoPreview.classList.add('hidden');
+        captureLocationBtn.classList.add('hidden');
+        saveOrderBtn.classList.add('hidden');
+        copyReceiptBtn.classList.add('hidden');
+        if (modalTotalRow) modalTotalRow.classList.add('hidden');
+        
+        // Show history header
+        modalHeaderHistory.classList.remove('hidden');
+        modalInstruction.textContent = "Fetching your recent orders...";
+        orderSummaryList.innerHTML = '<div class="loading-spinner"></div>';
+        summaryTotalLabel.textContent = "₱0.00";
+        
+        // Show modal
+        orderModal.classList.remove('hidden');
+        orderModal.style.display = 'flex';
+
+        try {
+            // Fetch all orders from Supabase (ordered by time)
+            const { data, error } = await window.supabaseClient
+                .from('orders')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(10);
+
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
+                orderSummaryList.innerHTML = '<p class="no-history">No recent orders found.</p>';
+                modalInstruction.textContent = "Your order history is empty.";
+                return;
+            }
+
+            modalInstruction.textContent = "Here are the most recent orders from Capibrews.";
+            
+            // Render orders list
+            orderSummaryList.innerHTML = data.map(order => {
+                const date = new Date(order.created_at).toLocaleDateString('en-PH', {
+                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+                const statusClass = `status-${order.status || 'pending'}`;
+                
+                return `
+                    <div class="history-item">
+                        <div class="history-item-main">
+                            <div class="history-item-info">
+                                <span class="history-date">${date}</span>
+                                <span class="history-name">${order.customer_name}</span>
+                            </div>
+                            <span class="history-status ${statusClass}">${order.status || 'pending'}</span>
+                        </div>
+                        <div class="history-item-details">
+                            <div class="history-items-list">
+                                ${order.items.map(item => {
+                                    const sizeInfo = item.selectedSize && item.selectedSize !== 'Standard' ? ` (${item.selectedSize})` : '';
+                                    return `<span>${item.quantity}x ${item.name}${sizeInfo}</span>`;
+                                }).join(', ')}
+                            </div>
+                            <span class="history-price">₱${Number(order.total_price).toFixed(0)}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+        } catch (err) {
+            console.error('Error fetching history:', err);
+            orderSummaryList.innerHTML = '<p class="error-msg">Failed to load order history.</p>';
+            modalInstruction.textContent = "Something went wrong. Please try again later.";
+        }
+    };
 
 // ─── Order Modal ──────────────────────────────────────────────────────────────
 const closeOrderModal = () => {
     orderModal.classList.add('hidden');
     orderModal.style.display = 'none';
     currentOrderData = null; // Reset
+    // Reset modal state for next open
+    modalHeaderHistory.classList.add('hidden');
+    modalHeaderSuccess.classList.add('hidden');
+    modalHeaderPreview.classList.add('hidden');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
@@ -259,8 +430,12 @@ async function handleCheckout(e) {
 function showOrderPreview(orderData) {
     const isDelivery = orderData.order_type === 'delivery';
     
+    // Reset modal sections
     modalHeaderSuccess.classList.add('hidden');
+    modalHeaderHistory?.classList.add('hidden');
     modalHeaderPreview.classList.remove('hidden');
+    if (modalTotalRow) modalTotalRow.classList.remove('hidden');
+    copyReceiptBtn?.classList.add('hidden');
     deliveryInfoPreview.classList.toggle('hidden', !isDelivery);
     
     // Configure buttons
@@ -359,9 +534,15 @@ async function processFinalSave(orderData) {
  */
 function showOrderSuccess(total, cartItems, receiptText) {
     modalHeaderPreview.classList.add('hidden');
+    // Show Success Header
     modalHeaderSuccess.classList.remove('hidden');
+    modalTitle.textContent = "Order Sent!";
     captureLocationBtn.classList.add('hidden');
     saveOrderBtn.classList.add('hidden');
+    if (modalTotalRow) modalTotalRow.classList.remove('hidden');
+    
+    // Configure buttons for success state
+    copyReceiptBtn.classList.remove('hidden');
     
     modalInstruction.textContent = "Order Placed Successfully! Your receipt has been copied to the clipboard. Please show it at the counter.";
 
@@ -395,3 +576,7 @@ document.getElementById('customer-name-input')?.addEventListener('input', () => 
     if (nameError) nameError.textContent = '';
     document.getElementById('customer-name-input').classList.remove('input-error');
 });
+searchInput?.addEventListener('input', filterAndRenderItems);
+
+// Initial Load
+fetchMenuData();
