@@ -997,6 +997,28 @@
 </div>
 
 <!-- Receipt / Confirmation Modal -->
+<!-- Confirmation Modal -->
+<div class="modal-overlay" id="confirmation-modal">
+  <div class="modal-box">
+    <div class="modal-top">
+      <div class="modal-icon">❓</div>
+      <div class="modal-title">Confirm Your Order</div>
+      <div class="modal-subtitle">Please review your order details before we finalize it.</div>
+    </div>
+
+    <div class="receipt-paper" id="confirmation-details"></div>
+
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-primary" id="confirm-final-btn">
+        ✅ Yes, Place Order
+      </button>
+      <button class="modal-btn modal-btn-ghost" onclick="closeConfirmation()">
+        ❌ Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="receipt-modal">
   <div class="modal-box">
     <div class="modal-top">
@@ -1235,12 +1257,14 @@ window.handleCheckout = function() {
   nameError.classList.remove('visible');
 
   const isDelivery = orderType === 'delivery';
+  let addr = null;
+  let phone = null;
 
   if (isDelivery) {
     const addrInput = document.getElementById('delivery-address');
     const phoneInput = document.getElementById('contact-number');
-    const addr = addrInput.value.trim();
-    const phone = phoneInput.value.trim();
+    addr = addrInput.value.trim();
+    phone = phoneInput.value.trim();
     
     if (!addr) {
       alert('Please enter your delivery address.');
@@ -1252,19 +1276,14 @@ window.handleCheckout = function() {
       phoneInput.focus();
       return;
     }
-    confirmOrder(name, addr, phone);
-  } else {
-    confirmOrder(name, null, null);
   }
+  
+  showConfirmation(name, addr, phone);
 }
 
-async function confirmOrder(name, address, phone) {
+window.showConfirmation = function(name, address, phone) {
   const isDelivery = orderType === 'delivery';
   const total = cart.reduce((s, i) => s + (i.selectedPrice * i.quantity), 0);
-  const checkoutBtn = document.querySelector('.confirm-btn');
-  const originalText = checkoutBtn.textContent;
-
-  // Group items (Already grouped in cart, but mapping for receipt)
   const itemsArr = cart.map(item => ({
     name: item.name,
     size: item.selectedSize,
@@ -1272,9 +1291,58 @@ async function confirmOrder(name, address, phone) {
     qty: item.quantity
   }));
 
-  // Loading state
-  checkoutBtn.disabled = true;
-  checkoutBtn.textContent = 'Placing Order...';
+  let summaryHTML = `
+    <div class="receipt-header">
+      <div class="receipt-shop-name">Order Summary</div>
+    </div>
+    <div class="receipt-row muted"><span>Customer</span><span>${name}</span></div>
+    <div class="receipt-row muted"><span>Type</span><span>${isDelivery ? '🛵 Delivery' : '🍽️ Dine-In'}</span></div>`;
+
+  if (isDelivery) {
+    summaryHTML += `<div class="receipt-row muted"><span>Address</span><span style="text-align:right;max-width:180px">${address}</span></div>`;
+    summaryHTML += `<div class="receipt-row muted"><span>Contact</span><span>${phone}</span></div>`;
+  }
+
+  summaryHTML += `<hr class="receipt-divider">`;
+  itemsArr.forEach(item => {
+    summaryHTML += `<div class="receipt-row"><span>${item.qty}× ${item.name} (${item.size})</span><span>₱${(item.price * item.qty).toFixed(0)}</span></div>`;
+  });
+  summaryHTML += `
+    <hr class="receipt-divider">
+    <div class="receipt-total-row"><span>TOTAL</span><span>₱${total.toFixed(0)}</span></div>`;
+
+  document.getElementById('confirmation-details').innerHTML = summaryHTML;
+  
+  // Set the confirm button action
+  const confirmBtn = document.getElementById('confirm-final-btn');
+  confirmBtn.onclick = () => finalizeOrder(name, address, phone);
+
+  document.getElementById('confirmation-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+window.closeConfirmation = function() {
+  document.getElementById('confirmation-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function finalizeOrder(name, address, phone) {
+  const isDelivery = orderType === 'delivery';
+  const total = cart.reduce((s, i) => s + (i.selectedPrice * i.quantity), 0);
+  const finalConfirmBtn = document.getElementById('confirm-final-btn');
+  const originalText = finalConfirmBtn.textContent;
+
+  // Group items
+  const itemsArr = cart.map(item => ({
+    name: item.name,
+    size: item.selectedSize,
+    price: item.selectedPrice,
+    qty: item.quantity
+  }));
+
+  // Loading state on the modal button
+  finalConfirmBtn.disabled = true;
+  finalConfirmBtn.textContent = '⌛ Placing Order...';
 
   try {
     // 1. Save to Supabase
@@ -1287,11 +1355,15 @@ async function confirmOrder(name, address, phone) {
           total_price: total,
           order_type: orderType,
           delivery_address: address,
+          phone_number: phone,
           status: 'pending'
         }]);
       
       if (error) throw error;
     }
+
+    // Success! Close confirmation modal
+    closeConfirmation();
 
     const now = new Date();
     const timeStr = now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
@@ -1359,6 +1431,13 @@ async function confirmOrder(name, address, phone) {
     updateCartUI();
     closeCart();
 
+    // Clear inputs
+    document.getElementById('customer-name').value = '';
+    const addrInput = document.getElementById('delivery-address');
+    const phoneInput = document.getElementById('contact-number');
+    if (addrInput) addrInput.value = '';
+    if (phoneInput) phoneInput.value = '';
+
     // Show modal
     document.getElementById('receipt-modal').classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -1367,8 +1446,8 @@ async function confirmOrder(name, address, phone) {
     console.error('Order error:', err);
     alert('Failed to place order: ' + (err.message || 'Unknown error'));
   } finally {
-    checkoutBtn.disabled = false;
-    checkoutBtn.textContent = originalText;
+    finalConfirmBtn.disabled = false;
+    finalConfirmBtn.textContent = originalText;
   }
 }
 
