@@ -941,6 +941,7 @@
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', () => {
 // ── Data ──────────────────────────────────────────────────────────────────────
 const initialMenuData = [
   { name:"Classic Americano", category:"Coffee Selection", description:"Smooth and bold espresso with hot water.", prices:{"8oz":79,"12oz":89,"16oz":99}, available:true, dietary:["vegan"], order:1 },
@@ -987,7 +988,7 @@ function buildCategoryTabs() {
   }).join('');
 }
 
-function filterCategory(cat) {
+window.filterCategory = function(cat) {
   currentCategory = cat;
   document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
   const tabs = document.querySelectorAll('.cat-tab');
@@ -1034,7 +1035,7 @@ function renderMenu(cat) {
 }
 
 // ── Cart ──────────────────────────────────────────────────────────────────────
-function addToCart(event, item, size, price) {
+window.addToCart = function(event, item, size, price) {
   cart.push({ ...item, selectedSize: size, selectedPrice: price, id: Date.now() + Math.random() });
   updateCartUI();
 
@@ -1045,7 +1046,7 @@ function addToCart(event, item, size, price) {
   setTimeout(() => { btn.classList.remove('added'); btn.innerHTML = orig; }, 1400);
 }
 
-function removeFromCart(uid) {
+window.removeFromCart = function(uid) {
   cart = cart.filter(i => i.id !== uid);
   updateCartUI();
 }
@@ -1091,7 +1092,7 @@ function updateCartUI() {
 }
 
 // ── Order type ────────────────────────────────────────────────────────────────
-function setOrderType(type) {
+window.setOrderType = function(type) {
   orderType = type;
   document.getElementById('btn-dinein').classList.toggle('active', type === 'dine-in');
   document.getElementById('btn-delivery').classList.toggle('active', type === 'delivery');
@@ -1099,20 +1100,20 @@ function setOrderType(type) {
 }
 
 // ── Drawer ────────────────────────────────────────────────────────────────────
-function openCart() {
+window.openCart = function() {
   document.getElementById('cart-drawer').classList.add('open');
   document.getElementById('drawer-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
-function closeCart() {
+window.closeCart = function() {
   document.getElementById('cart-drawer').classList.remove('open');
   document.getElementById('drawer-overlay').classList.remove('open');
   document.body.style.overflow = '';
 }
 
 // ── Checkout ──────────────────────────────────────────────────────────────────
-function handleCheckout() {
+window.handleCheckout = function() {
   if (!cart.length) return;
 
   const name = document.getElementById('customer-name').value.trim();
@@ -1244,7 +1245,7 @@ function buildReceiptText(name, address, phone, items, total) {
   return text;
 }
 
-async function copyAndConfirm(encodedText, btn) {
+window.copyAndConfirm = async function(encodedText, btn) {
   const text = decodeURIComponent(encodedText);
   try {
     await navigator.clipboard.writeText(text);
@@ -1256,12 +1257,12 @@ async function copyAndConfirm(encodedText, btn) {
   }
 }
 
-function openMessenger(encodedText) {
+window.openMessenger = function(encodedText) {
   copyAndConfirm(encodedText, { textContent: '', set textContent(v) {} });
   window.open('https://m.me/', '_blank');
 }
 
-function printReceipt(name, encodedItems, total) {
+window.printReceipt = function(name, encodedItems, total) {
   const items = JSON.parse(decodeURIComponent(encodedItems));
   const now = new Date();
   const printArea = document.getElementById('print-area');
@@ -1282,7 +1283,7 @@ function printReceipt(name, encodedItems, total) {
   window.print();
 }
 
-function closeModal() {
+window.closeModal = function() {
   document.getElementById('receipt-modal').classList.remove('open');
   document.body.style.overflow = '';
   // Reset name input
@@ -1298,6 +1299,7 @@ document.getElementById('receipt-modal').addEventListener('click', function(e) {
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 init();
+});
 </script>
 </body>
 </html>

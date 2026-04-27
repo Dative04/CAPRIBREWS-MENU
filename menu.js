@@ -1,187 +1,188 @@
-const menuGrid          = document.getElementById('menu-grid');
-const searchInput       = document.getElementById('menu-search');
-const mainHeader        = document.getElementById('main-header');
+document.addEventListener('DOMContentLoaded', () => {
+    const menuGrid          = document.getElementById('menu-grid');
+    const searchInput       = document.getElementById('menu-search');
+    const mainHeader        = document.getElementById('main-header');
 
-// Menu state
-let menuData = [];
-let currentCategory = 'All';
+    // Menu state
+    let menuData = [];
+    let currentCategory = 'All';
 
-// Cart state
-let cart = [];
-const cartFab           = document.getElementById('cart-fab');
-const cartCount         = document.getElementById('cart-count');
-const cartDrawer        = document.getElementById('cart-drawer');
-const cartBackdrop      = document.getElementById('cart-backdrop');
-const cartItemsContainer = document.getElementById('cart-items');
-const cartTotalLabel    = document.getElementById('cart-total');
-const checkoutBtn       = document.getElementById('checkout-btn');
-const closeCartBtn      = document.getElementById('close-cart');
-const orderModal        = document.getElementById('order-modal');
-const closeOrderModalBtn = document.getElementById('close-order-modal');
-const orderSummaryList  = document.getElementById('order-summary-list');
-const summaryTotalLabel = document.getElementById('summary-total');
-const cartCountNav      = document.getElementById('cart-count-nav');
-const nameError         = document.getElementById('name-error');
-const stickyBar         = document.getElementById('sticky-bar');
-const stickyCountBar    = document.getElementById('sticky-count-bar');
-const stickyTotalBar    = document.getElementById('sticky-total-bar');
+    // Cart state
+    let cart = [];
+    const cartFab           = document.getElementById('cart-fab');
+    const cartCount         = document.getElementById('cart-count');
+    const cartDrawer        = document.getElementById('cart-drawer');
+    const cartBackdrop      = document.getElementById('cart-backdrop');
+    const cartItemsContainer = document.getElementById('cart-items');
+    const cartTotalLabel    = document.getElementById('cart-total');
+    const checkoutBtn       = document.getElementById('checkout-btn');
+    const closeCartBtn      = document.getElementById('close-cart');
+    const orderModal        = document.getElementById('order-modal');
+    const closeOrderModalBtn = document.getElementById('close-order-modal');
+    const orderSummaryList  = document.getElementById('order-summary-list');
+    const summaryTotalLabel = document.getElementById('summary-total');
+    const cartCountNav      = document.getElementById('cart-count-nav');
+    const nameError         = document.getElementById('name-error');
+    const stickyBar         = document.getElementById('sticky-bar');
+    const stickyCountBar    = document.getElementById('sticky-count-bar');
+    const stickyTotalBar    = document.getElementById('sticky-total-bar');
 
-// ─── Side Drawer Toggle ───────────────────────────────────────────────────────
-window.toggleMenu = () => {
-    const drawer   = document.getElementById('side-drawer');
-    const backdrop = document.getElementById('drawer-backdrop');
-    const isOpen   = drawer.classList.toggle('open');
-    backdrop?.classList.toggle('visible', isOpen);
-};
+    // ─── Side Drawer Toggle ───────────────────────────────────────────────────────
+    window.toggleMenu = () => {
+        const drawer   = document.getElementById('side-drawer');
+        const backdrop = document.getElementById('drawer-backdrop');
+        const isOpen   = drawer.classList.toggle('open');
+        backdrop?.classList.toggle('visible', isOpen);
+    };
 
-// ─── Cart Toggle ──────────────────────────────────────────────────────────────
-window.toggleCart = () => {
-    const isHidden = cartDrawer.classList.toggle('hidden');
-    cartBackdrop?.classList.toggle('hidden', isHidden);
-};
+    // ─── Cart Toggle ──────────────────────────────────────────────────────────────
+    window.toggleCart = () => {
+        const isHidden = cartDrawer.classList.toggle('hidden');
+        cartBackdrop?.classList.toggle('hidden', isHidden);
+    };
 
-const openCart = () => {
-    cartDrawer.classList.remove('hidden');
-    cartBackdrop?.classList.remove('hidden');
-};
+    window.openCart = () => {
+        cartDrawer.classList.remove('hidden');
+        cartBackdrop?.classList.remove('hidden');
+    };
 
-const closeCart = () => {
-    cartDrawer.classList.add('hidden');
-    cartBackdrop?.classList.add('hidden');
-};
+    window.closeCart = () => {
+        cartDrawer.classList.add('hidden');
+        cartBackdrop?.classList.add('hidden');
+    };
 
-if (cartFab) cartFab.onclick = openCart;
-closeCartBtn.onclick  = closeCart;
+    if (cartFab) cartFab.onclick = openCart;
+    if (closeCartBtn) closeCartBtn.onclick  = closeCart;
 
-// Category Emojis Mapping
-const CATEGORY_EMOJIS = {
-    "all": "🍽️",
-    "coffee selection": "☕",
-    "signature blends": "✨",
-    "soda blends": "🥤",
-    "frappe": "🧊",
-    "milkshakes": "🥤",
-    "premium milkshakes": "✨",
-    "savory bites": "🍟",
-    "club sandwiches": "🥪",
-    "desserts": "🍰"
-};
+    // Category Emojis Mapping
+    const CATEGORY_EMOJIS = {
+        "all": "🍽️",
+        "coffee selection": "☕",
+        "signature blends": "✨",
+        "soda blends": "🥤",
+        "frappe": "🧊",
+        "milkshakes": "🥤",
+        "premium milkshakes": "✨",
+        "savory bites": "🍟",
+        "club sandwiches": "🥪",
+        "desserts": "🍰"
+    };
 
-// ─── Menu Rendering Logic ─────────────────────────────────────────────────────
+    // ─── Menu Rendering Logic ─────────────────────────────────────────────────────
 
-async function fetchMenuData() {
-    try {
-        const { data, error } = await window.supabaseClient
-            .from('menu')
-            .select('*')
-            .eq('available', true)
-            .order('sort_order', { ascending: true });
+    async function fetchMenuData() {
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('menu')
+                .select('*')
+                .eq('available', true)
+                .order('sort_order', { ascending: true });
 
-        if (error) throw error;
-        menuData = data || [];
-        
-        buildCategoryTabs(); // Dynamically build tabs based on data
-        filterAndRenderItems();
-    } catch (err) {
-        console.error('Error fetching menu:', err);
-        menuGrid.innerHTML = `<p class="error-msg">Failed to load menu. Please refresh.</p>`;
-    }
-}
-
-function buildCategoryTabs() {
-    const container = document.getElementById('category-tabs');
-    if (!container) return;
-
-    const categories = ['All', ...new Set(menuData.map(item => item.category).filter(Boolean))];
-    
-    container.innerHTML = categories.map(cat => {
-        const emoji = CATEGORY_EMOJIS[cat.toLowerCase()] || '•';
-        const isActive = currentCategory === cat;
-        return `
-            <button class="cat-tab ${isActive ? 'active' : ''}" onclick="filterByCategory('${cat}')">
-                ${emoji} ${cat}
-            </button>
-        `;
-    }).join('');
-}
-
-window.filterByCategory = (category) => {
-    currentCategory = category;
-    filterAndRenderItems();
-    
-    // Update section label if it exists
-    const label = document.getElementById('section-label');
-    if (label) label.textContent = category === 'All' ? 'All Items' : category;
-};
-
-function filterAndRenderItems() {
-    const searchTerm = searchInput?.value.toLowerCase() || '';
-    
-    // Ensure tabs are built/updated
-    buildCategoryTabs();
-
-    const filtered = menuData.filter(item => {
-        const matchesCategory = currentCategory === 'All' || 
-                              item.category.toLowerCase() === currentCategory.toLowerCase();
-        const matchesSearch = item.name.toLowerCase().includes(searchTerm) || 
-                            item.description.toLowerCase().includes(searchTerm);
-        return matchesCategory && matchesSearch;
-    });
-
-    renderMenuItems(filtered);
-}
-
-function renderMenuItems(items) {
-    if (!menuGrid) return;
-    menuGrid.innerHTML = '';
-
-    if (items.length === 0) {
-        menuGrid.innerHTML = `
-            <div class="no-results">
-                <p>No items found in the menu.</p>
-                <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 8px;">
-                    If you are the admin, please seed the menu data from the admin panel.
-                </p>
-            </div>`;
-        return;
+            if (error) throw error;
+            menuData = data || [];
+            
+            buildCategoryTabs(); // Dynamically build tabs based on data
+            filterAndRenderItems();
+        } catch (err) {
+            console.error('Error fetching menu:', err);
+            menuGrid.innerHTML = `<p class="error-msg">Failed to load menu. Please refresh.</p>`;
+        }
     }
 
-    items.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'menu-card';
+    function buildCategoryTabs() {
+        const container = document.getElementById('category-tabs');
+        if (!container) return;
+
+        const categories = ['All', ...new Set(menuData.map(item => item.category).filter(Boolean))];
         
-        // Handle multi-pricing vs single price
-        let pricingHTML = '';
-        if (item.prices && Object.keys(item.prices).length > 0) {
-            pricingHTML = Object.entries(item.prices).map(([size, price]) => `
-                <button class="add-to-cart-btn" onclick="addToCart(${JSON.stringify(item).replace(/"/g, '&quot;')}, '${size}', ${price}, event)">
-                    ${size} - ₱${price}
-                </button>
-            `).join('');
-        } else {
-            pricingHTML = `
-                <button class="add-to-cart-btn" onclick="addToCart(${JSON.stringify(item).replace(/"/g, '&quot;')}, 'Standard', ${item.price}, event)">
-                    Add to Cart - ₱${item.price}
+        container.innerHTML = categories.map(cat => {
+            const emoji = CATEGORY_EMOJIS[cat.toLowerCase()] || '•';
+            const isActive = currentCategory === cat;
+            return `
+                <button class="cat-tab ${isActive ? 'active' : ''}" onclick="filterByCategory('${cat}')">
+                    ${emoji} ${cat}
                 </button>
             `;
+        }).join('');
+    }
+
+    window.filterByCategory = (category) => {
+        currentCategory = category;
+        filterAndRenderItems();
+        
+        // Update section label if it exists
+        const label = document.getElementById('section-label');
+        if (label) label.textContent = category === 'All' ? 'All Items' : category;
+    };
+
+    function filterAndRenderItems() {
+        const searchTerm = searchInput?.value.toLowerCase() || '';
+        
+        // Ensure tabs are built/updated
+        buildCategoryTabs();
+
+        const filtered = menuData.filter(item => {
+            const matchesCategory = currentCategory === 'All' || 
+                                  item.category.toLowerCase() === currentCategory.toLowerCase();
+            const matchesSearch = item.name.toLowerCase().includes(searchTerm) || 
+                                item.description.toLowerCase().includes(searchTerm);
+            return matchesCategory && matchesSearch;
+        });
+
+        renderMenuItems(filtered);
+    }
+
+    function renderMenuItems(items) {
+        if (!menuGrid) return;
+        menuGrid.innerHTML = '';
+
+        if (items.length === 0) {
+            menuGrid.innerHTML = `
+                <div class="no-results">
+                    <p>No items found in the menu.</p>
+                    <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 8px;">
+                        If you are the admin, please seed the menu data from the admin panel.
+                    </p>
+                </div>`;
+            return;
         }
 
-        card.innerHTML = `
-            ${item.image_url ? `<img src="${item.image_url}" alt="${item.name}" class="menu-card-img">` : ''}
-            <div class="menu-card-content">
-                <div class="menu-card-header">
-                    <h3>${item.name}</h3>
-                    <span class="category-tag">${item.category}</span>
+        items.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'menu-card';
+            
+            // Handle multi-pricing vs single price
+            let pricingHTML = '';
+            if (item.prices && Object.keys(item.prices).length > 0) {
+                pricingHTML = Object.entries(item.prices).map(([size, price]) => `
+                    <button class="add-to-cart-btn" onclick="addToCart(${JSON.stringify(item).replace(/"/g, '&quot;')}, '${size}', ${price}, event)">
+                        ${size} - ₱${price}
+                    </button>
+                `).join('');
+            } else {
+                pricingHTML = `
+                    <button class="add-to-cart-btn" onclick="addToCart(${JSON.stringify(item).replace(/"/g, '&quot;')}, 'Standard', ${item.price}, event)">
+                        Add to Cart - ₱${item.price}
+                    </button>
+                `;
+            }
+
+            card.innerHTML = `
+                ${item.image_url ? `<img src="${item.image_url}" alt="${item.name}" class="menu-card-img">` : ''}
+                <div class="menu-card-content">
+                    <div class="menu-card-header">
+                        <h3>${item.name}</h3>
+                        <span class="category-tag">${item.category}</span>
+                    </div>
+                    <p class="menu-card-desc">${item.description}</p>
+                    <div class="menu-card-actions">
+                        ${pricingHTML}
+                    </div>
                 </div>
-                <p class="menu-card-desc">${item.description}</p>
-                <div class="menu-card-actions">
-                    ${pricingHTML}
-                </div>
-            </div>
-        `;
-        menuGrid.appendChild(card);
-    });
-}
+            `;
+            menuGrid.appendChild(card);
+        });
+    }
 
     // ─── Order Modal State & Elements ───────────────────────────────────────────
     const captureLocationBtn   = document.getElementById('captureLocationBtn');
@@ -291,7 +292,7 @@ closeOrderModalBtn.addEventListener('click', closeOrderModal);
 orderModal.addEventListener('click', (e) => { if (e.target === orderModal) closeOrderModal(); });
 
 // ─── Cart Logic ───────────────────────────────────────────────────────────────
-function addToCart(item, size, price, event) {
+window.addToCart = (item, size, price, event) => {
     if (!item) {
         console.error('Cannot add undefined item to cart');
         return;
@@ -306,13 +307,13 @@ function addToCart(item, size, price, event) {
         btn.style.background = '#2a5641';
         setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 1500);
     }
-}
+};
 
-function removeFromCart(index) {
+window.removeFromCart = (index) => {
     cart.splice(index, 1);
     updateCartUI();
     if (cart.length === 0) closeCart();
-}
+};
 
 function updateCartUI() {
     const totalCount = cart.length;
@@ -627,5 +628,6 @@ document.getElementById('customer-name-input')?.addEventListener('input', () => 
 });
 searchInput?.addEventListener('input', filterAndRenderItems);
 
-// Initial Load
-fetchMenuData();
+    // Initial Load
+    fetchMenuData();
+});
