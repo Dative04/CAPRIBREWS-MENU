@@ -393,6 +393,7 @@
     display: flex;
     flex-direction: column;
     box-shadow: -8px 0 48px rgba(26,15,10,0.5);
+    height: 100dvh; /* Use dynamic viewport height for mobile browsers */
   }
 
   .cart-drawer.open { transform: translateX(0); }
@@ -404,6 +405,10 @@
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    background: var(--dark-roast);
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
 
   .drawer-title {
@@ -435,6 +440,9 @@
     padding: 16px 24px;
     scrollbar-width: thin;
     scrollbar-color: var(--medium-roast) transparent;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling for iOS */
+    min-height: 0; /* Important for flex child to shrink and scroll */
+    background: var(--dark-roast); /* Ensure background is solid */
   }
 
   .cart-item-row {
@@ -481,6 +489,45 @@
     font-size: 16px;
     color: var(--accent-light);
     flex-shrink: 0;
+    margin-right: 10px;
+  }
+
+  /* Quantity controls */
+  .qty-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--medium-roast);
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid rgba(196,149,106,0.2);
+  }
+
+  .qty-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: none;
+    background: var(--dark-roast);
+    color: var(--cream);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .qty-btn:hover { background: var(--caramel); }
+  .qty-btn:active { transform: scale(0.9); }
+
+  .qty-num {
+    font-size: 14px;
+    font-weight: 600;
+    min-width: 18px;
+    text-align: center;
+    color: var(--cream);
   }
 
   .cart-remove {
@@ -504,12 +551,14 @@
 
   .empty-cart-icon { font-size: 48px; margin-bottom: 12px; }
 
-  /* ── Order form ── */
+  /* Ensure footer doesn't overlap on small screens */
   .drawer-footer {
     padding: 16px 24px 24px;
     border-top: 1px solid rgba(196,149,106,0.2);
     flex-shrink: 0;
     background: var(--dark-roast);
+    position: relative;
+    z-index: 5;
   }
 
   .total-row {
@@ -541,22 +590,32 @@
 
   .type-btn {
     background: var(--medium-roast);
-    border: 2px solid transparent;
+    border: 2px solid rgba(196,149,106,0.1);
     color: rgba(245,237,224,0.6);
     border-radius: 10px;
-    padding: 10px;
+    padding: 14px 10px;
     font-family: 'DM Sans', sans-serif;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     text-align: center;
     transition: all 0.2s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
   }
+
+  .type-btn:hover {
+    background: var(--caramel);
+    color: var(--cream);
+  }
+
+  .type-btn:active { transform: scale(0.96); }
 
   .type-btn.active {
     border-color: var(--accent);
     color: var(--cream);
-    background: rgba(212,130,42,0.15);
+    background: rgba(212,130,42,0.25);
+    box-shadow: 0 4px 12px rgba(212,130,42,0.2);
   }
 
   .form-field {
@@ -851,6 +910,9 @@
   </div>
 </header>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+
 <!-- Category tabs -->
 <div class="category-bar">
   <div class="category-tabs" id="category-tabs"></div>
@@ -1036,7 +1098,18 @@ function renderMenu(cat) {
 
 // ── Cart ──────────────────────────────────────────────────────────────────────
 window.addToCart = function(event, item, size, price) {
-  cart.push({ ...item, selectedSize: size, selectedPrice: price, id: Date.now() + Math.random() });
+  const existing = cart.find(i => i.name === item.name && i.selectedSize === size);
+  if (existing) {
+    existing.quantity++;
+  } else {
+    cart.push({ 
+      ...item, 
+      selectedSize: size, 
+      selectedPrice: price, 
+      quantity: 1,
+      id: Date.now() + Math.random() 
+    });
+  }
   updateCartUI();
 
   const btn = event.currentTarget;
@@ -1046,14 +1119,25 @@ window.addToCart = function(event, item, size, price) {
   setTimeout(() => { btn.classList.remove('added'); btn.innerHTML = orig; }, 1400);
 }
 
+window.updateQuantity = function(uid, delta) {
+  const item = cart.find(i => i.id === uid);
+  if (item) {
+    item.quantity += delta;
+    if (item.quantity <= 0) {
+      cart = cart.filter(i => i.id !== uid);
+    }
+    updateCartUI();
+  }
+}
+
 window.removeFromCart = function(uid) {
   cart = cart.filter(i => i.id !== uid);
   updateCartUI();
 }
 
 function updateCartUI() {
-  const count = cart.length;
-  const total = cart.reduce((s, i) => s + i.selectedPrice, 0);
+  const count = cart.reduce((s, i) => s + i.quantity, 0);
+  const total = cart.reduce((s, i) => s + (i.selectedPrice * i.quantity), 0);
 
   // Header badge
   const badge = document.getElementById('header-badge');
@@ -1085,8 +1169,13 @@ function updateCartUI() {
           <div class="cart-item-name">${item.name}</div>
           <div class="cart-item-size">${item.selectedSize}</div>
         </div>
-        <div class="cart-item-price">₱${item.selectedPrice.toFixed(0)}</div>
-        <button class="cart-remove" onclick="removeFromCart(${item.id})">×</button>
+        <div class="cart-item-price">₱${(item.selectedPrice * item.quantity).toFixed(0)}</div>
+        <div class="qty-controls">
+          <button class="qty-btn" onclick="updateQuantity(${item.id}, -1)">-</button>
+          <span class="qty-num">${item.quantity}</span>
+          <button class="qty-btn" onclick="updateQuantity(${item.id}, 1)">+</button>
+        </div>
+        <button class="cart-remove" onclick="removeFromCart(${item.id})" style="margin-left:8px">×</button>
       </div>`;
   }).join('');
 }
@@ -1114,14 +1203,18 @@ window.closeCart = function() {
 
 // ── Checkout ──────────────────────────────────────────────────────────────────
 window.handleCheckout = function() {
-  if (!cart.length) return;
+  if (!cart.length) {
+    alert('Your cart is empty!');
+    return;
+  }
 
-  const name = document.getElementById('customer-name').value.trim();
+  const nameInput = document.getElementById('customer-name');
+  const name = nameInput.value.trim();
   const nameError = document.getElementById('name-error');
 
   if (!name) {
     nameError.classList.add('visible');
-    document.getElementById('customer-name').focus();
+    nameInput.focus();
     return;
   }
   nameError.classList.remove('visible');
@@ -1129,10 +1222,19 @@ window.handleCheckout = function() {
   const isDelivery = orderType === 'delivery';
 
   if (isDelivery) {
-    const addr = document.getElementById('delivery-address').value.trim();
-    const phone = document.getElementById('contact-number').value.trim();
-    if (!addr || !phone) {
-      alert('Please fill in your delivery address and contact number.');
+    const addrInput = document.getElementById('delivery-address');
+    const phoneInput = document.getElementById('contact-number');
+    const addr = addrInput.value.trim();
+    const phone = phoneInput.value.trim();
+    
+    if (!addr) {
+      alert('Please enter your delivery address.');
+      addrInput.focus();
+      return;
+    }
+    if (!phone) {
+      alert('Please enter your contact number.');
+      phoneInput.focus();
       return;
     }
     confirmOrder(name, addr, phone);
@@ -1141,91 +1243,118 @@ window.handleCheckout = function() {
   }
 }
 
-function confirmOrder(name, address, phone) {
+async function confirmOrder(name, address, phone) {
   const isDelivery = orderType === 'delivery';
-  const total = cart.reduce((s, i) => s + i.selectedPrice, 0);
+  const total = cart.reduce((s, i) => s + (i.selectedPrice * i.quantity), 0);
+  const checkoutBtn = document.querySelector('.confirm-btn');
+  const originalText = checkoutBtn.textContent;
 
-  // Group items
-  const grouped = {};
-  cart.forEach(item => {
-    const key = `${item.name}-${item.selectedSize}`;
-    if (!grouped[key]) {
-      grouped[key] = { name: item.name, size: item.selectedSize, price: item.selectedPrice, qty: 1 };
-    } else {
-      grouped[key].qty++;
+  // Group items (Already grouped in cart, but mapping for receipt)
+  const itemsArr = cart.map(item => ({
+    name: item.name,
+    size: item.selectedSize,
+    price: item.selectedPrice,
+    qty: item.quantity
+  }));
+
+  // Loading state
+  checkoutBtn.disabled = true;
+  checkoutBtn.textContent = 'Placing Order...';
+
+  try {
+    // 1. Save to Supabase
+    if (window.supabaseClient) {
+      const { error } = await window.supabaseClient
+        .from('orders')
+        .insert([{
+          customer_name: name,
+          items: itemsArr,
+          total_price: total,
+          order_type: orderType,
+          delivery_address: address,
+          status: 'pending'
+        }]);
+      
+      if (error) throw error;
     }
-  });
 
-  const itemsArr = Object.values(grouped);
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
-  const dateStr = now.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+    const dateStr = now.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
 
-  // Build receipt HTML
-  let receiptHTML = `
-    <div class="receipt-header">
-      <div class="receipt-shop-name">☕ Capribrews</div>
-      <div class="receipt-meta">${dateStr} · ${timeStr}</div>
-    </div>
-    <div class="receipt-row muted"><span>Customer</span><span>${name}</span></div>
-    <div class="receipt-row muted"><span>Type</span><span>${isDelivery ? '🛵 Delivery' : '🍽️ Dine-In'}</span></div>`;
+    // Build receipt HTML
+    let receiptHTML = `
+      <div class="receipt-header">
+        <div class="receipt-shop-name">☕ Capribrews</div>
+        <div class="receipt-meta">${dateStr} · ${timeStr}</div>
+      </div>
+      <div class="receipt-row muted"><span>Customer</span><span>${name}</span></div>
+      <div class="receipt-row muted"><span>Type</span><span>${isDelivery ? '🛵 Delivery' : '🍽️ Dine-In'}</span></div>`;
 
-  if (isDelivery) {
-    receiptHTML += `<div class="receipt-row muted"><span>Address</span><span style="text-align:right;max-width:180px">${address}</span></div>`;
-    receiptHTML += `<div class="receipt-row muted"><span>Contact</span><span>${phone}</span></div>`;
+    if (isDelivery) {
+      receiptHTML += `<div class="receipt-row muted"><span>Address</span><span style="text-align:right;max-width:180px">${address}</span></div>`;
+      receiptHTML += `<div class="receipt-row muted"><span>Contact</span><span>${phone}</span></div>`;
+    }
+
+    receiptHTML += `<hr class="receipt-divider">`;
+    itemsArr.forEach(item => {
+      receiptHTML += `<div class="receipt-row"><span>${item.qty}× ${item.name} (${item.size})</span><span>₱${(item.price * item.qty).toFixed(0)}</span></div>`;
+    });
+    receiptHTML += `
+      <hr class="receipt-divider">
+      <div class="receipt-total-row"><span>TOTAL</span><span>₱${total.toFixed(0)}</span></div>`;
+
+    document.getElementById('receipt-paper').innerHTML = receiptHTML;
+
+    // Modal content
+    const modalIcon = document.getElementById('modal-icon');
+    const modalTitle = document.getElementById('modal-title');
+    const modalSubtitle = document.getElementById('modal-subtitle');
+    const modalActions = document.getElementById('modal-actions');
+
+    if (isDelivery) {
+      modalIcon.textContent = '🛵';
+      modalTitle.textContent = 'Ready to Send!';
+      modalSubtitle.textContent = 'Your order is saved. Copy the receipt and paste it in Messenger to notify us.';
+
+      const receiptText = buildReceiptText(name, address, phone, itemsArr, total);
+
+      modalActions.innerHTML = `
+        <button class="modal-btn messenger-btn" onclick="openMessenger('${encodeURIComponent(receiptText)}')">
+          💬 Open Messenger to Send
+        </button>
+        <button class="modal-btn modal-btn-secondary" onclick="copyAndConfirm('${encodeURIComponent(receiptText)}', this)">
+          📋 Copy Receipt
+        </button>
+        <button class="modal-btn modal-btn-ghost" onclick="closeModal()">Done</button>`;
+    } else {
+      modalIcon.innerHTML = `<span class="success-anim">🎉</span>`;
+      modalTitle.textContent = 'Order Confirmed!';
+      modalSubtitle.textContent = 'Your order is saved. Please proceed to the counter for payment.';
+
+      modalActions.innerHTML = `
+        <button class="modal-btn modal-btn-primary" onclick="printReceipt('${name}', '${encodeURIComponent(JSON.stringify(itemsArr))}', ${total})">
+          🖨️ Print Receipt
+        </button>
+        <button class="modal-btn modal-btn-ghost" onclick="closeModal()">Close</button>`;
+    }
+
+    // Clear cart & close drawer
+    cart = [];
+    updateCartUI();
+    closeCart();
+
+    // Show modal
+    document.getElementById('receipt-modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+  } catch (err) {
+    console.error('Order error:', err);
+    alert('Failed to place order: ' + (err.message || 'Unknown error'));
+  } finally {
+    checkoutBtn.disabled = false;
+    checkoutBtn.textContent = originalText;
   }
-
-  receiptHTML += `<hr class="receipt-divider">`;
-  itemsArr.forEach(item => {
-    receiptHTML += `<div class="receipt-row"><span>${item.qty}× ${item.name} (${item.size})</span><span>₱${(item.price * item.qty).toFixed(0)}</span></div>`;
-  });
-  receiptHTML += `
-    <hr class="receipt-divider">
-    <div class="receipt-total-row"><span>TOTAL</span><span>₱${total.toFixed(0)}</span></div>`;
-
-  document.getElementById('receipt-paper').innerHTML = receiptHTML;
-
-  // Modal content
-  const modalIcon = document.getElementById('modal-icon');
-  const modalTitle = document.getElementById('modal-title');
-  const modalSubtitle = document.getElementById('modal-subtitle');
-  const modalActions = document.getElementById('modal-actions');
-
-  if (isDelivery) {
-    modalIcon.textContent = '🛵';
-    modalTitle.textContent = 'Ready to Send!';
-    modalSubtitle.textContent = 'Your order is ready. Copy the receipt and paste it in Messenger.';
-
-    const receiptText = buildReceiptText(name, address, phone, itemsArr, total);
-
-    modalActions.innerHTML = `
-      <button class="modal-btn messenger-btn" onclick="openMessenger('${encodeURIComponent(receiptText)}')">
-        💬 Open Messenger to Send
-      </button>
-      <button class="modal-btn modal-btn-secondary" onclick="copyAndConfirm('${encodeURIComponent(receiptText)}', this)">
-        📋 Copy Receipt
-      </button>
-      <button class="modal-btn modal-btn-ghost" onclick="closeModal()">Done</button>`;
-  } else {
-    modalIcon.innerHTML = `<span class="success-anim">🎉</span>`;
-    modalTitle.textContent = 'Order Confirmed!';
-    modalSubtitle.textContent = 'Please proceed to the counter for payment. You can also print this receipt.';
-
-    modalActions.innerHTML = `
-      <button class="modal-btn modal-btn-primary" onclick="printReceipt('${name}', '${encodeURIComponent(JSON.stringify(itemsArr))}', ${total})">
-        🖨️ Print Receipt
-      </button>
-      <button class="modal-btn modal-btn-ghost" onclick="closeModal()">Close</button>`;
-  }
-
-  // Clear cart & close drawer
-  cart = [];
-  updateCartUI();
-  closeCart();
-
-  // Show modal
-  document.getElementById('receipt-modal').classList.add('open');
-  document.body.style.overflow = 'hidden';
 }
 
 function buildReceiptText(name, address, phone, items, total) {
