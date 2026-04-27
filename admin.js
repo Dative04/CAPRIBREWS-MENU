@@ -1,126 +1,104 @@
-// ─── DOM References ───────────────────────────────────────────────────────────
-const loginScreen   = document.getElementById('login-screen');
-const adminLayout   = document.getElementById('admin-layout'); // ✅ FIX: was 'admin-screen', now matches HTML
-const loginForm     = document.getElementById('login-form');
-const loginError    = document.getElementById('login-error');
-const logoutBtn     = document.getElementById('logout-btn');
-const adminGrid     = document.getElementById('admin-grid');
-const sidebar       = document.getElementById('sidebar');
-const viewTitle     = document.getElementById('view-title');
 
-// Orders
-let allOrders = [];
-let ordersListener = null;
-const ordersTableBody   = document.getElementById('ordersTableBody');
-const refreshOrdersBtn  = document.getElementById('refresh-orders-btn');
-
-// Modal
-const addModal          = document.getElementById('add-modal');
-const showAddModalBtn   = document.getElementById('show-add-modal');
-const closeModalBtn     = document.getElementById('close-modal');
-const addItemForm       = document.getElementById('add-item-form');
-const priceTypeSelect   = document.getElementById('price-type-select');
-const singlePriceSection = document.getElementById('single-price-input');
-const multiPriceSection  = document.getElementById('multi-price-input');
-const priceRowsContainer = document.getElementById('price-rows');
-const addPriceRowBtn    = document.getElementById('add-price-row');
-
-let currentItems = [];
-
-// ─── Toast (stacking, not overlapping) ────────────────────────────────────────
-function showToast(msg, type = '') {
-    let container = document.getElementById('toast-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'toast-container';
-        document.body.appendChild(container);
-    }
-    const toast = document.createElement('div');
-    toast.className = `toast${type ? ' ' + type : ''}`;
-    toast.textContent = msg;
-    container.appendChild(toast);
-    setTimeout(() => {
-        toast.style.animation = 'toastIn 0.3s ease-out reverse';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
-
-// ─── Custom Confirm Modal (replaces native confirm()) ─────────────────────────
-function showConfirm({ title = 'Are you sure?', message = 'This action cannot be undone.', icon = '⚠️', confirmLabel = 'Confirm', danger = true } = {}) {
-    return new Promise((resolve) => {
-        const modal = document.getElementById('confirm-modal');
-        document.getElementById('confirm-title').textContent = title;
-        document.getElementById('confirm-message').textContent = message;
-        document.getElementById('confirm-icon').textContent = icon;
-
-        const okBtn = document.getElementById('confirm-ok-btn');
-        okBtn.textContent = confirmLabel;
-        okBtn.className = danger ? 'btn-danger' : 'btn-primary';
-
-        modal.classList.remove('hidden');
-
-        const cleanup = (result) => {
-            modal.classList.add('hidden');
-            okBtn.replaceWith(okBtn.cloneNode(true)); // remove listeners
-            cancelBtn.replaceWith(cancelBtn.cloneNode(true));
-            resolve(result);
-        };
-
-        // Re-query after replaceWith
-        const cancelBtn = document.getElementById('confirm-cancel-btn');
-        document.getElementById('confirm-ok-btn').addEventListener('click', () => cleanup(true), { once: true });
-        document.getElementById('confirm-cancel-btn').addEventListener('click', () => cleanup(false), { once: true });
-    });
-}
-
-// ─── Sidebar ──────────────────────────────────────────────────────────────────
-window.toggleSidebar = () => sidebar.classList.toggle('expanded');
-
+// ─── Section Management ───────────────────────────────────────────────────────
 window.showSection = (sectionId) => {
+    // Update active nav link
+    document.querySelectorAll('.nav-item').forEach(nav => {
+        const onclick = nav.getAttribute('onclick');
+        if (onclick && onclick.includes(`'${sectionId}'`)) {
+            nav.classList.add('active');
+        } else {
+            nav.classList.remove('active');
+        }
+    });
+
+    // Show/Hide sections
     const sections = ['inventory', 'orders', 'completed', 'analytics', 'settings'];
     sections.forEach(id => {
         const el = document.getElementById(`${id}-section`);
-        if (el) el.style.display = id === sectionId ? 'block' : 'none';
+        if (el) {
+            el.classList.toggle('hidden', id !== sectionId);
+        }
     });
 
-    document.querySelectorAll('.nav-item').forEach(item => {
-        // Match by sectionId in the onclick attribute
-        const onclickAttr = item.getAttribute('onclick');
-        item.classList.toggle('active', onclickAttr && onclickAttr.includes(`'${sectionId}'`));
-    });
+    // Update title
+    const titleEl = document.getElementById('view-title');
+    if (titleEl) {
+        titleEl.textContent = sectionId.charAt(0).toUpperCase() + sectionId.slice(1);
+    }
 
-    const titles = { 
-        inventory: 'Inventory', 
-        orders: 'Active Orders', 
-        completed: 'Order History',
-        analytics: 'Sales Analytics',
-        settings: 'Settings' 
-    };
-    if (viewTitle) viewTitle.textContent = titles[sectionId] || '';
-
-    // Hide stats row on non-inventory sections
-    const statsRow = document.getElementById('stats-row');
-    if (statsRow) statsRow.style.display = sectionId === 'inventory' ? '' : 'none';
-
-    // Load data for specific sections
+    // Special loads
     if (sectionId === 'completed') loadCompletedOrders();
     if (sectionId === 'analytics') updateAnalytics();
 
-    if (window.innerWidth <= 768 && sidebar.classList.contains('expanded')) {
-        sidebar.classList.remove('expanded');
+    // Close sidebar on mobile after selection
+    if (window.innerWidth < 1024) {
+        document.getElementById('sidebar')?.classList.remove('expanded');
     }
 };
 
-// ─── Category Filtering ───────────────────────────────────────────────────────
-const categoryFilter = document.getElementById('itemCategory');
-categoryFilter?.addEventListener('change', (e) => filterInventory(e.target.value));
+window.toggleSidebar = () => {
+    document.getElementById('sidebar')?.classList.toggle('expanded');
+};
 
-function filterInventory(category) {
-    const filtered = category === 'All'
-        ? currentItems
-        : currentItems.filter(item => item.category === category);
+// Category Emojis Mapping
+const CATEGORY_EMOJIS = {
+    "all": "🍽️",
+    "coffee selection": "☕",
+    "signature blends": "✨",
+    "soda blends": "🥤",
+    "frappe": "🧊",
+    "milkshakes": "🥤",
+    "premium milkshakes": "✨",
+    "savory bites": "🍟",
+    "club sandwiches": "🥪",
+    "desserts": "🍰"
+};
+
+let currentCategory = 'All';
+
+// ─── Category Filtering ───────────────────────────────────────────────────────
+const adminCategoryTabs = document.getElementById('admin-category-tabs');
+
+function buildAdminCategoryTabs() {
+    if (!adminCategoryTabs) return;
+
+    const categories = ['All', ...new Set(currentItems.map(item => item.category).filter(Boolean))];
+    
+    adminCategoryTabs.innerHTML = categories.map(cat => {
+        const emoji = CATEGORY_EMOJIS[cat.toLowerCase()] || '•';
+        const isActive = currentCategory === cat;
+        return `
+            <button class="cat-tab ${isActive ? 'active' : ''}" onclick="filterAdminByCategory('${cat}')">
+                ${emoji} ${cat}
+            </button>
+        `;
+    }).join('');
+}
+
+window.filterAdminByCategory = (category) => {
+    currentCategory = category;
+    filterAdminGrid();
+};
+
+function filterAdminGrid() {
+    const searchTerm = adminSearch?.value.toLowerCase() || '';
+    
+    // Ensure tabs are built/updated
+    buildAdminCategoryTabs();
+
+    const filtered = currentItems.filter(item => {
+        const matchesCategory = currentCategory === 'All' || 
+                              item.category === currentCategory;
+        const matchesSearch = item.name.toLowerCase().includes(searchTerm) || 
+                            item.description.toLowerCase().includes(searchTerm);
+        return matchesCategory && matchesSearch;
+    });
+
     renderAdminGrid(filtered);
 }
+
+const adminSearch      = document.getElementById('admin-search');
+adminSearch?.addEventListener('input', filterAdminGrid);
 
 // ─── Refresh Orders Button ────────────────────────────────────────────────────
 if (refreshOrdersBtn) {
@@ -137,6 +115,7 @@ window.supabaseClient.auth.onAuthStateChange((event, session) => {
         adminLayout.classList.remove('hidden'); // ✅ FIX: shows admin-layout, not admin-screen
         loadAdminData();
         loadOrdersData();
+        showSection('inventory'); // ✅ Show default section
     } else {
         loginScreen.classList.remove('hidden');
         adminLayout.classList.add('hidden');
@@ -254,6 +233,7 @@ function createPriceRow(size = '', price = '') {
     };
     priceRowsContainer.appendChild(row);
     syncPricingRequired(); // Sync after adding
+    return row;
 }
 
 function resetPriceRows() {
@@ -377,7 +357,7 @@ function loadAdminData() {
             }
             currentItems = data || [];
             updateStats(currentItems);
-            renderAdminGrid(currentItems);
+            filterAdminGrid(); // Initial render with current filters
         });
 }
 
@@ -395,28 +375,15 @@ function updateStats(items) {
     set('stat-active', activeCount);
     set('stat-orders', pendingOrders);
 
-    // Refresh Category Filter Dropdown
-    refreshCategoryDropdowns(categoriesSet);
+    // Refresh Category Dropdown in Add Modal
+    refreshModalCategoryDropdown(categoriesSet);
 }
 
-function refreshCategoryDropdowns(categoriesSet) {
-    const filterSelect = document.getElementById('itemCategory');
+function refreshModalCategoryDropdown(categoriesSet) {
     const modalSelect  = document.getElementById('new-category');
-    
-    if (!filterSelect || !modalSelect) return;
+    if (!modalSelect) return;
 
-    // 1. Update Filter Dropdown
-    const currentFilterVal = filterSelect.value;
-    filterSelect.innerHTML = '<option value="All">All Categories</option>';
-    Array.from(categoriesSet).sort().forEach(cat => {
-        const opt = document.createElement('option');
-        opt.value = cat;
-        opt.textContent = cat;
-        filterSelect.appendChild(opt);
-    });
-    filterSelect.value = currentFilterVal; // Preserve selection
-
-    // 2. Update Modal Dropdown (Keep defaults + dynamic + "Add New")
+    // Update Modal Dropdown (Keep defaults + dynamic + "Add New")
     const defaults = ["Coffee Selection", "Signature Blends", "Soda Blends", "Frappe"];
     const allCats = new Set([...defaults, ...categoriesSet]);
     
@@ -476,7 +443,7 @@ function renderAdminGrid(items) {
                     <span>Available</span>
                     <label class="switch">
                         <input type="checkbox" ${item.available !== false ? 'checked' : ''}
-                               onchange="toggleAvailability('${item.id}', this.checked)">
+                                onchange="toggleAvailability('${item.id}', this.checked)">
                         <span class="slider"></span>
                     </label>
                 </div>
@@ -521,8 +488,7 @@ window.editItem = (id) => {
         
         priceRowsContainer.innerHTML = '';
         Object.entries(item.prices).forEach(([size, price]) => {
-            const row = createPriceRow(size, price);
-            priceRowsContainer.appendChild(row);
+            createPriceRow(size, price);
         });
     } else {
         priceTypeSelect.value = 'single';
@@ -876,7 +842,10 @@ window.seedMenuData = async () => {
             sort_order: item.order !== undefined ? item.order : index
         }));
 
-        const { error } = await window.supabaseClient.from('menu').insert(formattedData);
+        const { error } = await window.supabaseClient.from('menu').insert(formattedData.map(item => ({
+            ...item,
+            // Ensure Capribrews branding if needed
+        })));
         if (error) throw error;
 
         showToast(`${menuData.length} items synced successfully ✓`, 'success');

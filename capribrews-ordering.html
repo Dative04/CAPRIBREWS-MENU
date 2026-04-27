@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capribrews — Order Online</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --espresso: #1a0f0a;
+    --dark-roast: #2d1a10;
+    --medium-roast: #4a2c1a;
+    --caramel: #8b5e3c;
+    --latte: #c4956a;
+    --cream: #f5ede0;
+    --milk-foam: #fdf8f2;
+    --warm-white: #fff9f3;
+    --accent: #d4822a;
+    --accent-light: #e8a55a;
+    --green: #2d5a27;
+    --red: #8b2020;
+    --shadow: 0 4px 24px rgba(26,15,10,0.15);
+    --shadow-lg: 0 8px 48px rgba(26,15,10,0.25);
+    --radius: 16px;
+    --radius-sm: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--espresso);
+    color: var(--cream);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Background texture ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(139,94,60,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(74,44,26,0.2) 0%, transparent 60%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.015'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Header ── */
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(26,15,10,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(196,149,106,0.2);
+    padding: 0 20px;
+  }
+
+  .header-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--latte));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .logo-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--cream);
+    letter-spacing: 0.5px;
+  }
+
+  .logo-text span {
+    font-style: italic;
+    color: var(--accent-light);
+  }
+
+  .header-cart-btn {
+    position: relative;
+    background: var(--medium-roast);
+    border: 1px solid rgba(196,149,106,0.3);
+    color: var(--cream);
+    border-radius: 24px;
+    padding: 8px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+  }
+
+  .header-cart-btn:hover { background: var(--caramel); }
+
+  .cart-badge {
+    background: var(--accent);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .cart-badge.visible { opacity: 1; transform: scale(1); }
+
+  /* ── Category tabs ── */
+  .category-bar {
+    background: var(--dark-roast);
+    border-bottom: 1px solid rgba(196,149,106,0.15);
+    overflow-x: auto;
+    scrollbar-width: none;
+    position: sticky;
+    top: 64px;
+    z-index: 90;
+  }
+
+  .category-bar::-webkit-scrollbar { display: none; }
+
+  .category-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 10px 20px;
+    max-width: 900px;
+    margin: 0 auto;
+    width: max-content;
+  }
+
+  .cat-tab {
+    background: transparent;
+    border: 1px solid rgba(196,149,106,0.2);
+    color: rgba(245,237,224,0.6);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+
+  .cat-tab:hover { color: var(--cream); border-color: rgba(196,149,106,0.5); }
+
+  .cat-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  /* ── Main layout ── */
+  .main-content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 28px 20px 140px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .section-label {
+    font-family: 'Caveat', cursive;
+    font-size: 18px;
+    color: var(--latte);
+    margin-bottom: 16px;
+    opacity: 0.8;
+  }
+
+  /* ── Menu grid ── */
+  .menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .menu-card {
+    background: var(--dark-roast);
+    border: 1px solid rgba(196,149,106,0.15);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .menu-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+    border-color: rgba(196,149,106,0.35);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .card-img-placeholder {
+    width: 100%;
+    height: 120px;
+    background: linear-gradient(135deg, var(--medium-roast), var(--dark-roast));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    opacity: 0.5;
+  }
+
+  .card-body {
+    padding: 14px 16px 16px;
+  }
+
+  .card-cat {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--latte);
+    margin-bottom: 4px;
+  }
+
+  .card-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    color: var(--cream);
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+
+  .card-desc {
+    font-size: 13px;
+    color: rgba(245,237,224,0.55);
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+
+  /* Size buttons */
+  .size-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .size-btn {
+    background: var(--medium-roast);
+    border: 1px solid rgba(196,149,106,0.25);
+    color: var(--cream);
+    border-radius: 8px;
+    padding: 7px 13px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .size-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    transform: scale(1.04);
+  }
+
+  .size-btn.added {
+    background: var(--green);
+    border-color: var(--green);
+  }
+
+  .size-price {
+    display: block;
+    font-size: 11px;
+    opacity: 0.7;
+    margin-top: 2px;
+  }
+
+  /* ── Sticky bottom bar ── */
+  .sticky-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    padding: 12px 20px 20px;
+    background: linear-gradient(to top, rgba(26,15,10,1) 60%, transparent);
+    pointer-events: none;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .sticky-bar.visible { transform: translateY(0); pointer-events: all; }
+
+  .sticky-bar-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    background: var(--accent);
+    border-radius: 16px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 -4px 32px rgba(212,130,42,0.4), var(--shadow-lg);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .sticky-bar-inner:hover { background: var(--accent-light); }
+
+  .sticky-left { display: flex; align-items: center; gap: 12px; }
+
+  .sticky-count {
+    background: rgba(255,255,255,0.25);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  .sticky-label { font-weight: 600; font-size: 15px; color: white; }
+
+  .sticky-total {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    color: white;
+    font-weight: 700;
+  }
+
+  /* ── Cart drawer ── */
+  .drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(26,15,10,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 300;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+
+  .drawer-overlay.open { opacity: 1; pointer-events: all; }
+
+  .cart-drawer {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: min(420px, 100vw);
+    background: var(--dark-roast);
+    z-index: 400;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    box-shadow: -8px 0 48px rgba(26,15,10,0.5);
+  }
+
+  .cart-drawer.open { transform: translateX(0); }
+
+  .drawer-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid rgba(196,149,106,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .drawer-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--cream);
+  }
+
+  .drawer-close {
+    background: var(--medium-roast);
+    border: none;
+    color: var(--cream);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+
+  .drawer-close:hover { background: var(--caramel); }
+
+  .drawer-items {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 24px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--medium-roast) transparent;
+  }
+
+  .cart-item-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(196,149,106,0.1);
+    animation: slideIn 0.2s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(12px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .cart-item-emoji {
+    width: 40px;
+    height: 40px;
+    background: var(--medium-roast);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .cart-item-info { flex: 1; min-width: 0; }
+
+  .cart-item-name {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--cream);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cart-item-size { font-size: 12px; color: var(--latte); margin-top: 2px; }
+
+  .cart-item-price {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    color: var(--accent-light);
+    flex-shrink: 0;
+  }
+
+  .cart-remove {
+    background: none;
+    border: none;
+    color: rgba(245,237,224,0.3);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px;
+    transition: color 0.2s;
+    flex-shrink: 0;
+  }
+
+  .cart-remove:hover { color: #e55; }
+
+  .empty-cart {
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(245,237,224,0.3);
+  }
+
+  .empty-cart-icon { font-size: 48px; margin-bottom: 12px; }
+
+  /* ── Order form ── */
+  .drawer-footer {
+    padding: 16px 24px 24px;
+    border-top: 1px solid rgba(196,149,106,0.2);
+    flex-shrink: 0;
+    background: var(--dark-roast);
+  }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 16px;
+  }
+
+  .total-label {
+    font-size: 13px;
+    color: var(--latte);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .total-amount {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    color: var(--cream);
+  }
+
+  .order-type-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .type-btn {
+    background: var(--medium-roast);
+    border: 2px solid transparent;
+    color: rgba(245,237,224,0.6);
+    border-radius: 10px;
+    padding: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+  }
+
+  .type-btn.active {
+    border-color: var(--accent);
+    color: var(--cream);
+    background: rgba(212,130,42,0.15);
+  }
+
+  .form-field {
+    margin-bottom: 10px;
+  }
+
+  .form-field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--latte);
+    margin-bottom: 6px;
+  }
+
+  .form-field input, .form-field textarea {
+    width: 100%;
+    background: var(--medium-roast);
+    border: 1px solid rgba(196,149,106,0.2);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    resize: none;
+  }
+
+  .form-field input::placeholder, .form-field textarea::placeholder { color: rgba(245,237,224,0.3); }
+  .form-field input:focus, .form-field textarea:focus { border-color: var(--accent); }
+
+  .field-error {
+    font-size: 12px;
+    color: #e06060;
+    margin-top: 4px;
+    display: none;
+  }
+
+  .field-error.visible { display: block; }
+
+  .delivery-fields { display: none; }
+  .delivery-fields.visible { display: block; }
+
+  .confirm-btn {
+    width: 100%;
+    background: var(--accent);
+    border: none;
+    color: white;
+    border-radius: 12px;
+    padding: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 14px;
+    letter-spacing: 0.3px;
+  }
+
+  .confirm-btn:hover:not(:disabled) { background: var(--accent-light); transform: translateY(-1px); }
+  .confirm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Receipt Modal ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(26,15,10,0.85);
+    backdrop-filter: blur(8px);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+  .modal-box {
+    background: var(--dark-roast);
+    border: 1px solid rgba(196,149,106,0.25);
+    border-radius: 24px;
+    width: 100%;
+    max-width: 440px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: scale(0.92) translateY(20px);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    scrollbar-width: thin;
+    scrollbar-color: var(--medium-roast) transparent;
+  }
+
+  .modal-overlay.open .modal-box { transform: scale(1) translateY(0); }
+
+  .modal-top {
+    padding: 28px 28px 0;
+    text-align: center;
+  }
+
+  .modal-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+  }
+
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    color: var(--cream);
+    margin-bottom: 6px;
+  }
+
+  .modal-subtitle {
+    font-size: 14px;
+    color: rgba(245,237,224,0.5);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  /* Receipt look */
+  .receipt-paper {
+    background: var(--medium-roast);
+    margin: 0 28px;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 13px;
+    border: 1px solid rgba(196,149,106,0.2);
+  }
+
+  .receipt-header {
+    text-align: center;
+    border-bottom: 1px dashed rgba(196,149,106,0.3);
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+  }
+
+  .receipt-shop-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    color: var(--accent-light);
+  }
+
+  .receipt-meta { font-size: 11px; color: var(--latte); margin-top: 4px; }
+
+  .receipt-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    color: var(--cream);
+  }
+
+  .receipt-row.muted { color: rgba(245,237,224,0.5); font-size: 12px; }
+
+  .receipt-divider {
+    border: none;
+    border-top: 1px dashed rgba(196,149,106,0.3);
+    margin: 10px 0;
+  }
+
+  .receipt-total-row {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--cream);
+    margin-top: 8px;
+  }
+
+  .receipt-total-row span:last-child {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    color: var(--accent-light);
+  }
+
+  .modal-actions {
+    padding: 20px 28px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .modal-btn {
+    width: 100%;
+    border-radius: 12px;
+    padding: 13px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+
+  .modal-btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+
+  .modal-btn-primary:hover { background: var(--accent-light); }
+
+  .modal-btn-secondary {
+    background: var(--medium-roast);
+    color: var(--cream);
+    border: 1px solid rgba(196,149,106,0.3);
+  }
+
+  .modal-btn-secondary:hover { background: var(--caramel); }
+
+  .modal-btn-ghost {
+    background: transparent;
+    color: rgba(245,237,224,0.5);
+    border: 1px solid rgba(196,149,106,0.15);
+    font-size: 13px;
+  }
+
+  .modal-btn-ghost:hover { color: var(--cream); border-color: rgba(196,149,106,0.4); }
+
+  /* ── Print styles ── */
+  @media print {
+    body > *:not(#print-area) { display: none !important; }
+    #print-area {
+      display: block !important;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      padding: 20px;
+      color: #000;
+    }
+  }
+
+  #print-area { display: none; }
+
+  /* ── No results ── */
+  .no-items {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(245,237,224,0.3);
+  }
+
+  /* ── Mobile adjustments ── */
+  @media (max-width: 600px) {
+    .menu-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .card-body { padding: 10px 12px 12px; }
+    .card-name { font-size: 14px; }
+    .card-desc { display: none; }
+    .cart-drawer { width: 100vw; }
+    .modal-box { max-height: 95vh; border-radius: 20px 20px 0 0; }
+    .modal-overlay { align-items: flex-end; padding: 0; }
+  }
+
+  @media (max-width: 360px) {
+    .menu-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Success animation */
+  @keyframes popIn {
+    0% { transform: scale(0); }
+    70% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+
+  .success-anim { animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+  /* Messenger badge */
+  .messenger-btn {
+    background: linear-gradient(135deg, #0099ff, #a033ff);
+    color: white;
+  }
+
+  .messenger-btn:hover { filter: brightness(1.1); }
+</style>
+</head>
+<body>
+
+<!-- Print area (hidden, print-only) -->
+<div id="print-area"></div>
+
+<!-- Header -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">☕</div>
+      <div class="logo-text">Capri<span>brews</span></div>
+    </div>
+    <button class="header-cart-btn" onclick="openCart()">
+      🛒 Cart
+      <span class="cart-badge" id="header-badge">0</span>
+    </button>
+  </div>
+</header>
+
+<!-- Category tabs -->
+<div class="category-bar">
+  <div class="category-tabs" id="category-tabs"></div>
+</div>
+
+<!-- Main -->
+<main class="main-content">
+  <div class="section-label" id="section-label">All Items</div>
+  <div class="menu-grid" id="menu-grid"></div>
+</main>
+
+<!-- Sticky cart bar -->
+<div class="sticky-bar" id="sticky-bar" onclick="openCart()">
+  <div class="sticky-bar-inner">
+    <div class="sticky-left">
+      <div class="sticky-count" id="sticky-count">0</div>
+      <div class="sticky-label">View Cart</div>
+    </div>
+    <div class="sticky-total" id="sticky-total">₱0</div>
+  </div>
+</div>
+
+<!-- Drawer overlay -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeCart()"></div>
+
+<!-- Cart drawer -->
+<div class="cart-drawer" id="cart-drawer">
+  <div class="drawer-header">
+    <div class="drawer-title">Your Order</div>
+    <button class="drawer-close" onclick="closeCart()">×</button>
+  </div>
+
+  <div class="drawer-items" id="drawer-items">
+    <div class="empty-cart">
+      <div class="empty-cart-icon">🛒</div>
+      <div>Your cart is empty</div>
+    </div>
+  </div>
+
+  <div class="drawer-footer">
+    <div class="total-row">
+      <div class="total-label">Total</div>
+      <div class="total-amount" id="drawer-total">₱0</div>
+    </div>
+
+    <!-- Order type -->
+    <div class="order-type-toggle">
+      <button class="type-btn active" id="btn-dinein" onclick="setOrderType('dine-in')">🍽️ Dine-In</button>
+      <button class="type-btn" id="btn-delivery" onclick="setOrderType('delivery')">🛵 Delivery</button>
+    </div>
+
+    <!-- Name -->
+    <div class="form-field">
+      <label>Your Name</label>
+      <input type="text" id="customer-name" placeholder="e.g. Maria Santos" maxlength="50">
+      <div class="field-error" id="name-error">Please enter your name.</div>
+    </div>
+
+    <!-- Delivery fields -->
+    <div class="delivery-fields" id="delivery-fields">
+      <div class="form-field">
+        <label>Delivery Address / Landmark</label>
+        <input type="text" id="delivery-address" placeholder="e.g. Near Jollibee, Brgy. Uno">
+      </div>
+      <div class="form-field">
+        <label>Contact Number</label>
+        <input type="tel" id="contact-number" placeholder="09XX XXX XXXX" maxlength="13">
+      </div>
+    </div>
+
+    <button class="confirm-btn" onclick="handleCheckout()">Confirm Order →</button>
+  </div>
+</div>
+
+<!-- Receipt / Confirmation Modal -->
+<div class="modal-overlay" id="receipt-modal">
+  <div class="modal-box">
+    <div class="modal-top">
+      <div class="modal-icon" id="modal-icon">🎉</div>
+      <div class="modal-title" id="modal-title">Order Confirmed!</div>
+      <div class="modal-subtitle" id="modal-subtitle">Here's your receipt.</div>
+    </div>
+
+    <div class="receipt-paper" id="receipt-paper"></div>
+
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────────
+const initialMenuData = [
+  { name:"Classic Americano", category:"Coffee Selection", description:"Smooth and bold espresso with hot water.", prices:{"8oz":79,"12oz":89,"16oz":99}, available:true, dietary:["vegan"], order:1 },
+  { name:"Caffè Latte", category:"Coffee Selection", description:"Espresso with steamed milk and a thin layer of foam.", prices:{"8oz":89,"12oz":99,"16oz":109}, available:true, order:2 },
+  { name:"Espresso Chips Frappe", category:"Frappe", description:"Coffee-based frappe with chocolate chips.", prices:{"16oz":129,"22oz":139}, available:true, order:3 },
+  { name:"Choco Crunch Frappe", category:"Frappe", description:"Rich chocolate blended with ice and topped with crunch.", prices:{"16oz":159,"22oz":169}, available:true, order:4 },
+  { name:"Mango Graham Milkshake", category:"Milkshakes", description:"Creamy mango shake with graham cracker bits.", prices:{"16oz":119,"22oz":129}, available:true, dietary:["gluten-free"], order:5 },
+  { name:"Ube Cheesecake Milkshake", category:"Milkshakes", description:"Classic Filipino ube flavor with a cheesecake twist.", prices:{"16oz":119,"22oz":129}, available:true, order:6 },
+  { name:"Mango Cheesecake Premium", category:"Premium Milkshakes", description:"Indulgent mango shake with real cheesecake chunks.", prices:{"16oz":159,"22oz":169}, available:true, order:7 },
+  { name:"Matcha Cloudy Premium", category:"Premium Milkshakes", description:"Premium ceremonial matcha with a creamy cloud topping.", prices:{"16oz":159,"22oz":169}, available:true, order:8 },
+  { name:"French Fries", category:"Savory Bites", description:"Golden crispy fries served with your choice of dip.", prices:{"Solo":59,"Sharing":89}, available:true, order:9 },
+  { name:"Loaded Nachos", category:"Savory Bites", description:"Nachos topped with cheese, meat, and jalapeños.", prices:{"Solo":79,"Sharing":129}, available:true, order:10 },
+  { name:"Ham & Cheese Club", category:"Club Sandwiches", description:"Triple-decker sandwich with ham, cheese, and fresh veggies.", price:129, available:true, order:11 },
+  { name:"Bacon Club Sandwich", category:"Club Sandwiches", description:"Crispy bacon with lettuce and tomato in a classic club.", price:129, available:true, order:12 }
+];
+
+const CATEGORY_EMOJIS = {
+  "coffee selection":"☕", "frappe":"🧊", "milkshakes":"🥤",
+  "premium milkshakes":"✨", "savory bites":"🍟", "club sandwiches":"🥪"
+};
+
+const ITEM_EMOJIS = {
+  "Coffee Selection":"☕","Frappe":"🧊","Milkshakes":"🥤",
+  "Premium Milkshakes":"✨","Savory Bites":"🍟","Club Sandwiches":"🥪"
+};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let cart = [];
+let currentCategory = 'All';
+let orderType = 'dine-in';
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+function init() {
+  buildCategoryTabs();
+  renderMenu('All');
+}
+
+function buildCategoryTabs() {
+  const cats = ['All', ...new Set(initialMenuData.map(i => i.category))];
+  const container = document.getElementById('category-tabs');
+  container.innerHTML = cats.map(cat => {
+    const emoji = cat === 'All' ? '🍽️' : (CATEGORY_EMOJIS[cat.toLowerCase()] || '•');
+    return `<button class="cat-tab ${cat === 'All' ? 'active' : ''}" onclick="filterCategory('${cat}')">${emoji} ${cat}</button>`;
+  }).join('');
+}
+
+function filterCategory(cat) {
+  currentCategory = cat;
+  document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
+  const tabs = document.querySelectorAll('.cat-tab');
+  tabs.forEach(t => { if (t.textContent.includes(cat === 'All' ? 'All' : cat)) t.classList.add('active'); });
+  const label = document.getElementById('section-label');
+  label.textContent = cat === 'All' ? 'All Items' : cat;
+  renderMenu(cat);
+}
+
+function renderMenu(cat) {
+  const grid = document.getElementById('menu-grid');
+  const items = cat === 'All'
+    ? initialMenuData.filter(i => i.available)
+    : initialMenuData.filter(i => i.available && i.category === cat);
+
+  if (!items.length) {
+    grid.innerHTML = '<div class="no-items"><div style="font-size:36px;margin-bottom:12px">☕</div><div>Nothing here yet.</div></div>';
+    return;
+  }
+
+  grid.innerHTML = items.map((item, idx) => {
+    const emoji = ITEM_EMOJIS[item.category] || '☕';
+    const pricingHTML = item.prices
+      ? Object.entries(item.prices).map(([size, price]) =>
+          `<button class="size-btn" onclick="addToCart(event,${JSON.stringify(item).replace(/'/g,"&#39;").replace(/"/g,"&quot;")},'${size}',${price})">
+            ${size}<span class="size-price">₱${price}</span>
+          </button>`
+        ).join('')
+      : `<button class="size-btn" onclick="addToCart(event,${JSON.stringify(item).replace(/'/g,"&#39;").replace(/"/g,"&quot;")},'Standard',${item.price})">
+          Add to Cart<span class="size-price">₱${item.price}</span>
+        </button>`;
+
+    return `
+      <div class="menu-card" style="animation-delay:${idx * 0.04}s">
+        <div class="card-img-placeholder">${emoji}</div>
+        <div class="card-body">
+          <div class="card-cat">${item.category}</div>
+          <div class="card-name">${item.name}</div>
+          <div class="card-desc">${item.description}</div>
+          <div class="size-btns">${pricingHTML}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── Cart ──────────────────────────────────────────────────────────────────────
+function addToCart(event, item, size, price) {
+  cart.push({ ...item, selectedSize: size, selectedPrice: price, id: Date.now() + Math.random() });
+  updateCartUI();
+
+  const btn = event.currentTarget;
+  const orig = btn.innerHTML;
+  btn.classList.add('added');
+  btn.innerHTML = `✓ Added<span class="size-price">₱${price}</span>`;
+  setTimeout(() => { btn.classList.remove('added'); btn.innerHTML = orig; }, 1400);
+}
+
+function removeFromCart(uid) {
+  cart = cart.filter(i => i.id !== uid);
+  updateCartUI();
+}
+
+function updateCartUI() {
+  const count = cart.length;
+  const total = cart.reduce((s, i) => s + i.selectedPrice, 0);
+
+  // Header badge
+  const badge = document.getElementById('header-badge');
+  badge.textContent = count;
+  badge.classList.toggle('visible', count > 0);
+
+  // Sticky bar
+  const bar = document.getElementById('sticky-bar');
+  bar.classList.toggle('visible', count > 0);
+  document.getElementById('sticky-count').textContent = count;
+  document.getElementById('sticky-total').textContent = `₱${total.toFixed(0)}`;
+
+  // Drawer total
+  document.getElementById('drawer-total').textContent = `₱${total.toFixed(0)}`;
+
+  // Drawer items
+  const container = document.getElementById('drawer-items');
+  if (!count) {
+    container.innerHTML = `<div class="empty-cart"><div class="empty-cart-icon">🛒</div><div>Your cart is empty</div></div>`;
+    return;
+  }
+
+  container.innerHTML = cart.map(item => {
+    const emoji = ITEM_EMOJIS[item.category] || '☕';
+    return `
+      <div class="cart-item-row">
+        <div class="cart-item-emoji">${emoji}</div>
+        <div class="cart-item-info">
+          <div class="cart-item-name">${item.name}</div>
+          <div class="cart-item-size">${item.selectedSize}</div>
+        </div>
+        <div class="cart-item-price">₱${item.selectedPrice.toFixed(0)}</div>
+        <button class="cart-remove" onclick="removeFromCart(${item.id})">×</button>
+      </div>`;
+  }).join('');
+}
+
+// ── Order type ────────────────────────────────────────────────────────────────
+function setOrderType(type) {
+  orderType = type;
+  document.getElementById('btn-dinein').classList.toggle('active', type === 'dine-in');
+  document.getElementById('btn-delivery').classList.toggle('active', type === 'delivery');
+  document.getElementById('delivery-fields').classList.toggle('visible', type === 'delivery');
+}
+
+// ── Drawer ────────────────────────────────────────────────────────────────────
+function openCart() {
+  document.getElementById('cart-drawer').classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCart() {
+  document.getElementById('cart-drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ── Checkout ──────────────────────────────────────────────────────────────────
+function handleCheckout() {
+  if (!cart.length) return;
+
+  const name = document.getElementById('customer-name').value.trim();
+  const nameError = document.getElementById('name-error');
+
+  if (!name) {
+    nameError.classList.add('visible');
+    document.getElementById('customer-name').focus();
+    return;
+  }
+  nameError.classList.remove('visible');
+
+  const isDelivery = orderType === 'delivery';
+
+  if (isDelivery) {
+    const addr = document.getElementById('delivery-address').value.trim();
+    const phone = document.getElementById('contact-number').value.trim();
+    if (!addr || !phone) {
+      alert('Please fill in your delivery address and contact number.');
+      return;
+    }
+    confirmOrder(name, addr, phone);
+  } else {
+    confirmOrder(name, null, null);
+  }
+}
+
+function confirmOrder(name, address, phone) {
+  const isDelivery = orderType === 'delivery';
+  const total = cart.reduce((s, i) => s + i.selectedPrice, 0);
+
+  // Group items
+  const grouped = {};
+  cart.forEach(item => {
+    const key = `${item.name}-${item.selectedSize}`;
+    if (!grouped[key]) {
+      grouped[key] = { name: item.name, size: item.selectedSize, price: item.selectedPrice, qty: 1 };
+    } else {
+      grouped[key].qty++;
+    }
+  });
+
+  const itemsArr = Object.values(grouped);
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+  const dateStr = now.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  // Build receipt HTML
+  let receiptHTML = `
+    <div class="receipt-header">
+      <div class="receipt-shop-name">☕ Capribrews</div>
+      <div class="receipt-meta">${dateStr} · ${timeStr}</div>
+    </div>
+    <div class="receipt-row muted"><span>Customer</span><span>${name}</span></div>
+    <div class="receipt-row muted"><span>Type</span><span>${isDelivery ? '🛵 Delivery' : '🍽️ Dine-In'}</span></div>`;
+
+  if (isDelivery) {
+    receiptHTML += `<div class="receipt-row muted"><span>Address</span><span style="text-align:right;max-width:180px">${address}</span></div>`;
+    receiptHTML += `<div class="receipt-row muted"><span>Contact</span><span>${phone}</span></div>`;
+  }
+
+  receiptHTML += `<hr class="receipt-divider">`;
+  itemsArr.forEach(item => {
+    receiptHTML += `<div class="receipt-row"><span>${item.qty}× ${item.name} (${item.size})</span><span>₱${(item.price * item.qty).toFixed(0)}</span></div>`;
+  });
+  receiptHTML += `
+    <hr class="receipt-divider">
+    <div class="receipt-total-row"><span>TOTAL</span><span>₱${total.toFixed(0)}</span></div>`;
+
+  document.getElementById('receipt-paper').innerHTML = receiptHTML;
+
+  // Modal content
+  const modalIcon = document.getElementById('modal-icon');
+  const modalTitle = document.getElementById('modal-title');
+  const modalSubtitle = document.getElementById('modal-subtitle');
+  const modalActions = document.getElementById('modal-actions');
+
+  if (isDelivery) {
+    modalIcon.textContent = '🛵';
+    modalTitle.textContent = 'Ready to Send!';
+    modalSubtitle.textContent = 'Your order is ready. Copy the receipt and paste it in Messenger.';
+
+    const receiptText = buildReceiptText(name, address, phone, itemsArr, total);
+
+    modalActions.innerHTML = `
+      <button class="modal-btn messenger-btn" onclick="openMessenger('${encodeURIComponent(receiptText)}')">
+        💬 Open Messenger to Send
+      </button>
+      <button class="modal-btn modal-btn-secondary" onclick="copyAndConfirm('${encodeURIComponent(receiptText)}', this)">
+        📋 Copy Receipt
+      </button>
+      <button class="modal-btn modal-btn-ghost" onclick="closeModal()">Done</button>`;
+  } else {
+    modalIcon.innerHTML = `<span class="success-anim">🎉</span>`;
+    modalTitle.textContent = 'Order Confirmed!';
+    modalSubtitle.textContent = 'Please proceed to the counter for payment. You can also print this receipt.';
+
+    modalActions.innerHTML = `
+      <button class="modal-btn modal-btn-primary" onclick="printReceipt('${name}', '${encodeURIComponent(JSON.stringify(itemsArr))}', ${total})">
+        🖨️ Print Receipt
+      </button>
+      <button class="modal-btn modal-btn-ghost" onclick="closeModal()">Close</button>`;
+  }
+
+  // Clear cart & close drawer
+  cart = [];
+  updateCartUI();
+  closeCart();
+
+  // Show modal
+  document.getElementById('receipt-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function buildReceiptText(name, address, phone, items, total) {
+  let text = `☕ CAPRIBREWS ORDER\n`;
+  text += `━━━━━━━━━━━━━━━━━━\n`;
+  text += `👤 Name: ${name}\n`;
+  text += `🛵 Type: Delivery\n`;
+  text += `📍 Address: ${address}\n`;
+  text += `📞 Contact: ${phone}\n`;
+  text += `━━━━━━━━━━━━━━━━━━\n`;
+  items.forEach(i => { text += `• ${i.qty}x ${i.name} (${i.size}) — ₱${(i.price * i.qty).toFixed(0)}\n`; });
+  text += `━━━━━━━━━━━━━━━━━━\n`;
+  text += `💰 TOTAL: ₱${total.toFixed(0)}\n`;
+  text += `Status: Pending Payment via Messenger\n`;
+  text += `━━━━━━━━━━━━━━━━━━\n`;
+  text += `Thank you for choosing Capribrews! ☕`;
+  return text;
+}
+
+async function copyAndConfirm(encodedText, btn) {
+  const text = decodeURIComponent(encodedText);
+  try {
+    await navigator.clipboard.writeText(text);
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  } catch {
+    prompt('Copy this text:', text);
+  }
+}
+
+function openMessenger(encodedText) {
+  copyAndConfirm(encodedText, { textContent: '', set textContent(v) {} });
+  window.open('https://m.me/', '_blank');
+}
+
+function printReceipt(name, encodedItems, total) {
+  const items = JSON.parse(decodeURIComponent(encodedItems));
+  const now = new Date();
+  const printArea = document.getElementById('print-area');
+  printArea.innerHTML = `
+    <div style="text-align:center;margin-bottom:12px">
+      <strong style="font-size:16px">☕ CAPRIBREWS</strong><br>
+      <small>${now.toLocaleString('en-PH')}</small>
+    </div>
+    <hr>
+    <p>Customer: <strong>${name}</strong></p>
+    <p>Type: Dine-In</p>
+    <hr>
+    ${items.map(i => `<p>${i.qty}× ${i.name} (${i.size}) ... ₱${(i.price * i.qty).toFixed(0)}</p>`).join('')}
+    <hr>
+    <p><strong>TOTAL: ₱${total.toFixed(0)}</strong></p>
+    <hr>
+    <p style="text-align:center;margin-top:8px">Thank you! Please proceed to the counter.</p>`;
+  window.print();
+}
+
+function closeModal() {
+  document.getElementById('receipt-modal').classList.remove('open');
+  document.body.style.overflow = '';
+  // Reset name input
+  document.getElementById('customer-name').value = '';
+  document.getElementById('delivery-address').value = '';
+  document.getElementById('contact-number').value = '';
+}
+
+// Close modal on backdrop click
+document.getElementById('receipt-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ── Start ─────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

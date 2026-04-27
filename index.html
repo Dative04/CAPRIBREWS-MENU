@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Capibrews | Specialty Coffee</title>
+    <title>Capribrews — Premium Coffee & Treats</title>
     <link rel="icon" type="image/png" href="https://i.imgur.com/F022t03.png">
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,38 +11,31 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <header class="top-nav">
-        <button class="menu-btn" onclick="toggleMenu()" aria-label="Open Menu">☰</button>
-        <div class="logo">Capibrews</div>
-        <button class="cart-icon-btn" onclick="toggleCart()" aria-label="View Cart">🛒 <span id="cart-count-nav">0</span></button>
+    <header class="site-header">
+        <div class="header-inner">
+            <div class="logo" onclick="window.location.reload()">
+                <div class="logo-icon">☕</div>
+                <div class="logo-text">Capri<span>brews</span></div>
+            </div>
+            <button class="header-cart-btn" onclick="toggleCart()">
+                🛒 Cart
+                <span class="cart-badge" id="cart-count-nav"></span>
+            </button>
+        </div>
     </header>
 
-    <!-- Side Nav Drawer -->
-    <div id="side-drawer" class="drawer">
-        <div class="drawer-header">
-            <button class="close-btn-drawer" onclick="toggleMenu()" aria-label="Close Menu">×</button>
+    <!-- Category Tabs -->
+    <div class="category-bar">
+        <div class="category-tabs" id="category-tabs">
+            <!-- Dynamically populated by menu.js -->
         </div>
-        <nav class="drawer-links">
-            <a href="#" onclick="filterByCategory('Coffee Selection'); toggleMenu()">☕ Coffee Selection</a>
-            <a href="#" onclick="filterByCategory('Signature Blends'); toggleMenu()">✨ Signature Blends</a>
-            <a href="#" onclick="filterByCategory('Soda Blends'); toggleMenu()">🥤 Soda Blends</a>
-            <a href="#" onclick="filterByCategory('Frappe'); toggleMenu()">🍦 Frappe</a>
-            <a href="#" onclick="filterByCategory('Milkshakes'); toggleMenu()">🥛 Milkshakes</a>
-            <a href="#" onclick="filterByCategory('Savory Bites'); toggleMenu()">🍔 Savory Bites</a>
-            <div class="drawer-divider"></div>
-            <a href="#" onclick="filterByCategory('All'); toggleMenu()">📋 View All Menu</a>
-            <a href="#" onclick="showRecentOrders(); toggleMenu()">🕒 My Recent Orders</a>
-        </nav>
     </div>
-
-    <!-- ✅ FIX: Backdrop overlay for side drawer -->
-    <div id="drawer-backdrop" class="drawer-backdrop" onclick="toggleMenu()"></div>
 
     <div class="app-container">
         <header class="main-header" id="main-header">
             <div class="header-content-wrapper">
                 <div class="header-content">
-                    <img src="https://i.imgur.com/F022t03.png" alt="Capibrews Logo" class="brand-logo">
+                    <img src="https://i.imgur.com/F022t03.png" alt="Capribrews Logo" class="brand-logo">
                     <p class="tagline">Feeling Adventurous? Ask our barista for their 'Daily Whim'.</p>
                     <div class="search-container">
                         <input type="text" id="menu-search" placeholder="Search our menu...">
@@ -60,11 +53,16 @@
             </div>
         </main>
 
-        <!-- Floating Cart Button -->
-        <button id="cart-fab" class="cart-fab hidden" aria-label="View Cart">
-            <span class="cart-icon">🛒</span>
-            <span id="cart-count" class="cart-count">0</span>
-        </button>
+        <!-- Sticky cart bar -->
+        <div class="sticky-bar" id="sticky-bar" onclick="toggleCart()">
+            <div class="sticky-bar-inner">
+                <div class="sticky-left">
+                    <div class="sticky-count" id="sticky-count-bar">0</div>
+                    <div class="sticky-label">View Cart</div>
+                </div>
+                <div class="sticky-total" id="sticky-total-bar">₱0</div>
+            </div>
+        </div>
 
         <!-- ✅ FIX: Cart backdrop overlay -->
         <div id="cart-backdrop" class="cart-backdrop hidden" onclick="toggleCart()"></div>
@@ -184,8 +182,8 @@
         </div>
 
         <footer class="minimal-footer">
-            <img src="https://i.imgur.com/F022t03.png" alt="Capibrews Signature" class="footer-sig">
-            <p>&copy; 2024 Capibrews Specialty Coffee</p>
+            <img src="https://i.imgur.com/F022t03.png" alt="Capribrews Signature" class="footer-sig">
+            <p>&copy; 2024 Capribrews Specialty Coffee</p>
         </footer>
     </div>
 

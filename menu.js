@@ -22,6 +22,9 @@ const orderSummaryList  = document.getElementById('order-summary-list');
 const summaryTotalLabel = document.getElementById('summary-total');
 const cartCountNav      = document.getElementById('cart-count-nav');
 const nameError         = document.getElementById('name-error');
+const stickyBar         = document.getElementById('sticky-bar');
+const stickyCountBar    = document.getElementById('sticky-count-bar');
+const stickyTotalBar    = document.getElementById('sticky-total-bar');
 
 // ─── Side Drawer Toggle ───────────────────────────────────────────────────────
 window.toggleMenu = () => {
@@ -47,12 +50,21 @@ const closeCart = () => {
     cartBackdrop?.classList.add('hidden');
 };
 
-cartFab.onclick       = openCart;
+if (cartFab) cartFab.onclick = openCart;
 closeCartBtn.onclick  = closeCart;
 
-window.filterByCategory = (category) => {
-    currentCategory = category;
-    filterAndRenderItems();
+// Category Emojis Mapping
+const CATEGORY_EMOJIS = {
+    "all": "🍽️",
+    "coffee selection": "☕",
+    "signature blends": "✨",
+    "soda blends": "🥤",
+    "frappe": "🧊",
+    "milkshakes": "🥤",
+    "premium milkshakes": "✨",
+    "savory bites": "🍟",
+    "club sandwiches": "🥪",
+    "desserts": "🍰"
 };
 
 // ─── Menu Rendering Logic ─────────────────────────────────────────────────────
@@ -67,6 +79,8 @@ async function fetchMenuData() {
 
         if (error) throw error;
         menuData = data || [];
+        
+        buildCategoryTabs(); // Dynamically build tabs based on data
         filterAndRenderItems();
     } catch (err) {
         console.error('Error fetching menu:', err);
@@ -74,9 +88,38 @@ async function fetchMenuData() {
     }
 }
 
+function buildCategoryTabs() {
+    const container = document.getElementById('category-tabs');
+    if (!container) return;
+
+    const categories = ['All', ...new Set(menuData.map(item => item.category).filter(Boolean))];
+    
+    container.innerHTML = categories.map(cat => {
+        const emoji = CATEGORY_EMOJIS[cat.toLowerCase()] || '•';
+        const isActive = currentCategory === cat;
+        return `
+            <button class="cat-tab ${isActive ? 'active' : ''}" onclick="filterByCategory('${cat}')">
+                ${emoji} ${cat}
+            </button>
+        `;
+    }).join('');
+}
+
+window.filterByCategory = (category) => {
+    currentCategory = category;
+    filterAndRenderItems();
+    
+    // Update section label if it exists
+    const label = document.getElementById('section-label');
+    if (label) label.textContent = category === 'All' ? 'All Items' : category;
+};
+
 function filterAndRenderItems() {
     const searchTerm = searchInput?.value.toLowerCase() || '';
     
+    // Ensure tabs are built/updated
+    buildCategoryTabs();
+
     const filtered = menuData.filter(item => {
         const matchesCategory = currentCategory === 'All' || 
                               item.category.toLowerCase() === currentCategory.toLowerCase();
@@ -194,7 +237,7 @@ function renderMenuItems(items) {
                 return;
             }
 
-            modalInstruction.textContent = "Here are the most recent orders from Capibrews.";
+            modalInstruction.textContent = "Here are the most recent orders from Capribrews.";
             
             // Render orders list
             orderSummaryList.innerHTML = data.map(order => {
@@ -297,7 +340,13 @@ function updateCartUI() {
     });
 
     cartTotalLabel.textContent = `₱${total.toFixed(0)}`;
-    cartFab.classList.toggle('hidden', cart.length === 0);
+    
+    // Update sticky bar
+    if (stickyBar) {
+        stickyBar.classList.toggle('visible', cart.length > 0);
+        if (stickyCountBar) stickyCountBar.textContent = totalCount;
+        if (stickyTotalBar) stickyTotalBar.textContent = `₱${total.toFixed(0)}`;
+    }
 }
 
 /**
@@ -305,7 +354,7 @@ function updateCartUI() {
  */
 function generateReceiptText(customerName, groupedItems, total, orderType, deliveryAddress, coordinates) {
     const isDelivery = orderType === 'delivery';
-    let text = `☕ CAPIBREWS RECEIPT\n`;
+    let text = `☕ CAPRIBREWS RECEIPT\n`;
     text += `━━━━━━━━━━━━━━━━━━━━\n`;
     text += `👤 Customer: ${customerName}\n`;
     text += `🛵 Type: ${isDelivery ? 'Delivery' : 'Dine-in'}\n`;
@@ -329,7 +378,7 @@ function generateReceiptText(customerName, groupedItems, total, orderType, deliv
     }
     
     text += `━━━━━━━━━━━━━━━━━━━━\n`;
-    text += `Thank you for choosing Capibrews!`;
+    text += `Thank you for choosing Capribrews!`;
     return text;
 }
 
