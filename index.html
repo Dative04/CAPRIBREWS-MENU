@@ -1336,7 +1336,7 @@ async function confirmOrder(name, address, phone) {
 
       modalActions.innerHTML = `
         <button class="modal-btn messenger-btn" onclick="openMessenger('${encodeURIComponent(receiptText)}')">
-          💬 Open Messenger to Send
+          💬 Send Order via Messenger
         </button>
         <button class="modal-btn modal-btn-secondary" onclick="copyAndConfirm('${encodeURIComponent(receiptText)}', this)">
           📋 Copy Receipt
@@ -1402,8 +1402,12 @@ window.copyAndConfirm = async function(encodedText, btn) {
 }
 
 window.openMessenger = function(encodedText) {
-  copyAndConfirm(encodedText, { textContent: '', set textContent(v) {} });
-  window.open('https://m.me/', '_blank');
+  const receipt = decodeURIComponent(encodedText);
+  const messengerUrl = `https://m.me/61580219733955?text=${encodeURIComponent(receipt)}`;
+
+  navigator.clipboard.writeText(receipt).catch(() => {});
+
+  window.open(messengerUrl, '_blank');
 }
 
 window.printReceipt = function(name, encodedItems, total) {
