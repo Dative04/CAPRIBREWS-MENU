@@ -1071,15 +1071,38 @@ const ITEM_EMOJIS = {
 let cart = [];
 let currentCategory = 'All';
 let orderType = 'dine-in';
+let menuItems = []; // This will hold the live data from Supabase
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-function init() {
+async function init() {
+  await fetchMenu();
   buildCategoryTabs();
   renderMenu('All');
 }
 
+async function fetchMenu() {
+  try {
+    const { data, error } = await window.supabaseClient
+      .from('menu')
+      .select('*')
+      .order('sort_order', { ascending: true });
+
+    if (error) throw error;
+    
+    if (data && data.length > 0) {
+      menuItems = data;
+    } else {
+      // Fallback to initial data if DB is empty
+      menuItems = initialMenuData;
+    }
+  } catch (err) {
+    console.error('Fetch menu error:', err);
+    menuItems = initialMenuData;
+  }
+}
+
 function buildCategoryTabs() {
-  const cats = ['All', ...new Set(initialMenuData.map(i => i.category))];
+  const cats = ['All', ...new Set(menuItems.map(i => i.category))];
   const container = document.getElementById('category-tabs');
   container.innerHTML = cats.map(cat => {
     const emoji = cat === 'All' ? '🍽️' : (CATEGORY_EMOJIS[cat.toLowerCase()] || '•');
@@ -1100,8 +1123,8 @@ window.filterCategory = function(cat) {
 function renderMenu(cat) {
   const grid = document.getElementById('menu-grid');
   const items = cat === 'All'
-    ? initialMenuData.filter(i => i.available)
-    : initialMenuData.filter(i => i.available && i.category === cat);
+    ? menuItems.filter(i => i.available)
+    : menuItems.filter(i => i.available && i.category === cat);
 
   if (!items.length) {
     grid.innerHTML = '<div class="no-items"><div style="font-size:36px;margin-bottom:12px">☕</div><div>Nothing here yet.</div></div>';
@@ -1126,7 +1149,7 @@ function renderMenu(cat) {
         <div class="card-body">
           <div class="card-cat">${item.category}</div>
           <div class="card-name">${item.name}</div>
-          <div class="card-desc">${item.description}</div>
+          <div class="card-desc">${item.description || ''}</div>
           <div class="size-btns">${pricingHTML}</div>
         </div>
       </div>`;
@@ -1316,6 +1339,9 @@ window.showConfirmation = function(name, address, phone) {
   // Set the confirm button action
   const confirmBtn = document.getElementById('confirm-final-btn');
   confirmBtn.onclick = () => finalizeOrder(name, address, phone);
+
+  // Close cart drawer on mobile so confirmation modal is visible
+  closeCart();
 
   document.getElementById('confirmation-modal').classList.add('open');
   document.body.style.overflow = 'hidden';
