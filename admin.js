@@ -32,6 +32,87 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentItems = [];
     let allOrders = [];
 
+    // Default menu data for seeding if table is empty
+    window.DEFAULT_MENU_DATA = [
+        // Coffee Selection (8oz / 12oz / 16oz)
+        { name: "Capri Black", category: "Coffee Selection", prices: { "8oz": 79, "12oz": 89, "16oz": 99 }, available: true, sort_order: 1 },
+        { name: "Café Latte", category: "Coffee Selection", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 2 },
+        { name: "Cappuccino", category: "Coffee Selection", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 3 },
+        { name: "Caramel Macchiato", category: "Coffee Selection", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 4 },
+        { name: "Salted Caramel", category: "Coffee Selection", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 5 },
+        { name: "White Chocolate", category: "Coffee Selection", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 6 },
+        { name: "Dark Mocha", category: "Coffee Selection", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 7 },
+        { name: "Vanilla Latte", category: "Coffee Selection", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 8 },
+        { name: "Ube Coffee Haze", category: "Coffee Selection", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 9 },
+
+        // Frappe (16oz / 22oz)
+        { name: "Espresso Chips", category: "Frappe", prices: { "16oz": 129, "22oz": 139 }, available: true, sort_order: 10 },
+        { name: "Choco Crunch", category: "Frappe", prices: { "16oz": 139, "22oz": 149 }, available: true, sort_order: 11 },
+        { name: "Double Fudge", category: "Frappe", prices: { "16oz": 139, "22oz": 149 }, available: true, sort_order: 12 },
+        { name: "Strawberry", category: "Frappe", prices: { "16oz": 139, "22oz": 149 }, available: true, sort_order: 13 },
+        { name: "Matcha", category: "Frappe", prices: { "16oz": 149, "22oz": 159 }, available: true, sort_order: 14 },
+        { name: "Matcha Strawberry", category: "Frappe", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 15 },
+        { name: "Choco Strawberry", category: "Frappe", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 16 },
+
+        // Signature Twists (Single price)
+        { name: "Choco Volcano", category: "Signature Twists", price: 129, available: true, sort_order: 17 },
+        { name: "Milo Oreo Latte", category: "Signature Twists", price: 129, available: true, sort_order: 18 },
+        { name: "Matcha Milk Foam", category: "Signature Twists", price: 139, available: true, sort_order: 19 },
+
+        // Soda Blends (16oz / 22oz)
+        { name: "Green Apple", category: "Soda Blends", prices: { "16oz": 39, "22oz": 49 }, available: true, sort_order: 20 },
+        { name: "Kiwi", category: "Soda Blends", prices: { "16oz": 39, "22oz": 49 }, available: true, sort_order: 21 },
+        { name: "Mango", category: "Soda Blends", prices: { "16oz": 39, "22oz": 49 }, available: true, sort_order: 22 },
+        { name: "Strawberry", category: "Soda Blends", prices: { "16oz": 39, "22oz": 49 }, available: true, sort_order: 23 },
+        { name: "Grapes", category: "Soda Blends", prices: { "16oz": 39, "22oz": 49 }, available: true, sort_order: 24 },
+        { name: "Lemon", category: "Soda Blends", prices: { "16oz": 39, "22oz": 49 }, available: true, sort_order: 25 },
+
+        // Signature Fruit Infusions (Single price)
+        { name: "Cucumber Lemonade", category: "Signature Fruit Infusions", price: 129, available: true, sort_order: 26 },
+        { name: "Yakult Honey Lemonade", category: "Signature Fruit Infusions", price: 129, available: true, sort_order: 27 },
+
+        // Milkshakes (16oz / 22oz)
+        { name: "Mango Graham", category: "Milkshakes", prices: { "16oz": 119, "22oz": 129 }, available: true, sort_order: 28 },
+        { name: "Mango Delights", category: "Milkshakes", prices: { "16oz": 119, "22oz": 129 }, available: true, sort_order: 29 },
+        { name: "Mango Oreo", category: "Milkshakes", prices: { "16oz": 119, "22oz": 129 }, available: true, sort_order: 30 },
+        { name: "Ube Cheesecake", category: "Milkshakes", prices: { "16oz": 119, "22oz": 129 }, available: true, sort_order: 31 },
+        { name: "Chocolate Cookies", category: "Milkshakes", prices: { "16oz": 119, "22oz": 129 }, available: true, sort_order: 32 },
+        { name: "Choco Volcano", category: "Milkshakes", prices: { "16oz": 119, "22oz": 129 }, available: true, sort_order: 33 },
+
+        // Premium Milkshakes (16oz / 22oz)
+        { name: "Mango Cheesecake", category: "Premium Milkshakes", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 34 },
+        { name: "Espresso Chips", category: "Premium Milkshakes", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 35 },
+        { name: "Cappuccino", category: "Premium Milkshakes", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 36 },
+        { name: "Café Mocha", category: "Premium Milkshakes", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 37 },
+        { name: "Café Caramel", category: "Premium Milkshakes", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 38 },
+        { name: "Café Matcha", category: "Premium Milkshakes", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 39 },
+        { name: "Salted Caramel", category: "Premium Milkshakes", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 40 },
+        { name: "Matcha Strawberry", category: "Premium Milkshakes", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 41 },
+        { name: "Matcha Cloudy", category: "Premium Milkshakes", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 42 },
+
+        // Savory Bites (Solo / Sharing)
+        { name: "Fries", category: "Savory Bites", prices: { "Solo": 59, "Sharing": 89 }, available: true, sort_order: 43 },
+        { name: "Nachos", category: "Savory Bites", prices: { "Solo": 79, "Sharing": 129 }, available: true, sort_order: 44 },
+
+        // Club Sandwiches
+        { name: "Ham", category: "Club Sandwiches", price: 129, available: true, sort_order: 45 },
+        { name: "Bacon", category: "Club Sandwiches", price: 129, available: true, sort_order: 46 },
+        { name: "Tuna", category: "Club Sandwiches", price: 129, available: true, sort_order: 47 },
+
+        // Capri Burger
+        { name: "Classic", category: "Capri Burger", price: 69, available: true, sort_order: 48 },
+        { name: "Country", category: "Capri Burger", price: 99, available: true, sort_order: 49 },
+        { name: "Quarter Pounder", category: "Capri Burger", price: 139, available: true, sort_order: 50 },
+
+        // Takoyaki (4pcs / 12pcs / 16pcs)
+        { name: "Cheese", category: "Takoyaki", prices: { "4pcs": 58, "12pcs": 165, "16pcs": 225 }, available: true, sort_order: 51 },
+        { name: "Ham", category: "Takoyaki", prices: { "4pcs": 58, "12pcs": 165, "16pcs": 225 }, available: true, sort_order: 52 },
+        { name: "Bacon", category: "Takoyaki", prices: { "4pcs": 58, "12pcs": 165, "16pcs": 225 }, available: true, sort_order: 53 },
+        { name: "Ham & Cheese", category: "Takoyaki", prices: { "4pcs": 58, "12pcs": 165, "16pcs": 225 }, available: true, sort_order: 54 },
+        { name: "Crab", category: "Takoyaki", prices: { "4pcs": 58, "12pcs": 165, "16pcs": 225 }, available: true, sort_order: 55 },
+        { name: "Squid", category: "Takoyaki", prices: { "4pcs": 58, "12pcs": 165, "16pcs": 225 }, available: true, sort_order: 56 }
+    ];
+
     // ─── Section Management ───────────────────────────────────────────────────────
     window.showSection = (sectionId) => {
         // Update active nav link
@@ -77,14 +158,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const CATEGORY_EMOJIS = {
         "all": "🍽️",
         "coffee selection": "☕",
-        "signature blends": "✨",
-        "soda blends": "🥤",
         "frappe": "🧊",
+        "signature twists": "✨",
+        "soda blends": "🥤",
+        "signature fruit infusions": "🍹",
         "milkshakes": "🥤",
         "premium milkshakes": "✨",
         "savory bites": "🍟",
         "club sandwiches": "🥪",
-        "desserts": "🍰"
+        "capri burger": "🍔",
+        "takoyaki": "🐙"
     };
 
     // ─── Category Filtering ───────────────────────────────────────────────────────
@@ -120,8 +203,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const filtered = currentItems.filter(item => {
             const matchesCategory = currentCategory === 'All' || 
                                 item.category === currentCategory;
-            const matchesSearch = item.name.toLowerCase().includes(searchTerm) || 
-                                item.description.toLowerCase().includes(searchTerm);
+            const matchesSearch = (item.name || '').toLowerCase().includes(searchTerm) || 
+                                (item.description || '').toLowerCase().includes(searchTerm);
             return matchesCategory && matchesSearch;
         });
 
@@ -431,7 +514,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!modalSelect) return;
 
         // Update Modal Dropdown (Keep defaults + dynamic + "Add New")
-        const defaults = ["Coffee Selection", "Signature Blends", "Soda Blends", "Frappe"];
+        const defaults = [
+            "Coffee Selection", 
+            "Frappe", 
+            "Signature Twists", 
+            "Soda Blends", 
+            "Signature Fruit Infusions", 
+            "Milkshakes", 
+            "Premium Milkshakes", 
+            "Savory Bites", 
+            "Club Sandwiches", 
+            "Capri Burger", 
+            "Takoyaki"
+        ];
         const allCats = new Set([...defaults, ...categoriesSet]);
         
         const currentModalVal = modalSelect.value;
@@ -505,7 +600,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.editItem = (id) => {
-        const item = currentItems.find(i => i.id === id);
+        const item = currentItems.find(i => String(i.id) === String(id));
         if (!item) return;
 
         addModal.classList.remove('hidden');
