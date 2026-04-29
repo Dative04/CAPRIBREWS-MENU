@@ -137,6 +137,47 @@
 
   .cart-badge.visible { opacity: 1; transform: scale(1); }
 
+  /* ── Search Bar ── */
+  .search-section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 20px 0;
+  }
+
+  .search-container {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+  }
+
+  .search-input {
+    width: 100%;
+    background: var(--dark-roast);
+    border: 1px solid rgba(196,149,106,0.3);
+    border-radius: 24px;
+    padding: 12px 20px 12px 45px;
+    color: var(--cream);
+    font-family: inherit;
+    font-size: 15px;
+    outline: none;
+    transition: all 0.2s;
+  }
+
+  .search-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(212,130,42,0.1);
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
   /* ── Category tabs ── */
   .category-bar {
     background: var(--dark-roast);
@@ -910,7 +951,7 @@
 <header class="site-header">
   <div class="header-inner">
     <div class="logo">
-      <img src="https://i.imgur.com/F022t03.png" alt="Logo" class="logo-img">
+      <img src="logos/pictures/logo.png" alt="Logo" class="logo-img">
       <div class="logo-text">Capri<span>brews</span></div>
     </div>
     
@@ -920,6 +961,13 @@
     </button>
   </div>
 </header>
+
+<div class="search-section">
+  <div class="search-container">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="menu-search" class="search-input" placeholder="Search for your favorite drinks or bites..." oninput="handleSearch()">
+  </div>
+</div>
 
 <div class="category-bar">
   <div class="category-tabs" id="category-tabs">
@@ -1150,6 +1198,7 @@ const ITEM_EMOJIS = {
 // ── State ─────────────────────────────────────────────────────────────────────
 let cart = [];
 let currentCategory = 'All';
+let searchTerm = '';
 let orderType = 'dine-in';
 let menuItems = []; // This will hold the live data from Supabase
 
@@ -1157,7 +1206,7 @@ let menuItems = []; // This will hold the live data from Supabase
 async function init() {
   await fetchMenu();
   buildCategoryTabs();
-  renderMenu('All');
+  renderMenu();
 }
 
 async function fetchMenu() {
@@ -1197,21 +1246,31 @@ window.filterCategory = function(cat) {
   tabs.forEach(t => { if (t.textContent.includes(cat === 'All' ? 'All' : cat)) t.classList.add('active'); });
   const label = document.getElementById('section-label');
   label.textContent = cat === 'All' ? 'All Items' : cat;
-  renderMenu(cat);
+  renderMenu();
 }
 
-function renderMenu(cat) {
-  const grid = document.getElementById('menu-grid');
-  const items = cat === 'All'
-    ? menuItems.filter(i => i.available)
-    : menuItems.filter(i => i.available && i.category === cat);
+window.handleSearch = function() {
+  searchTerm = document.getElementById('menu-search').value.toLowerCase();
+  renderMenu();
+}
 
-  if (!items.length) {
-    grid.innerHTML = '<div class="no-items"><div style="font-size:36px;margin-bottom:12px">☕</div><div>Nothing here yet.</div></div>';
+function renderMenu() {
+  const grid = document.getElementById('menu-grid');
+  const cat = currentCategory;
+  
+  const filteredItems = menuItems.filter(item => {
+    const matchesCategory = cat === 'All' || item.category === cat;
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm) || 
+                          (item.description && item.description.toLowerCase().includes(searchTerm));
+    return item.available && matchesCategory && matchesSearch;
+  });
+
+  if (!filteredItems.length) {
+    grid.innerHTML = '<div class="no-items"><div style="font-size:36px;margin-bottom:12px">☕</div><div>Nothing here yet. Try a different search!</div></div>';
     return;
   }
 
-  grid.innerHTML = items.map((item, idx) => {
+  grid.innerHTML = filteredItems.map((item, idx) => {
     const emoji = ITEM_EMOJIS[item.category] || '☕';
     const pricingHTML = item.prices
       ? Object.entries(item.prices).map(([size, price]) =>

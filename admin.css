@@ -931,12 +931,12 @@ button {
     content: '';
     position: absolute;
     inset: 0;
-    background-image: url('https://i.imgur.com/F022t03.png');
+    background-image: url('logos/pictures/logo.png'); /* Local path */
     background-size: 30px;
     background-repeat: no-repeat;
     background-position: center;
-    opacity: 0.2; /* Slightly increased for visibility */
-    z-index: 0; /* Changed to 0 */
+    opacity: 0.15;
+    z-index: 0;
 }
 
 .add-size-btn {
@@ -945,16 +945,17 @@ button {
     font-size: 0.85rem;
     width: auto;
     position: relative;
-    background-color: var(--cream);
+    background-color: #d4a373; /* Tan/Coffee color matching the logo */
     color: #000000;
-    border: 2px solid #2d1a10; /* Darker border */
+    border: 2px solid #3e2717; /* Darker brown border */
     overflow: hidden;
     z-index: 1;
+    font-weight: 700;
 }
 
-.add-size-btn span, .add-size-btn i {
-    position: relative;
-    z-index: 2;
+.add-size-btn:hover {
+    background-color: #dda15e; /* Slightly lighter on hover */
+    border-color: #000000;
 }
 
 .add-size-btn:hover {
