@@ -1000,6 +1000,91 @@ button {
 
 .hidden { display: none !important; }
 
+/* File Upload Styling */
+.file-upload-wrapper {
+    position: relative;
+    width: 100%;
+    height: 45px;
+}
+
+.file-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.file-upload-btn {
+    position: absolute;
+    inset: 0;
+    background: var(--medium-roast);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    z-index: 1;
+}
+
+.file-input:hover + .file-upload-btn {
+    background: var(--dark-roast);
+    border-color: var(--accent);
+}
+
+.image-preview-box {
+    width: 100%;
+    height: 45px;
+    background: var(--medium-roast);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+}
+
+.image-preview-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.admin-card img {
+    width: 60px;
+    height: 60px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+    background: var(--medium-roast);
+    flex-shrink: 0;
+}
+
+.placeholder-img {
+    width: 60px;
+    height: 60px;
+    border-radius: var(--radius-sm);
+    background: var(--medium-roast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--accent);
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+}
+
+.card-content-wrapper {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
 /* Modal specific fixes */
 #custom-category {
     width: 100%;

@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminGrid           = document.getElementById('admin-grid');
     const refreshOrdersBtn    = document.getElementById('refresh-orders-btn');
     const adminSearch         = document.getElementById('admin-search');
+    const imageFileInput      = document.getElementById('new-image-file');
+    const imageBase64Input    = document.getElementById('new-image-base64');
+    const imagePreview        = document.getElementById('image-preview');
     
     // Custom Confirm Modal
     const confirmModal        = document.getElementById('confirm-modal');
@@ -275,6 +278,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     logoutBtn?.addEventListener('click', () => window.supabaseClient.auth.signOut());
 
+    // ─── Image Upload & Preview ──────────────────────────────────────────────────
+    imageFileInput?.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Check file size (limit to 1MB for Base64 storage)
+        if (file.size > 1024 * 1024) {
+            showToast('Image too large. Please select a file smaller than 1MB.', 'error');
+            imageFileInput.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const base64 = event.target.result;
+            imageBase64Input.value = base64;
+            imagePreview.innerHTML = `<img src="${base64}" alt="Preview">`;
+        };
+        reader.readAsDataURL(file);
+    });
+
     // ─── Add Item Modal ───────────────────────────────────────────────────────────
     window.toggleCustomCategory = (val) => {
         const customInput = document.getElementById('custom-category');
@@ -296,6 +320,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modal-title').textContent = 'New Menu Item';
         document.getElementById('submit-btn').textContent = 'Create Item';
         document.getElementById('edit-item-id').value = '';
+        imagePreview.innerHTML = '<span>No image selected</span>';
+        imageBase64Input.value = '';
         
         // Set default temperature to 'both'
         const tempRadios = document.getElementsByName('temp');
@@ -417,7 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
             name:        document.getElementById('new-name').value.trim(),
             category:    category,
             description: document.getElementById('new-description').value.trim() || '',
-            image_url:   document.getElementById('new-image').value.trim() || '',
+            image_url:   imageBase64Input.value.trim() || '',
             dietary:     dietary.length ? dietary : null,
             temp:        temp
         };
@@ -570,16 +596,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? `<span class="temp-tag ${item.temp}">${item.temp.toUpperCase()}</span>` 
                 : '';
 
+            const imgHtml = item.image_url 
+                ? `<img src="${item.image_url}" alt="${item.name}">`
+                : `<div class="placeholder-img">☕</div>`;
+
             card.innerHTML = `
-                <div class="card-info">
-                    <div class="card-title-row">
-                        <h3>${item.name} ${tempTag}</h3>
-                        <div class="dietary-tags">
-                            ${item.dietary?.includes('vegan') ? '<span class="tag-v" title="Vegan">🌱</span>' : ''}
-                            ${item.dietary?.includes('gf') ? '<span class="tag-gf" title="Gluten Free">🌾</span>' : ''}
+                <div class="card-content-wrapper">
+                    ${imgHtml}
+                    <div class="card-info">
+                        <div class="card-title-row">
+                            <h3>${item.name} ${tempTag}</h3>
+                            <div class="dietary-tags">
+                                ${item.dietary?.includes('vegan') ? '<span class="tag-v" title="Vegan">🌱</span>' : ''}
+                                ${item.dietary?.includes('gf') ? '<span class="tag-gf" title="Gluten Free">🌾</span>' : ''}
+                            </div>
                         </div>
+                        <p class="card-meta">${item.category} · ${priceDisplay}</p>
                     </div>
-                    <p class="card-meta">${item.category} · ${priceDisplay}</p>
                 </div>
                 <div class="card-actions">
                     <div class="toggle-group">
@@ -612,7 +645,15 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('new-name').value = item.name;
         document.getElementById('new-category').value = item.category;
         document.getElementById('new-description').value = item.description || '';
-        document.getElementById('new-image').value = item.image_url || '';
+        
+        // Handle image preview
+        if (item.image_url) {
+            imageBase64Input.value = item.image_url;
+            imagePreview.innerHTML = `<img src="${item.image_url}" alt="Preview">`;
+        } else {
+            imageBase64Input.value = '';
+            imagePreview.innerHTML = '<span>No image selected</span>';
+        }
 
         // Handle temperature
         const tempRadios = document.getElementsByName('temp');
