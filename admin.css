@@ -1056,6 +1056,30 @@ button {
     object-fit: cover;
 }
 
+.admin-card {
+    background: var(--card-bg);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    justify-content: space-between;
+    align-items: center; /* Center items vertically */
+    gap: var(--space-3);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card-content-wrapper {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex: 1; /* Take up available space */
+}
+
+.card-info {
+    flex: 1;
+}
+
 .admin-card img {
     width: 60px;
     height: 60px;
@@ -1079,10 +1103,25 @@ button {
     border: 1px solid var(--border);
 }
 
-.card-content-wrapper {
+.card-actions {
     display: flex;
-    gap: 15px;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.toggle-group {
+    display: flex;
     align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+}
+
+.item-actions {
+    display: flex;
+    gap: 8px;
 }
 
 /* Modal specific fixes */

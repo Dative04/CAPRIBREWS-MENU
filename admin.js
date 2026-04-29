@@ -293,8 +293,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const reader = new FileReader();
         reader.onload = (event) => {
             const base64 = event.target.result;
+            
+            // Validate that it's a real image data URL
+            if (!base64.startsWith('data:image/')) {
+                showToast('Invalid image file.', 'error');
+                return;
+            }
+
             imageBase64Input.value = base64;
-            imagePreview.innerHTML = `<img src="${base64}" alt="Preview">`;
+            imagePreview.innerHTML = `<img src="${base64}" alt="Preview" style="width:100%;height:100%;object-fit:cover;">`;
+            showToast('Photo ready to upload ✓', 'success');
+        };
+        reader.onerror = () => {
+            showToast('Error reading file', 'error');
         };
         reader.readAsDataURL(file);
     });
