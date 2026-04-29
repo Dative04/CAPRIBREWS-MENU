@@ -964,22 +964,23 @@ button {
     font-size: 0.85rem;
     width: auto;
     position: relative;
-    background-color: #d4a373; /* Tan/Coffee color matching the logo */
-    color: #000000; /* Changed back to black */
-    border: 2px solid #3e2717; /* Darker brown border */
+    background-color: #d4a373 !important; /* Force tan color */
+    color: #000000 !important; /* Force black text */
+    border: 2px solid #3e2717 !important; /* Force darker brown border */
     overflow: hidden;
     z-index: 1;
     font-weight: 700;
 }
 
-.add-size-btn:hover {
-    background-color: #dda15e; /* Slightly lighter on hover */
-    border-color: #000000;
+.add-size-btn span {
+    position: relative;
+    z-index: 2;
+    color: #000000; /* Explicitly black for the span */
 }
 
 .add-size-btn:hover {
-    background-color: var(--milk-foam);
-    border-color: #000000;
+    background-color: #dda15e !important;
+    border-color: #000000 !important;
 }
 
 /* ─────────────────────────────────────────
