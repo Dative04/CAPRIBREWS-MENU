@@ -931,7 +931,7 @@ button {
     content: '';
     position: absolute;
     inset: 0;
-    background-image: url('logos/pictures/logo.png'); /* Local path */
+    background-image: url('logos/pictures/CAPRI%20BREWS.png'); /* Local path */
     background-size: 30px;
     background-repeat: no-repeat;
     background-position: center;
@@ -946,7 +946,7 @@ button {
     width: auto;
     position: relative;
     background-color: #d4a373; /* Tan/Coffee color matching the logo */
-    color: #000000;
+    color: #000000; /* Changed back to black */
     border: 2px solid #3e2717; /* Darker brown border */
     overflow: hidden;
     z-index: 1;
