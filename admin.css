@@ -931,7 +931,7 @@ button {
     content: '';
     position: absolute;
     inset: 0;
-    background-image: url('logos/pictures/CAPRI%20BREWS.png'); /* Local path */
+    background-image: url('logos/pictures/logo.png'); /* Local path */
     background-size: 30px;
     background-repeat: no-repeat;
     background-position: center;
