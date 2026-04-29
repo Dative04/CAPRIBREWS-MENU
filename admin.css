@@ -1078,7 +1078,34 @@ button {
     font-size: 0.95rem;
 }
 
-.btn-primary:hover { background: var(--accent-light); }
+.action-btns-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.btn-success {
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.btn-success:hover {
+    background: #4f5b2f;
+}
+
+.status-badge.error {
+    background: rgba(188, 71, 73, 0.15);
+    color: #ff6b6b;
+}
 
 .btn-secondary {
     background: none;

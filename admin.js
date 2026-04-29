@@ -141,6 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Special loads
+        if (sectionId === 'orders') loadOrdersData();
         if (sectionId === 'completed') loadCompletedOrders();
         if (sectionId === 'analytics') updateAnalytics();
 
@@ -717,7 +718,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>₱${Number(order.total_price).toFixed(0)}</td>
                 <td><span class="status-badge pending">Pending</span></td>
                 <td>
-                    <button class="btn-success btn-sm" onclick="completeOrder('${order.id}')">Complete</button>
+                    <div class="action-btns-row">
+                        <button class="btn-success btn-sm" onclick="completeOrder('${order.id}')">Complete</button>
+                        <button class="btn-danger btn-sm" onclick="cancelOrder('${order.id}', 'pending')">Cancel</button>
+                    </div>
                 </td>
             `;
             tableBody.appendChild(tr);
@@ -733,8 +737,58 @@ document.addEventListener('DOMContentLoaded', () => {
             if (error) throw error;
             showToast('Order completed!', 'success');
             loadOrdersData();
+            updateAnalytics(); // Update analytics if active
         } catch (err) {
             showToast('Failed to complete order', 'error');
+        }
+    };
+
+    window.cancelOrder = async (id, currentStatus) => {
+        const confirmed = await showConfirm({
+            title: 'Cancel Order?',
+            message: 'Are you sure you want to cancel this order? It will be moved to history with a cancelled status.',
+            icon: '⚠️',
+            confirmLabel: 'Cancel Order',
+            danger: true
+        });
+        if (!confirmed) return;
+
+        try {
+            const { error } = await window.supabaseClient
+                .from('orders')
+                .update({ status: 'cancelled' })
+                .eq('id', id);
+            if (error) throw error;
+            showToast('Order cancelled', 'success');
+            if (currentStatus === 'pending') loadOrdersData();
+            else loadCompletedOrders();
+            updateAnalytics();
+        } catch (err) {
+            showToast('Failed to cancel order', 'error');
+        }
+    };
+
+    window.clearOrder = async (id) => {
+        const confirmed = await showConfirm({
+            title: 'Clear from History?',
+            message: 'This will permanently delete this order record. It will no longer appear in history or sales analytics.',
+            icon: '🗑️',
+            confirmLabel: 'Delete Permanently',
+            danger: true
+        });
+        if (!confirmed) return;
+
+        try {
+            const { error } = await window.supabaseClient
+                .from('orders')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
+            showToast('Order record deleted', 'success');
+            loadCompletedOrders();
+            updateAnalytics();
+        } catch (err) {
+            showToast('Failed to delete order', 'error');
         }
     };
 
@@ -748,7 +802,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let query = window.supabaseClient
                 .from('orders')
                 .select('*')
-                .eq('status', 'completed')
+                .in('status', ['completed', 'cancelled'])
                 .order('created_at', { ascending: false });
 
             if (dateFilter) {
@@ -768,13 +822,17 @@ document.addEventListener('DOMContentLoaded', () => {
             data.forEach(order => {
                 const date = new Date(order.created_at).toLocaleDateString();
                 const itemsList = order.items.map(i => i.name).join(', ');
+                const statusClass = order.status === 'completed' ? 'success' : 'error';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${date}</td>
                     <td>${order.customer_name}</td>
                     <td>${itemsList}</td>
                     <td>₱${Number(order.total_price).toFixed(0)}</td>
-                    <td><span class="status-badge success">Completed</span></td>
+                    <td><span class="status-badge ${statusClass}">${order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span></td>
+                    <td>
+                        <button class="delete-btn btn-sm" onclick="clearOrder('${order.id}')" title="Clear Record">×</button>
+                    </td>
                 `;
                 tableBody.appendChild(tr);
             });
