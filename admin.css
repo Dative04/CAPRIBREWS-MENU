@@ -72,16 +72,13 @@ body::before {
     gap: 12px;
 }
 
-.logo-icon {
+.logo-img {
     width: 40px;
     height: 40px;
-    background: var(--accent);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    box-shadow: 0 4px 12px rgba(212,130,42,0.3);
+    object-fit: contain;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+    background-color: var(--accent); /* Fallback background */
+    border-radius: 50%;
 }
 
 .logo-text {
@@ -326,10 +323,9 @@ body::before {
     white-space: nowrap;
 }
 
-.sidebar-header .logo .logo-icon {
+.sidebar-header .logo .logo-img {
     width: 32px;
     height: 32px;
-    font-size: 16px;
 }
 
 .sidebar-header .logo .logo-text {
@@ -931,6 +927,18 @@ button {
     padding: 8px 16px;
 }
 
+.add-size-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('https://i.imgur.com/F022t03.png');
+    background-size: 30px;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.2; /* Slightly increased for visibility */
+    z-index: 0; /* Changed to 0 */
+}
+
 .add-size-btn {
     margin-top: var(--space-1);
     padding: 10px 16px;
@@ -944,16 +952,9 @@ button {
     z-index: 1;
 }
 
-.add-size-btn::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: url('https://i.imgur.com/F022t03.png');
-    background-size: 40px;
-    background-repeat: no-repeat;
-    background-position: center;
-    opacity: 0.15; /* Low opacity backdrop */
-    z-index: -1;
+.add-size-btn span, .add-size-btn i {
+    position: relative;
+    z-index: 2;
 }
 
 .add-size-btn:hover {
