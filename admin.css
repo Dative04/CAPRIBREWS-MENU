@@ -1089,7 +1089,7 @@ button {
     font-size: 0.95rem;
 }
 
-.btn-secondary:hover { background: #f8f9fa; border-color: var(--text-dim); color: var(--text-main); }
+.btn-secondary:hover { background: var(--medium-roast); border-color: var(--latte); color: var(--text-main); }
 
 .btn-text {
     background: none;
@@ -1179,11 +1179,12 @@ input:focus, textarea:focus, select:focus {
 .check-group input { width: auto; }
 
 .price-section {
-    background: #f8f9fa;
+    background: var(--medium-roast);
     padding: 14px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border);
     margin-top: var(--space-1);
+    color: var(--text-main);
 }
 
 .price-row {
