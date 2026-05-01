@@ -208,7 +208,6 @@
     max-width: 1200px;
     margin: 0 auto;
     position: relative;
-    z-index: 10;
   }
 
   .sidebar-overlay {
@@ -381,8 +380,8 @@
     margin-bottom: 16px;
   }
 
-  /* Hide old category bar and search section */
-  .category-bar, .search-section { display: none !important; }
+  /* Hide old category bar */
+  .category-bar { display: none !important; }
 
   .section-label {
     font-family: 'Caveat', cursive;
@@ -1488,7 +1487,10 @@ window.filterCategory = function(cat) {
   // Close sidebar on mobile after selection
   if (window.innerWidth <= 850) {
     const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
     if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('open');
+    document.body.style.overflow = '';
   }
   
   renderMenu();
