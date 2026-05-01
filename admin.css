@@ -1,3 +1,24 @@
+/* ── Custom Scrollbar ── */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--medium-roast);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--caramel);
+}
+/* For Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--medium-roast) transparent;
+}
+
 :root {
     --espresso: #2d1a10; /* Lighter than original #1a0f0a */
     --dark-roast: #3e2717; /* Lighter than original #2d1a10 */

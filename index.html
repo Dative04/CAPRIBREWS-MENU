@@ -168,6 +168,27 @@
 
   .cart-badge.visible { opacity: 1; transform: scale(1); }
 
+  /* ── Custom Scrollbar ── */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--medium-roast);
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--caramel);
+  }
+  /* For Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--medium-roast) transparent;
+  }
+
   /* ── Sidebar & Layout ── */
   .layout-wrapper {
     display: flex;
@@ -175,6 +196,22 @@
     margin: 0 auto;
     position: relative;
     z-index: 10;
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(26,15,10,0.5);
+    backdrop-filter: blur(4px);
+    z-index: 240;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .sidebar-overlay.open {
+    opacity: 1;
+    visibility: visible;
   }
 
   .sidebar {
@@ -192,6 +229,9 @@
     overflow-y: auto;
     flex-shrink: 0;
   }
+
+  .sidebar::-webkit-scrollbar { display: none; } /* Hide sidebar scrollbar */
+  .sidebar { -ms-overflow-style: none; scrollbar-width: none; }
 
   .sidebar-label {
     font-size: 11px;
@@ -1103,6 +1143,8 @@
   </div>
 </header>
 
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
 <div class="layout-wrapper">
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-search">
@@ -1423,9 +1465,11 @@ window.filterCategory = function(cat) {
 }
 
 window.toggleSidebar = function() {
-  const sidebar = document.getElementById('sidebar');
-  if (sidebar) sidebar.classList.toggle('open');
-}
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (sidebar) sidebar.classList.toggle('open');
+    if (overlay) overlay.classList.toggle('open');
+  }
 
 window.handleSearch = function() {
   searchTerm = document.getElementById('menu-search').value.toLowerCase();
