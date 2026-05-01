@@ -65,6 +65,14 @@ body::before {
     z-index: -1;
 }
 
+/* Responsive Backdrop for Mobile */
+@media (max-width: 600px) {
+    body::before {
+        background-size: 100% auto, 60px 60px; /* Make logo smaller on mobile */
+        background-position: center 30%, center;
+    }
+}
+
 body::after {
     content: 'CAPRIBREWS';
     position: fixed;
@@ -80,6 +88,14 @@ body::after {
     pointer-events: none;
     z-index: -1;
     white-space: nowrap;
+}
+
+/* Responsive Text for Mobile */
+@media (max-width: 600px) {
+    body::after {
+        font-size: 3rem;
+        top: 90%;
+    }
 }
 
 .hidden { display: none !important; }

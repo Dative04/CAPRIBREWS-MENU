@@ -69,6 +69,18 @@
     white-space: nowrap;
   }
 
+  /* Responsive Backdrop for Mobile */
+  @media (max-width: 600px) {
+    body::before {
+      background-size: 100% auto, 60px 60px; /* Make logo smaller on mobile */
+      background-position: center 30%, center;
+    }
+    body::after {
+      font-size: 3rem;
+      top: 90%;
+    }
+  }
+
   /* ── Header ── */
   .site-header {
     position: sticky;
@@ -156,99 +168,151 @@
 
   .cart-badge.visible { opacity: 1; transform: scale(1); }
 
-  /* ── Search Bar ── */
-  .search-section {
-    max-width: 900px;
+  /* ── Sidebar & Layout ── */
+  .layout-wrapper {
+    display: flex;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 20px 20px 0;
+    position: relative;
+    z-index: 10;
+  }
+
+  .sidebar {
+    width: 240px;
+    position: sticky;
+    top: 64px;
+    height: calc(100vh - 64px);
+    background: rgba(26,15,10,0.8);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid rgba(196,149,106,0.15);
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .sidebar-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--latte);
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+    opacity: 0.7;
+  }
+
+  .sidebar-tab {
+    background: transparent;
+    border: none;
+    color: rgba(245,237,224,0.6);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .sidebar-tab:hover {
+    background: rgba(196,149,106,0.1);
+    color: var(--cream);
+  }
+
+  .sidebar-tab.active {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 4px 12px rgba(188, 108, 37, 0.2);
+  }
+
+  .main-content {
+    flex: 1;
+    padding: 28px 40px 140px;
+    min-width: 0;
+  }
+
+  /* ── Search Bar in Sidebar ── */
+  .sidebar-search {
+    margin-bottom: 24px;
   }
 
   .search-container {
     position: relative;
     width: 100%;
-    max-width: 500px;
   }
 
   .search-input {
     width: 100%;
     background: var(--dark-roast);
-    border: 1px solid rgba(196,149,106,0.3);
-    border-radius: 24px;
-    padding: 12px 20px 12px 45px;
+    border: 1px solid rgba(196,149,106,0.2);
+    border-radius: 12px;
+    padding: 10px 14px 10px 38px;
     color: var(--cream);
-    font-family: inherit;
-    font-size: 15px;
+    font-size: 14px;
     outline: none;
     transition: all 0.2s;
   }
 
   .search-input:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 4px rgba(212,130,42,0.1);
+    background: var(--medium-roast);
   }
 
   .search-icon {
     position: absolute;
-    left: 18px;
+    left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 16px;
-    opacity: 0.5;
-    pointer-events: none;
+    font-size: 14px;
+    opacity: 0.4;
   }
 
-  /* ── Category tabs ── */
-  .category-bar {
-    background: var(--dark-roast);
-    border-bottom: 1px solid rgba(196,149,106,0.15);
-    overflow-x: auto;
-    scrollbar-width: none;
-    position: sticky;
-    top: 64px;
-    z-index: 90;
+  /* Mobile Adjustments for Sidebar */
+  @media (max-width: 850px) {
+    .sidebar {
+      position: fixed;
+      left: -240px;
+      z-index: 250;
+      transition: left 0.3s ease;
+      background: var(--dark-roast);
+    }
+    .sidebar.open {
+      left: 0;
+    }
+    .main-content {
+      padding: 20px;
+    }
+    .mobile-menu-toggle {
+      display: flex !important;
+    }
+    .layout-wrapper {
+        display: block;
+    }
   }
 
-  .category-bar::-webkit-scrollbar { display: none; }
-
-  .category-tabs {
-    display: flex;
-    gap: 4px;
-    padding: 10px 20px;
-    max-width: 900px;
-    margin: 0 auto;
-    width: max-content;
-  }
-
-  .cat-tab {
-    background: transparent;
-    border: 1px solid rgba(196,149,106,0.2);
-    color: rgba(245,237,224,0.6);
-    border-radius: 20px;
-    padding: 6px 16px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.2s;
-  }
-
-  .cat-tab:hover { color: var(--cream); border-color: rgba(196,149,106,0.5); }
-
-  .cat-tab.active {
+  .mobile-menu-toggle {
+    display: none;
+    align-items: center;
+    gap: 8px;
     background: var(--accent);
-    border-color: var(--accent);
+    border: none;
     color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 16px;
   }
 
-  /* ── Main layout ── */
-  .main-content {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 28px 20px 140px;
-    position: relative;
-    z-index: 1;
-  }
+  /* Hide old category bar and search section */
+  .category-bar, .search-section { display: none !important; }
 
   .section-label {
     font-family: 'Caveat', cursive;
@@ -1039,11 +1103,31 @@
   </div>
 </header>
 
-<div class="search-section">
-  <div class="search-container">
-    <span class="search-icon">🔍</span>
-    <input type="text" id="menu-search" class="search-input" placeholder="Search for your favorite drinks or bites..." oninput="handleSearch()">
-  </div>
+<div class="layout-wrapper">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-search">
+      <div class="search-container">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="menu-search" class="search-input" placeholder="Search menu..." oninput="handleSearch()">
+      </div>
+    </div>
+
+    <div class="sidebar-label">Categories</div>
+    <nav class="sidebar-nav" id="sidebar-nav">
+      <!-- Categories injected here -->
+    </nav>
+  </aside>
+
+  <main class="main-content">
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()">
+      <span>☰</span> Categories
+    </button>
+    
+    <div class="section-label" id="section-label">All Items</div>
+    <div class="menu-grid" id="menu-grid">
+      <!-- Items injected here -->
+    </div>
+  </main>
 </div>
 
 <div class="category-bar">
@@ -1306,21 +1390,41 @@ async function fetchMenu() {
 
 function buildCategoryTabs() {
   const cats = ['All', ...new Set(menuItems.map(i => i.category))];
-  const container = document.getElementById('category-tabs');
+  const container = document.getElementById('sidebar-nav');
+  if (!container) return;
+  
   container.innerHTML = cats.map(cat => {
     const emoji = cat === 'All' ? '🍽️' : (CATEGORY_EMOJIS[cat.toLowerCase()] || '•');
-    return `<button class="cat-tab ${cat === 'All' ? 'active' : ''}" onclick="filterCategory('${cat}')">${emoji} ${cat}</button>`;
+    const activeClass = cat === currentCategory ? 'active' : '';
+    return `<button class="sidebar-tab ${activeClass}" onclick="filterCategory('${cat}')">
+      <span>${emoji}</span> ${cat}
+    </button>`;
   }).join('');
 }
 
 window.filterCategory = function(cat) {
   currentCategory = cat;
-  document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
-  const tabs = document.querySelectorAll('.cat-tab');
-  tabs.forEach(t => { if (t.textContent.includes(cat === 'All' ? 'All' : cat)) t.classList.add('active'); });
+  
+  // Update active state in sidebar
+  document.querySelectorAll('.sidebar-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.textContent.includes(cat));
+  });
+
   const label = document.getElementById('section-label');
-  label.textContent = cat === 'All' ? 'All Items' : cat;
+  if (label) label.textContent = cat === 'All' ? 'All Items' : cat;
+  
+  // Close sidebar on mobile after selection
+  if (window.innerWidth <= 850) {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) sidebar.classList.remove('open');
+  }
+  
   renderMenu();
+}
+
+window.toggleSidebar = function() {
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar) sidebar.classList.toggle('open');
 }
 
 window.handleSearch = function() {
