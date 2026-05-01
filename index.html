@@ -201,8 +201,8 @@
   .sidebar-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(26,15,10,0.5);
-    backdrop-filter: blur(4px);
+    background: rgba(26,15,10,0.4);
+    backdrop-filter: none; /* Removed blur to prevent whole screen blurring */
     z-index: 240;
     opacity: 0;
     visibility: hidden;
@@ -277,9 +277,10 @@
     min-width: 0;
   }
 
-  /* ── Search Bar in Sidebar ── */
-  .sidebar-search {
+  /* ── Search Bar ── */
+  .search-section {
     margin-bottom: 24px;
+    max-width: 500px;
   }
 
   .search-container {
@@ -1147,13 +1148,6 @@
 
 <div class="layout-wrapper">
   <aside class="sidebar" id="sidebar">
-    <div class="sidebar-search">
-      <div class="search-container">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="menu-search" class="search-input" placeholder="Search menu..." oninput="handleSearch()">
-      </div>
-    </div>
-
     <div class="sidebar-label">Categories</div>
     <nav class="sidebar-nav" id="sidebar-nav">
       <!-- Categories injected here -->
@@ -1164,6 +1158,13 @@
     <button class="mobile-menu-toggle" onclick="toggleSidebar()">
       <span>☰</span> Categories
     </button>
+
+    <div class="search-section">
+      <div class="search-container">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="menu-search" class="search-input" placeholder="Search menu..." oninput="handleSearch()">
+      </div>
+    </div>
     
     <div class="section-label" id="section-label">All Items</div>
     <div class="menu-grid" id="menu-grid">
