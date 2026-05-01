@@ -1007,19 +1007,6 @@
   .modal-btn-ghost:hover { color: var(--cream); border-color: rgba(196,149,106,0.4); }
 
   /* ── Print styles ── */
-  @media print {
-    body > *:not(#print-area) { display: none !important; }
-    #print-area {
-      display: block !important;
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-      padding: 20px;
-      color: #000;
-    }
-  }
-
-  #print-area { display: none; }
-
   /* ── No results ── */
   .no-items {
     grid-column: 1/-1;
@@ -1167,9 +1154,6 @@
     <div class="modal-actions" id="modal-actions"></div>
   </div>
 </div>
-
-<!-- Print Area (Hidden) -->
-<div id="print-area"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
@@ -1721,10 +1705,9 @@ async function finalizeOrder(name, address, phone) {
       modalSubtitle.textContent = 'Your order is saved. Please proceed to the counter for payment.';
 
       modalActions.innerHTML = `
-        <button class="modal-btn modal-btn-primary" onclick="printReceipt('${name}', '${encodeURIComponent(JSON.stringify(itemsArr))}', ${total})">
-          🖨️ Print Receipt
-        </button>
-        <button class="modal-btn modal-btn-ghost" onclick="closeModal()">Close</button>`;
+        <button class="modal-btn modal-btn-primary" onclick="closeModal()">
+          Great, Thanks!
+        </button>`;
     }
 
     // Clear cart & close drawer
@@ -1782,32 +1765,6 @@ window.copyAndOpenMessenger = async function(encodedText) {
   
   const messengerUrl = `https://m.me/61580219733955?text=${encodeURIComponent(text)}`;
   window.open(messengerUrl, '_blank');
-}
-
-window.printReceipt = function(name, encodedItems, total) {
-  const items = JSON.parse(decodeURIComponent(encodedItems));
-  const now = new Date();
-  const printArea = document.getElementById('print-area');
-  printArea.innerHTML = `
-    <div style="text-align:center;margin-bottom:12px">
-      <strong style="font-size:16px">☕ CAPRIBREWS</strong><br>
-      <small>${now.toLocaleString('en-PH')}</small>
-    </div>
-    <hr>
-    <p>Customer: <strong>${name}</strong></p>
-    <p>Type: Dine-In</p>
-    <hr>
-    ${items.map(i => `
-      <p style="margin: 4px 0;">
-        ${i.qty}× ${i.name} (${i.size})<br>
-        ${i.sugarLevel ? `<small style="font-style:italic">Sugar: ${i.sugarLevel}</small>` : ''}
-        <span style="float:right">₱${(i.price * i.qty).toFixed(0)}</span>
-      </p>`).join('')}
-    <hr>
-    <p><strong>TOTAL: ₱${total.toFixed(0)}</strong></p>
-    <hr>
-    <p style="text-align:center;margin-top:8px">Thank you! Please proceed to the counter.</p>`;
-  window.print();
 }
 
 window.closeModal = function() {
