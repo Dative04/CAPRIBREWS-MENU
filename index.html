@@ -1552,6 +1552,8 @@ function renderMenu() {
       </div>
     ` : '';
 
+    const sizeLabelHTML = isBeverage && item.prices ? `<div class="sugar-label">Drink Size</div>` : '';
+
     const pricingHTML = item.prices
       ? Object.entries(item.prices).map(([size, price]) =>
           `<button class="size-btn" onclick="addToCart(event,${JSON.stringify(item).replace(/'/g,"&#39;").replace(/"/g,"&quot;")},'${size}',${price})">
@@ -1576,6 +1578,7 @@ function renderMenu() {
           <div class="card-name">${item.name}</div>
           <div class="card-desc">${item.description || ''}</div>
           ${sugarHTML}
+          ${sizeLabelHTML}
           <div class="size-btns">${pricingHTML}</div>
         </div>
       </div>`;
