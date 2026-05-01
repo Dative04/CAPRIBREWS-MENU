@@ -189,6 +189,19 @@
     scrollbar-color: var(--medium-roast) transparent;
   }
 
+  /* Hide default scrollbars in PC mode for specific elements */
+  @media (min-width: 851px) {
+    .sidebar, .drawer-items, .modal-box {
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE/Edge */
+    }
+    .sidebar::-webkit-scrollbar, 
+    .drawer-items::-webkit-scrollbar, 
+    .modal-box::-webkit-scrollbar {
+      display: none; /* Chrome/Safari/Webkit */
+    }
+  }
+
   /* ── Sidebar & Layout ── */
   .layout-wrapper {
     display: flex;
@@ -207,11 +220,13 @@
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
+    pointer-events: none; /* Default to no interaction */
   }
 
   .sidebar-overlay.open {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto; /* Allow clicking to close when open */
   }
 
   .sidebar {
@@ -1482,8 +1497,15 @@ window.filterCategory = function(cat) {
 window.toggleSidebar = function() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
+    
+    // Toggle sidebar
     if (sidebar) sidebar.classList.toggle('open');
     if (overlay) overlay.classList.toggle('open');
+
+    // Prevent scrolling on body when sidebar is open on mobile
+    if (window.innerWidth <= 850) {
+      document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : '';
+    }
   }
 
 window.handleSearch = function() {
