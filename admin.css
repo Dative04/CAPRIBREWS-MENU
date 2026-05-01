@@ -1056,6 +1056,13 @@ button {
     object-fit: cover;
 }
 
+.admin-item-grid {
+    display: grid;
+    grid-template-columns: 1fr; /* Single column to prevent horizontal overlapping */
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+}
+
 .admin-card {
     background: var(--card-bg);
     padding: var(--space-3);
@@ -1064,43 +1071,48 @@ button {
     box-shadow: var(--shadow-sm);
     display: flex;
     justify-content: space-between;
-    align-items: center; /* Center items vertically */
+    align-items: center;
     gap: var(--space-3);
     transition: transform 0.2s, box-shadow 0.2s;
+    width: 100%; /* Ensure it takes full width of the grid */
+    box-sizing: border-box;
 }
 
 .card-content-wrapper {
     display: flex;
     gap: 15px;
     align-items: center;
-    flex: 1; /* Take up available space */
+    flex: 1;
+    min-width: 0; /* Important: prevents content from pushing out the card */
 }
 
 .card-info {
     flex: 1;
+    min-width: 0; /* Important: allows text truncation or wrapping */
 }
 
-.admin-card img {
-    width: 60px;
-    height: 60px;
-    border-radius: var(--radius-sm);
-    object-fit: cover;
-    background: var(--medium-roast);
-    flex-shrink: 0;
-}
-
-.placeholder-img {
-    width: 60px;
-    height: 60px;
-    border-radius: var(--radius-sm);
-    background: var(--medium-roast);
+.card-title-row {
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
+    gap: 10px;
+    margin-bottom: 4px;
+    flex-wrap: wrap; /* Allow tags to wrap on small screens */
+}
+
+.card-info h3 {
+    margin: 0;
+    font-size: 1.1rem;
     color: var(--accent);
-    flex-shrink: 0;
-    border: 1px solid var(--border);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Truncate very long names */
+}
+
+.card-meta {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.4;
 }
 
 .card-actions {
@@ -1108,15 +1120,7 @@ button {
     flex-direction: column;
     align-items: flex-end;
     gap: 12px;
-    flex-shrink: 0;
-}
-
-.toggle-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.8rem;
-    color: var(--text-dim);
+    flex-shrink: 0; /* Prevent buttons from shrinking */
 }
 
 .item-actions {
