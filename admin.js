@@ -623,6 +623,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </div>
                         <p class="card-meta">${item.category} · ${priceDisplay}</p>
+                        ${item.image_url ? `<button class="btn-text btn-sm" style="padding:0; margin-top:4px; color:var(--error);" onclick="removeMenuItemPicture('${item.id}')">Remove Picture</button>` : ''}
                     </div>
                 </div>
                 <div class="card-actions">
@@ -660,7 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Handle image preview
         if (item.image_url) {
             imageBase64Input.value = item.image_url;
-            imagePreview.innerHTML = `<img src="${item.image_url}" alt="Preview">`;
+            imagePreview.innerHTML = `<img src="${item.image_url}" alt="Preview" style="width:100%;height:100%;object-fit:cover;">`;
         } else {
             imageBase64Input.value = '';
             imagePreview.innerHTML = '<span>No image selected</span>';
@@ -727,6 +728,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    window.removeMenuItemPicture = async (itemId) => {
+        const confirmed = await showConfirm({
+            title: 'Remove Picture?',
+            message: 'Are you sure you want to remove this item\'s photo? It will revert to the default logo.',
+            icon: '🖼️',
+            confirmLabel: 'Remove Photo',
+            danger: true
+        });
+        if (!confirmed) return;
+
+        try {
+            const { error } = await window.supabaseClient
+                .from('menu')
+                .update({ image_url: '' })
+                .eq('id', itemId);
+            
+            if (error) throw error;
+            
+            showToast('Image removed ✓', 'success');
+            loadAdminData();
+        } catch (err) {
+            showToast('Failed to remove image', 'error');
+        }
+    };
+
     // ─── Orders ───────────────────────────────────────────────────────────────────
     async function loadOrdersData() {
         try {
@@ -763,7 +789,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>
                     <div class="customer-info">
                         <strong>${order.customer_name}</strong>
-                        ${order.order_type === 'delivery' ? `<br><small>🛵 ${order.delivery_address || 'No address'}</small>` : '<br><small>🏠 Dine-in</small>'}
+                        ${order.order_type === 'delivery' ? `<br><small>🛵 ${order.delivery_address || 'No address'}</small><br><a href="https://m.me/61580219733955" target="_blank" style="font-size:0.75rem; color:var(--accent-light);">💬 Open Messenger</a>` : '<br><small>🏠 Dine-in</small>'}
                     </div>
                 </td>
                 <td>${itemsList}</td>
@@ -878,7 +904,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${date}</td>
-                    <td>${order.customer_name}</td>
+                    <td>
+                        <div class="customer-info">
+                            <strong>${order.customer_name}</strong>
+                            ${order.order_type === 'delivery' ? `<br><a href="https://m.me/61580219733955" target="_blank" style="font-size:0.75rem; color:var(--accent-light);">💬 Open Messenger</a>` : ''}
+                        </div>
+                    </td>
                     <td>${itemsList}</td>
                     <td>₱${Number(order.total_price).toFixed(0)}</td>
                     <td><span class="status-badge ${statusClass}">${order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span></td>

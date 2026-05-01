@@ -273,12 +273,44 @@
     overflow: hidden;
     transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
     animation: fadeUp 0.4s ease both;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .item-image-container {
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+    background-color: var(--medium-roast);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid rgba(196,149,106,0.1);
+  }
+
+  .item-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .item-image-container .placeholder-logo {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    opacity: 0.3;
   }
 
   .menu-card:hover {
-    transform: translateY(-3px);
+    transform: translateY(-4px);
     box-shadow: var(--shadow-lg);
-    border-color: rgba(196,149,106,0.35);
+    border-color: rgba(196,149,106,0.3);
+  }
+
+  .menu-card:hover .item-image-container img {
+    transform: scale(1.05);
   }
 
   @keyframes fadeUp {
@@ -288,24 +320,17 @@
 
   .card-img {
     width: 100%;
-    height: 160px;
+    height: 100%;
     object-fit: cover;
     display: block;
-  }
-
-  .card-img-placeholder {
-    width: 100%;
-    height: 120px;
-    background: linear-gradient(135deg, var(--medium-roast), var(--dark-roast));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 32px;
-    opacity: 0.5;
+    transition: transform 0.3s ease;
   }
 
   .card-body {
     padding: 14px 16px 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
   }
 
   .card-cat {
@@ -330,6 +355,7 @@
     color: rgba(245,237,224,0.55);
     line-height: 1.5;
     margin-bottom: 14px;
+    flex: 1;
   }
 
   /* Size buttons */
@@ -1301,9 +1327,15 @@ function renderMenu() {
           Add to Cart<span class="size-price">₱${item.price}</span>
         </button>`;
 
+    const imgHtml = item.image_url 
+      ? `<img src="${item.image_url}" class="card-img" alt="${item.name}" loading="lazy">` 
+      : `<img src="https://raw.githubusercontent.com/Dative04/CAPRIBREWS-MENU/main/logo.png" class="placeholder-logo" alt="Capribrews">`;
+
     return `
       <div class="menu-card" style="animation-delay:${idx * 0.04}s">
-        <div class="card-img-placeholder">${emoji}</div>
+        <div class="item-image-container">
+          ${imgHtml}
+        </div>
         <div class="card-body">
           <div class="card-cat">${item.category}</div>
           <div class="card-name">${item.name}</div>
@@ -1586,16 +1618,13 @@ async function finalizeOrder(name, address, phone) {
     if (isDelivery) {
       modalIcon.textContent = '🛵';
       modalTitle.textContent = 'Ready to Send!';
-      modalSubtitle.textContent = 'Your order is saved. Copy the receipt and paste it in Messenger to notify us.';
+      modalSubtitle.textContent = 'Your order is saved. Click below to notify us via Messenger.';
 
       const receiptText = buildReceiptText(name, address, phone, itemsArr, total);
 
       modalActions.innerHTML = `
-        <button class="modal-btn messenger-btn" onclick="openMessenger('${encodeURIComponent(receiptText)}')">
-          💬 Send Order via Messenger
-        </button>
-        <button class="modal-btn modal-btn-secondary" onclick="copyAndConfirm('${encodeURIComponent(receiptText)}', this)">
-          📋 Copy Receipt
+        <button class="modal-btn modal-btn-primary" onclick="copyAndOpenMessenger('${encodeURIComponent(receiptText)}')">
+          💬 Copy & Open Messenger
         </button>
         <button class="modal-btn modal-btn-ghost" onclick="closeModal()">Done</button>`;
     } else {
@@ -1652,24 +1681,16 @@ function buildReceiptText(name, address, phone, items, total) {
   return text;
 }
 
-window.copyAndConfirm = async function(encodedText, btn) {
+window.copyAndOpenMessenger = async function(encodedText) {
   const text = decodeURIComponent(encodedText);
   try {
     await navigator.clipboard.writeText(text);
-    const orig = btn.textContent;
-    btn.textContent = '✓ Copied!';
-    setTimeout(() => { btn.textContent = orig; }, 2000);
-  } catch {
-    prompt('Copy this text:', text);
+    alert('Order details copied! Now pasting into Messenger...');
+  } catch (err) {
+    console.error('Clipboard error:', err);
   }
-}
-
-window.openMessenger = function(encodedText) {
-  const receipt = decodeURIComponent(encodedText);
-  const messengerUrl = `https://m.me/61580219733955?text=${encodeURIComponent(receipt)}`;
-
-  navigator.clipboard.writeText(receipt).catch(() => {});
-
+  
+  const messengerUrl = `https://m.me/61580219733955?text=${encodeURIComponent(text)}`;
   window.open(messengerUrl, '_blank');
 }
 
