@@ -783,7 +783,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         orders.forEach(order => {
             const tr = document.createElement('tr');
-            const itemsList = order.items.map(i => `${i.name} (${i.selectedSize})`).join(', ');
+            const itemsList = order.items.map(i => {
+                const sugarText = i.sugarLevel ? ` <span class="sugar-tag">${i.sugarLevel} Sugar</span>` : '';
+                return `• ${i.name} (${i.size})${sugarText}`;
+            }).join('<br>');
             
             tr.innerHTML = `
                 <td>
@@ -899,7 +902,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             data.forEach(order => {
                 const date = new Date(order.created_at).toLocaleDateString();
-                const itemsList = order.items.map(i => i.name).join(', ');
+                const itemsList = order.items.map(i => {
+                    const sugarText = i.sugarLevel ? ` <small>(${i.sugarLevel})</small>` : '';
+                    return `${i.name}${sugarText}`;
+                }).join(', ');
                 const statusClass = order.status === 'completed' ? 'success' : 'error';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `

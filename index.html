@@ -358,6 +358,51 @@
     flex: 1;
   }
 
+  /* ── Sugar Selector ── */
+  .sugar-selector {
+    margin-bottom: 14px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(196,149,106,0.1);
+  }
+
+  .sugar-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--latte);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+  }
+
+  .sugar-options {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+
+  .sugar-pill {
+    background: var(--medium-roast);
+    border: 1px solid rgba(196,149,106,0.2);
+    color: var(--cream);
+    border-radius: 15px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .sugar-pill:hover {
+    border-color: var(--accent);
+  }
+
+  .sugar-pill.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
   /* Size buttons */
   .size-btns {
     display: flex;
@@ -1317,6 +1362,25 @@ function renderMenu() {
 
   grid.innerHTML = filteredItems.map((item, idx) => {
     const emoji = ITEM_EMOJIS[item.category] || '☕';
+    
+    // Determine if item is a beverage for sugar selector
+    const beverageCategories = ['Coffee Selection', 'Frappe', 'Signature Twists', 'Soda Blends', 'Signature Fruit Infusions', 'Milkshakes', 'Premium Milkshakes'];
+    const isBeverage = beverageCategories.includes(item.category);
+
+    const sugarHTML = isBeverage ? `
+      <div class="sugar-selector" id="sugar-selector-${item.id}">
+        <div class="sugar-label">Sugar Level</div>
+        <div class="sugar-options">
+          <div class="sugar-pill" onclick="setSugarLevel(${item.id}, '0%')">0%</div>
+          <div class="sugar-pill" onclick="setSugarLevel(${item.id}, '25%')">25%</div>
+          <div class="sugar-pill" onclick="setSugarLevel(${item.id}, '50%')">50%</div>
+          <div class="sugar-pill" onclick="setSugarLevel(${item.id}, '75%')">75%</div>
+          <div class="sugar-pill active" onclick="setSugarLevel(${item.id}, '100%')">100%</div>
+        </div>
+        <input type="hidden" id="sugar-val-${item.id}" value="100%">
+      </div>
+    ` : '';
+
     const pricingHTML = item.prices
       ? Object.entries(item.prices).map(([size, price]) =>
           `<button class="size-btn" onclick="addToCart(event,${JSON.stringify(item).replace(/'/g,"&#39;").replace(/"/g,"&quot;")},'${size}',${price})">
@@ -1340,15 +1404,32 @@ function renderMenu() {
           <div class="card-cat">${item.category}</div>
           <div class="card-name">${item.name}</div>
           <div class="card-desc">${item.description || ''}</div>
+          ${sugarHTML}
           <div class="size-btns">${pricingHTML}</div>
         </div>
       </div>`;
   }).join('');
 }
 
+window.setSugarLevel = function(itemId, level) {
+  const container = document.getElementById(`sugar-selector-${itemId}`);
+  if (!container) return;
+  
+  // Update UI
+  container.querySelectorAll('.sugar-pill').forEach(p => {
+    p.classList.toggle('active', p.textContent === level);
+  });
+  
+  // Update hidden input
+  document.getElementById(`sugar-val-${itemId}`).value = level;
+}
+
 // ── Cart ──────────────────────────────────────────────────────────────────────
 window.addToCart = function(event, item, size, price) {
-  const existing = cart.find(i => i.name === item.name && i.selectedSize === size);
+  const sugarInput = document.getElementById(`sugar-val-${item.id}`);
+  const sugarLevel = sugarInput ? sugarInput.value : null;
+
+  const existing = cart.find(i => i.name === item.name && i.selectedSize === size && i.sugarLevel === sugarLevel);
   if (existing) {
     existing.quantity++;
   } else {
@@ -1356,6 +1437,7 @@ window.addToCart = function(event, item, size, price) {
       ...item, 
       selectedSize: size, 
       selectedPrice: price, 
+      sugarLevel: sugarLevel,
       quantity: 1,
       id: Math.floor(Date.now() + Math.random() * 1000) 
     });
@@ -1417,7 +1499,7 @@ function updateCartUI() {
         <div class="cart-item-emoji">${emoji}</div>
         <div class="cart-item-info">
           <div class="cart-item-name">${item.name}</div>
-          <div class="cart-item-size">${item.selectedSize}</div>
+          <div class="cart-item-size">${item.selectedSize}${item.sugarLevel ? ` · Sugar: ${item.sugarLevel}` : ''}</div>
         </div>
         <div class="cart-item-price">₱${(item.selectedPrice * item.quantity).toFixed(0)}</div>
         <div class="qty-controls">
@@ -1500,6 +1582,7 @@ window.showConfirmation = function(name, address, phone) {
   const itemsArr = cart.map(item => ({
     name: item.name,
     size: item.selectedSize,
+    sugar: item.sugarLevel,
     price: item.selectedPrice,
     qty: item.quantity
   }));
@@ -1518,7 +1601,11 @@ window.showConfirmation = function(name, address, phone) {
 
   summaryHTML += `<hr class="receipt-divider">`;
   itemsArr.forEach(item => {
-    summaryHTML += `<div class="receipt-row"><span>${item.qty}× ${item.name} (${item.size})</span><span>₱${(item.price * item.qty).toFixed(0)}</span></div>`;
+    summaryHTML += `
+      <div class="receipt-row">
+        <span>${item.qty}× ${item.name} (${item.size})${item.sugar ? `<br><small style="opacity:0.7">Sugar Level: ${item.sugar}</small>` : ''}</span>
+        <span>₱${(item.price * item.qty).toFixed(0)}</span>
+      </div>`;
   });
   summaryHTML += `
     <hr class="receipt-divider">
@@ -1552,6 +1639,7 @@ async function finalizeOrder(name, address, phone) {
   const itemsArr = cart.map(item => ({
     name: item.name,
     size: item.selectedSize,
+    sugarLevel: item.sugarLevel,
     price: item.selectedPrice,
     qty: item.quantity
   }));
@@ -1672,7 +1760,9 @@ function buildReceiptText(name, address, phone, items, total) {
   text += `📍 Address: ${address}\n`;
   text += `📞 Contact: ${phone}\n`;
   text += `━━━━━━━━━━━━━━━━━━\n`;
-  items.forEach(i => { text += `• ${i.qty}x ${i.name} (${i.size}) — ₱${(i.price * i.qty).toFixed(0)}\n`; });
+  items.forEach(i => { 
+    text += `• ${i.qty}x ${i.name} (${i.size})${i.sugarLevel ? ` [Sugar: ${i.sugarLevel}]` : ''} — ₱${(i.price * i.qty).toFixed(0)}\n`; 
+  });
   text += `━━━━━━━━━━━━━━━━━━\n`;
   text += `💰 TOTAL: ₱${total.toFixed(0)}\n`;
   text += `Status: Pending Payment via Messenger\n`;
@@ -1707,7 +1797,12 @@ window.printReceipt = function(name, encodedItems, total) {
     <p>Customer: <strong>${name}</strong></p>
     <p>Type: Dine-In</p>
     <hr>
-    ${items.map(i => `<p>${i.qty}× ${i.name} (${i.size}) ... ₱${(i.price * i.qty).toFixed(0)}</p>`).join('')}
+    ${items.map(i => `
+      <p style="margin: 4px 0;">
+        ${i.qty}× ${i.name} (${i.size})<br>
+        ${i.sugarLevel ? `<small style="font-style:italic">Sugar: ${i.sugarLevel}</small>` : ''}
+        <span style="float:right">₱${(i.price * i.qty).toFixed(0)}</span>
+      </p>`).join('')}
     <hr>
     <p><strong>TOTAL: ₱${total.toFixed(0)}</strong></p>
     <hr>
