@@ -149,13 +149,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sectionId === 'analytics') updateAnalytics();
 
         // Close sidebar on mobile after selection
-        if (window.innerWidth < 1024) {
+        if (window.innerWidth < 768) {
             document.getElementById('sidebar')?.classList.remove('expanded');
+            document.getElementById('sidebar-overlay')?.classList.remove('open');
+            document.body.style.overflow = '';
         }
     };
 
     window.toggleSidebar = () => {
-        document.getElementById('sidebar')?.classList.toggle('expanded');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        
+        sidebar?.classList.toggle('expanded');
+        overlay?.classList.toggle('open');
+
+        // Prevent scrolling on body when sidebar is open on mobile
+        if (window.innerWidth < 768) {
+            document.body.style.overflow = sidebar?.classList.contains('expanded') ? 'hidden' : '';
+        }
     };
 
     // Category Emojis Mapping
