@@ -169,6 +169,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Close sidebar when clicking outside (on desktop or mobile)
+    document.addEventListener('click', (e) => {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        const mobileToggle = document.querySelector('.mobile-toggle');
+        const desktopToggle = document.querySelector('.toggle-btn');
+        
+        if (sidebar && sidebar.classList.contains('expanded')) {
+            // If click is outside sidebar AND outside the toggle buttons
+            if (!sidebar.contains(e.target) && 
+                !mobileToggle?.contains(e.target) && 
+                !desktopToggle?.contains(e.target)) {
+                
+                sidebar.classList.remove('expanded');
+                overlay?.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+        }
+    });
+
     // Category Emojis Mapping
     const CATEGORY_EMOJIS = {
         "all": "🍽️",

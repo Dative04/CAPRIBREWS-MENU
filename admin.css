@@ -121,6 +121,25 @@ body::after {
 
 .hidden { display: none !important; }
 
+/* Sidebar Overlay for Mobile */
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(26,15,10,0.4);
+    backdrop-filter: none;
+    z-index: 150;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.sidebar-overlay.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
 /* Logo Styles */
 .logo {
     display: flex;
@@ -666,9 +685,7 @@ body::after {
     color: var(--text-dim);
     font-size: 0.8rem;
     margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.4;
 }
 
 .card-actions {
@@ -1157,11 +1174,13 @@ button {
     align-items: center;
     flex: 1;
     min-width: 0; /* Important: prevents content from pushing out the card */
+    overflow: hidden;
 }
 
 .card-info {
     flex: 1;
     min-width: 0; /* Important: allows text truncation or wrapping */
+    overflow: hidden;
 }
 
 .card-title-row {
@@ -1546,20 +1565,34 @@ input:focus, textarea:focus, select:focus {
 
 @media (max-width: 768px) {
     .analytics-grid { grid-template-columns: 1fr; }
-    .admin-item-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
-}
+    .admin-item-grid { grid-template-columns: 1fr; }
 
-@media (max-width: 768px) {
     .sidebar {
         position: fixed;
         left: -240px;
         height: 100vh;
         width: 240px;
+        background: var(--dark-roast);
         box-shadow: var(--shadow-lg);
+        z-index: 250; /* Above overlay */
+        transition: left 0.3s ease;
     }
     .sidebar.expanded { left: 0; }
     
-    .mobile-toggle { display: block; }
+    .mobile-toggle { 
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--accent);
+        border: none;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    
     .toggle-btn { display: none; }
     .sidebar .logo { opacity: 1; pointer-events: auto; }
     .nav-label { opacity: 1; pointer-events: auto; }
@@ -1569,12 +1602,35 @@ input:focus, textarea:focus, select:focus {
     .header-controls { width: 100%; }
     #itemCategory, .search-filter, .search-filter input { width: 100%; }
     
+    .admin-card { 
+        flex-direction: column; 
+        align-items: stretch; 
+        gap: 15px;
+    }
+    
+    .card-content-wrapper {
+        width: 100%;
+    }
+    
+    .card-actions { 
+        width: 100%; 
+        flex-direction: row; 
+        justify-content: space-between; 
+        align-items: center; 
+        padding-top: 12px; 
+        border-top: 1px solid var(--border); 
+    }
+    
+    .card-info h3 {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+    }
+    
     .form-row { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {
     .stats-row { grid-template-columns: 1fr; }
     .admin-top-bar h1 { font-size: 1.1rem; }
-    .admin-card { flex-direction: column; align-items: flex-start; }
-    .card-actions { width: 100%; flex-direction: row; justify-content: space-between; align-items: center; margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
 }
