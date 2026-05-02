@@ -1430,6 +1430,7 @@ let currentCategory = 'All';
 let searchTerm = '';
 let orderType = 'dine-in';
 let menuItems = []; // This will hold the live data from Supabase
+const MIN_DELIVERY_FEE = 30;
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
@@ -1752,7 +1753,10 @@ window.handleCheckout = function() {
 
 window.showConfirmation = function(name, address, phone) {
   const isDelivery = orderType === 'delivery';
-  const total = cart.reduce((s, i) => s + (i.selectedPrice * i.quantity), 0);
+  const subtotal = cart.reduce((s, i) => s + (i.selectedPrice * i.quantity), 0);
+  const deliveryFee = isDelivery ? MIN_DELIVERY_FEE : 0;
+  const total = subtotal + deliveryFee;
+  
   const itemsArr = cart.map(item => ({
     name: item.name,
     size: item.selectedSize,
@@ -1781,6 +1785,16 @@ window.showConfirmation = function(name, address, phone) {
         <span>₱${(item.price * item.qty).toFixed(0)}</span>
       </div>`;
   });
+
+  if (isDelivery) {
+    summaryHTML += `
+      <div class="receipt-row">
+        <span>Delivery Fee (Min.)</span>
+        <span>₱${deliveryFee.toFixed(0)}</span>
+      </div>
+      <div style="font-size: 10px; color: var(--latte); text-align: right; margin-top: -4px; margin-bottom: 8px;">*Fee may vary depending on location</div>`;
+  }
+
   summaryHTML += `
     <hr class="receipt-divider">
     <div class="receipt-total-row"><span>TOTAL</span><span>₱${total.toFixed(0)}</span></div>`;
@@ -1805,7 +1819,9 @@ window.closeConfirmation = function() {
 
 async function finalizeOrder(name, address, phone) {
   const isDelivery = orderType === 'delivery';
-  const total = cart.reduce((s, i) => s + (i.selectedPrice * i.quantity), 0);
+  const subtotal = cart.reduce((s, i) => s + (i.selectedPrice * i.quantity), 0);
+  const deliveryFee = isDelivery ? MIN_DELIVERY_FEE : 0;
+  const total = subtotal + deliveryFee;
   const finalConfirmBtn = document.getElementById('confirm-final-btn');
   const originalText = finalConfirmBtn.textContent;
 
@@ -1865,6 +1881,15 @@ async function finalizeOrder(name, address, phone) {
     itemsArr.forEach(item => {
       receiptHTML += `<div class="receipt-row"><span>${item.qty}× ${item.name} (${item.size})</span><span>₱${(item.price * item.qty).toFixed(0)}</span></div>`;
     });
+
+    if (isDelivery) {
+      receiptHTML += `
+        <div class="receipt-row">
+          <span>Delivery Fee (Min.)</span>
+          <span>₱${deliveryFee.toFixed(0)}</span>
+        </div>`;
+    }
+
     receiptHTML += `
       <hr class="receipt-divider">
       <div class="receipt-total-row"><span>TOTAL</span><span>₱${total.toFixed(0)}</span></div>`;
@@ -1882,7 +1907,7 @@ async function finalizeOrder(name, address, phone) {
       modalTitle.textContent = 'Ready to Send!';
       modalSubtitle.textContent = 'Your order is saved. Click below to notify us via Messenger.';
 
-      const receiptText = buildReceiptText(name, address, phone, itemsArr, total);
+      const receiptText = buildReceiptText(name, address, phone, itemsArr, total, deliveryFee);
 
       modalActions.innerHTML = `
         <button class="modal-btn modal-btn-primary" onclick="copyAndOpenMessenger('${encodeURIComponent(receiptText)}')">
@@ -1925,7 +1950,7 @@ async function finalizeOrder(name, address, phone) {
   }
 }
 
-function buildReceiptText(name, address, phone, items, total) {
+function buildReceiptText(name, address, phone, items, total, deliveryFee) {
   let text = `☕ CAPRIBREWS ORDER\n`;
   text += `━━━━━━━━━━━━━━━━━━\n`;
   text += `👤 Name: ${name}\n`;
@@ -1936,6 +1961,10 @@ function buildReceiptText(name, address, phone, items, total) {
   items.forEach(i => { 
     text += `• ${i.qty}x ${i.name} (${i.size})${i.sugarLevel ? ` [Sugar: ${i.sugarLevel}]` : ''} — ₱${(i.price * i.qty).toFixed(0)}\n`; 
   });
+  if (deliveryFee > 0) {
+    text += `• Delivery Fee (Min.): ₱${deliveryFee.toFixed(0)}\n`;
+    text += `  (May vary depending on location)\n`;
+  }
   text += `━━━━━━━━━━━━━━━━━━\n`;
   text += `💰 TOTAL: ₱${total.toFixed(0)}\n`;
   text += `Status: Pending Payment via Messenger\n`;
