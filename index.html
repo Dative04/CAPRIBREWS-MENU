@@ -1561,6 +1561,19 @@ function renderMenu() {
 
     const sizeLabelHTML = isBeverage && item.prices ? `<div class="sugar-label">Drink Size</div>` : '';
 
+    const addonsHTML = item.addons && item.addons.length > 0 ? `
+      <div class="sugar-selector" id="addons-selector-${item.id}">
+        <div class="sugar-label">Add-ons (Optional)</div>
+        <div class="sugar-options">
+          ${item.addons.map(addon => `
+            <div class="sugar-pill" onclick="toggleAddon(${item.id}, '${addon.name}', ${addon.price})">
+              ${addon.name} (+₱${addon.price})
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : '';
+
     const pricingHTML = item.prices
       ? Object.entries(item.prices).map(([size, price]) =>
           `<button class="size-btn" onclick="addToCart(event,${JSON.stringify(item).replace(/'/g,"&#39;").replace(/"/g,"&quot;")},'${size}',${price})">
@@ -1585,6 +1598,7 @@ function renderMenu() {
           <div class="card-name">${item.name}</div>
           <div class="card-desc">${item.description || ''}</div>
           ${sugarHTML}
+          ${addonsHTML}
           ${sizeLabelHTML}
           <div class="size-btns">${pricingHTML}</div>
         </div>
@@ -1605,12 +1619,44 @@ window.setSugarLevel = function(itemId, level) {
   document.getElementById(`sugar-val-${itemId}`).value = level;
 }
 
+const activeAddons = {}; // { itemId: [{name, price}, ...] }
+
+window.toggleAddon = function(itemId, name, price) {
+  if (!activeAddons[itemId]) activeAddons[itemId] = [];
+  
+  const index = activeAddons[itemId].findIndex(a => a.name === name);
+  const container = document.getElementById(`addons-selector-${itemId}`);
+  
+  if (index > -1) {
+    activeAddons[itemId].splice(index, 1);
+  } else {
+    activeAddons[itemId].push({ name, price });
+  }
+  
+  // Update UI
+  if (container) {
+    container.querySelectorAll('.sugar-pill').forEach(p => {
+      const isSelected = activeAddons[itemId].some(a => p.textContent.includes(a.name));
+      p.classList.toggle('active', isSelected);
+    });
+  }
+}
+
 // ── Cart ──────────────────────────────────────────────────────────────────────
 window.addToCart = function(event, item, size, price) {
   const sugarInput = document.getElementById(`sugar-val-${item.id}`);
   const sugarLevel = sugarInput ? sugarInput.value : null;
+  const itemAddons = activeAddons[item.id] ? [...activeAddons[item.id]] : [];
+  
+  const totalPrice = price + itemAddons.reduce((s, a) => s + a.price, 0);
 
-  const existing = cart.find(i => i.name === item.name && i.selectedSize === size && i.sugarLevel === sugarLevel);
+  const existing = cart.find(i => 
+    i.name === item.name && 
+    i.selectedSize === size && 
+    i.sugarLevel === sugarLevel &&
+    JSON.stringify(i.selectedAddons || []) === JSON.stringify(itemAddons)
+  );
+
   if (existing) {
     existing.quantity++;
   } else {
@@ -1618,17 +1664,29 @@ window.addToCart = function(event, item, size, price) {
       ...item, 
       selectedSize: size, 
       selectedPrice: price, 
+      totalItemPrice: totalPrice,
       sugarLevel: sugarLevel,
+      selectedAddons: itemAddons,
       quantity: 1,
       id: Math.floor(Date.now() + Math.random() * 1000) 
     });
   }
+  
+  // Reset active addons for this item after adding to cart
+  if (activeAddons[item.id]) {
+    activeAddons[item.id] = [];
+    const container = document.getElementById(`addons-selector-${item.id}`);
+    if (container) {
+      container.querySelectorAll('.sugar-pill').forEach(p => p.classList.remove('active'));
+    }
+  }
+
   updateCartUI();
 
   const btn = event.currentTarget;
   const orig = btn.innerHTML;
   btn.classList.add('added');
-  btn.innerHTML = `✓ Added<span class="size-price">₱${price}</span>`;
+  btn.innerHTML = `✓ Added<span class="size-price">₱${totalPrice}</span>`;
   setTimeout(() => { btn.classList.remove('added'); btn.innerHTML = orig; }, 1400);
 }
 
@@ -1650,7 +1708,7 @@ window.removeFromCart = function(uid) {
 
 function updateCartUI() {
   const count = cart.reduce((s, i) => s + i.quantity, 0);
-  const total = cart.reduce((s, i) => s + (i.selectedPrice * i.quantity), 0);
+  const total = cart.reduce((s, i) => s + (i.totalItemPrice * i.quantity), 0);
 
   // Header badge
   const badge = document.getElementById('header-badge');
@@ -1675,14 +1733,19 @@ function updateCartUI() {
 
   container.innerHTML = cart.map(item => {
     const emoji = ITEM_EMOJIS[item.category] || '☕';
+    const addonsText = item.selectedAddons && item.selectedAddons.length > 0 
+      ? `<div class="cart-item-size" style="color:var(--accent-light)">+ ${item.selectedAddons.map(a => a.name).join(', ')}</div>` 
+      : '';
+      
     return `
       <div class="cart-item-row">
         <div class="cart-item-emoji">${emoji}</div>
         <div class="cart-item-info">
           <div class="cart-item-name">${item.name}</div>
           <div class="cart-item-size">${item.selectedSize}${item.sugarLevel ? ` · Sugar: ${item.sugarLevel}` : ''}</div>
+          ${addonsText}
         </div>
-        <div class="cart-item-price">₱${(item.selectedPrice * item.quantity).toFixed(0)}</div>
+        <div class="cart-item-price">₱${(item.totalItemPrice * item.quantity).toFixed(0)}</div>
         <div class="qty-controls">
           <button class="qty-btn" onclick="updateQuantity(${item.id}, -1)">-</button>
           <span class="qty-num">${item.quantity}</span>
@@ -1759,7 +1822,7 @@ window.handleCheckout = function() {
 
 window.showConfirmation = function(name, address, phone) {
   const isDelivery = orderType === 'delivery';
-  const subtotal = cart.reduce((s, i) => s + (i.selectedPrice * i.quantity), 0);
+  const subtotal = cart.reduce((s, i) => s + (i.totalItemPrice * i.quantity), 0);
   const deliveryFee = isDelivery ? MIN_DELIVERY_FEE : 0;
   const total = subtotal + deliveryFee;
   
@@ -1767,7 +1830,8 @@ window.showConfirmation = function(name, address, phone) {
     name: item.name,
     size: item.selectedSize,
     sugar: item.sugarLevel,
-    price: item.selectedPrice,
+    addons: item.selectedAddons,
+    price: item.totalItemPrice,
     qty: item.quantity
   }));
 
@@ -1785,9 +1849,13 @@ window.showConfirmation = function(name, address, phone) {
 
   summaryHTML += `<hr class="receipt-divider">`;
   itemsArr.forEach(item => {
+    const addonsDetail = item.addons && item.addons.length > 0 
+      ? `<br><small style="opacity:0.7">+ ${item.addons.map(a => a.name).join(', ')}</small>` 
+      : '';
+      
     summaryHTML += `
       <div class="receipt-row">
-        <span>${item.qty}× ${item.name} (${item.size})${item.sugar ? `<br><small style="opacity:0.7">Sugar Level: ${item.sugar}</small>` : ''}</span>
+        <span>${item.qty}× ${item.name} (${item.size})${item.sugar ? `<br><small style="opacity:0.7">Sugar Level: ${item.sugar}</small>` : ''}${addonsDetail}</span>
         <span>₱${(item.price * item.qty).toFixed(0)}</span>
       </div>`;
   });
@@ -1825,7 +1893,7 @@ window.closeConfirmation = function() {
 
 async function finalizeOrder(name, address, phone) {
   const isDelivery = orderType === 'delivery';
-  const subtotal = cart.reduce((s, i) => s + (i.selectedPrice * i.quantity), 0);
+  const subtotal = cart.reduce((s, i) => s + (i.totalItemPrice * i.quantity), 0);
   const deliveryFee = isDelivery ? MIN_DELIVERY_FEE : 0;
   const total = subtotal + deliveryFee;
   const finalConfirmBtn = document.getElementById('confirm-final-btn');
@@ -1836,7 +1904,8 @@ async function finalizeOrder(name, address, phone) {
     name: item.name,
     size: item.selectedSize,
     sugarLevel: item.sugarLevel,
-    price: item.selectedPrice,
+    selectedAddons: item.selectedAddons,
+    price: item.totalItemPrice,
     qty: item.quantity
   }));
 
@@ -1885,7 +1954,11 @@ async function finalizeOrder(name, address, phone) {
 
     receiptHTML += `<hr class="receipt-divider">`;
     itemsArr.forEach(item => {
-      receiptHTML += `<div class="receipt-row"><span>${item.qty}× ${item.name} (${item.size})</span><span>₱${(item.price * item.qty).toFixed(0)}</span></div>`;
+      const addonsDetail = item.selectedAddons && item.selectedAddons.length > 0 
+        ? `<br><small style="opacity:0.7">+ ${item.selectedAddons.map(a => a.name).join(', ')}</small>` 
+        : '';
+        
+      receiptHTML += `<div class="receipt-row"><span>${item.qty}× ${item.name} (${item.size})${addonsDetail}</span><span>₱${(item.price * item.qty).toFixed(0)}</span></div>`;
     });
 
     if (isDelivery) {
@@ -1965,7 +2038,8 @@ function buildReceiptText(name, address, phone, items, total, deliveryFee) {
   text += `📞 Contact: ${phone}\n`;
   text += `━━━━━━━━━━━━━━━━━━\n`;
   items.forEach(i => { 
-    text += `• ${i.qty}x ${i.name} (${i.size})${i.sugarLevel ? ` [Sugar: ${i.sugarLevel}]` : ''} — ₱${(i.price * i.qty).toFixed(0)}\n`; 
+    const addonsStr = i.selectedAddons && i.selectedAddons.length > 0 ? ` [+ ${i.selectedAddons.map(a => a.name).join(', ')}]` : '';
+    text += `• ${i.qty}x ${i.name} (${i.size})${i.sugarLevel ? ` [Sugar: ${i.sugarLevel}]` : ''}${addonsStr} — ₱${(i.price * i.qty).toFixed(0)}\n`; 
   });
   if (deliveryFee > 0) {
     text += `• Delivery Fee (Min.): ₱${deliveryFee.toFixed(0)}\n`;

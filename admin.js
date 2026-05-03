@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const multiPriceSection   = document.getElementById('multi-price-input');
     const priceRowsContainer  = document.getElementById('price-rows');
     const addPriceRowBtn      = document.getElementById('add-price-row');
+    const addonsRowsContainer = document.getElementById('addons-rows');
+    const addAddonRowBtn      = document.getElementById('add-addon-row');
     const adminGrid           = document.getElementById('admin-grid');
     const refreshOrdersBtn    = document.getElementById('refresh-orders-btn');
     const adminSearch         = document.getElementById('admin-search');
@@ -364,6 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
         multiPriceSection.classList.add('hidden');
         
         resetPriceRows();
+        resetAddonRows();
         syncPricingRequired();
         document.getElementById('custom-category').classList.add('hidden');
     });
@@ -431,6 +434,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     addPriceRowBtn?.addEventListener('click', () => createPriceRow());
 
+    function createAddonRow(name = '', price = '') {
+        const row = document.createElement('div');
+        row.className = 'form-row addon-row';
+        row.style.cssText = 'margin-bottom: 10px; position: relative;';
+        
+        row.innerHTML = `
+            <div class="form-group">
+                <input type="text" placeholder="Add-on (e.g. Extra Pearl)" class="addon-name" value="${name}">
+            </div>
+            <div class="form-group">
+                <input type="number" placeholder="Price (₱)" class="addon-price" value="${price}" step="0.01">
+                <button type="button" class="remove-row" title="Remove">×</button>
+            </div>
+        `;
+        row.querySelector('.remove-row').onclick = () => row.remove();
+        addonsRowsContainer.appendChild(row);
+        return row;
+    }
+
+    function resetAddonRows() {
+        addonsRowsContainer.innerHTML = '';
+    }
+
+    addAddonRowBtn?.addEventListener('click', () => createAddonRow());
+
     addItemForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -476,13 +504,21 @@ document.addEventListener('DOMContentLoaded', () => {
             finalImageURL = optimizeCloudinaryURL(finalImageURL);
         }
 
+        const addons = [];
+        addonsRowsContainer.querySelectorAll('.addon-row').forEach(row => {
+            const name = row.querySelector('.addon-name').value.trim();
+            const price = parseFloat(row.querySelector('.addon-price').value) || 0;
+            if (name) addons.push({ name, price });
+        });
+
         const itemData = {
             name:        document.getElementById('new-name').value.trim(),
             category:    category,
             description: document.getElementById('new-description').value.trim() || '',
             image_url:   finalImageURL,
             dietary:     dietary.length ? dietary : null,
-            temp:        temp
+            temp:        temp,
+            addons:      addons.length ? addons : null
         };
 
         if (priceTypeSelect.value === 'single') {
@@ -718,6 +754,14 @@ document.addEventListener('DOMContentLoaded', () => {
             multiPriceSection.classList.add('hidden');
             document.getElementById('new-price').value = item.price || 0;
             resetPriceRows();
+        }
+        
+        // Handle addons
+        resetAddonRows();
+        if (item.addons && item.addons.length > 0) {
+            item.addons.forEach(addon => {
+                createAddonRow(addon.name, addon.price);
+            });
         }
         
         syncPricingRequired();
