@@ -270,7 +270,7 @@
                         <input type="text" id="new-image-url" placeholder="Paste Cloudinary URL here..." class="url-input">
                     </div>
                     <div class="form-group">
-                        <label for="image-preview">Preview</label>
+                        <span class="field-label">Preview</span>
                         <div id="image-preview" class="image-preview-box">
                             <span>No image URL provided</span>
                         </div>
@@ -278,12 +278,14 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Temperature</label>
-                        <div class="temp-group">
-                            <label><input type="radio" name="temp" value="hot" class="temp-radio"> Hot</label>
-                            <label><input type="radio" name="temp" value="cold" class="temp-radio"> Cold</label>
-                            <label><input type="radio" name="temp" value="both" class="temp-radio" checked> Both</label>
-                        </div>
+                        <fieldset>
+                            <legend>Temperature</legend>
+                            <div class="temp-group">
+                                <label><input type="radio" name="temp" value="hot" class="temp-radio"> Hot</label>
+                                <label><input type="radio" name="temp" value="cold" class="temp-radio"> Cold</label>
+                                <label><input type="radio" name="temp" value="both" class="temp-radio" checked> Both</label>
+                            </div>
+                        </fieldset>
                     </div>
                 </div>
                 <div class="form-row">
@@ -295,11 +297,13 @@
                         </select>
                     </div>
                     <div class="form-group dietary-checks">
-                        <label>Dietary Tags</label>
-                        <div class="check-group">
-                            <label><input type="checkbox" value="vegan" class="diet-check"> Vegan</label>
-                            <label><input type="checkbox" value="gluten-free" class="diet-check"> Gluten-Free</label>
-                        </div>
+                        <fieldset>
+                            <legend>Dietary Tags</legend>
+                            <div class="check-group">
+                                <label><input type="checkbox" value="vegan" class="diet-check"> Vegan</label>
+                                <label><input type="checkbox" value="gluten-free" class="diet-check"> Gluten-Free</label>
+                            </div>
+                        </fieldset>
                     </div>
                 </div>
                 <div id="single-price-input" class="price-section">
