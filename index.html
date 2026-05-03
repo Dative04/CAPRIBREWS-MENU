@@ -1324,7 +1324,6 @@
 <script src="supabase-config.js"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
 // ── Data ──────────────────────────────────────────────────────────────────────
 const initialMenuData = [
   // Coffee Selection (8oz / 12oz / 16oz)
@@ -1435,13 +1434,13 @@ const ITEM_EMOJIS = {
 };
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let menuItems = [];
+let cart = [];
+let menuItems = []; // This will hold the live data from Supabase
 let currentCategory = 'All';
 let currentMenuType = 'Beverage'; // New: Beverage or Food
 let globalAddons = []; // New: Stores global add-ons
 let searchTerm = '';
 let orderType = 'dine-in';
-let menuItems = []; // This will hold the live data from Supabase
 const MIN_DELIVERY_FEE = 30;
 
 function optimizeCloudinaryURL(url) {
@@ -2142,7 +2141,6 @@ document.getElementById('receipt-modal').addEventListener('click', function(e) {
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 init();
-});
 </script>
 </body>
 </html>
