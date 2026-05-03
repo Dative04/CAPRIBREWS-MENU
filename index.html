@@ -1252,20 +1252,20 @@
 
     <!-- Name -->
     <div class="form-field">
-      <label>Your Name</label>
-      <input type="text" id="customer-name" placeholder="e.g. Maria Santos" maxlength="50">
+      <label for="customer-name">Your Name</label>
+      <input type="text" id="customer-name" placeholder="e.g. Maria Santos" maxlength="50" autocomplete="name">
       <div class="field-error" id="name-error">Please enter your name.</div>
     </div>
 
     <!-- Delivery fields -->
     <div class="delivery-fields" id="delivery-fields">
       <div class="form-field">
-        <label>Delivery Address / Landmark</label>
-        <input type="text" id="delivery-address" placeholder="e.g. Near Jollibee, Brgy. Uno">
+        <label for="delivery-address">Delivery Address / Landmark</label>
+        <input type="text" id="delivery-address" placeholder="e.g. Near Jollibee, Brgy. Uno" autocomplete="street-address">
       </div>
       <div class="form-field">
-        <label>Contact Number</label>
-        <input type="tel" id="contact-number" placeholder="09XX XXX XXXX" maxlength="13">
+        <label for="contact-number">Contact Number</label>
+        <input type="tel" id="contact-number" placeholder="09XX XXX XXXX" maxlength="13" autocomplete="tel">
       </div>
     </div>
 

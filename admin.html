@@ -21,11 +21,11 @@
             <form id="login-form">
                 <div class="form-group">
                     <label for="email">Email</label>
-                    <input type="email" id="email" placeholder="admin@capribrews.com" required>
+                    <input type="email" id="email" placeholder="admin@capribrews.com" required autocomplete="email">
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" placeholder="••••••••" required>
+                    <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
                 </div>
                 <button type="submit" class="btn-primary login-submit-btn">Login</button>
                 <div style="text-align: center; margin-top: 15px;">
@@ -237,11 +237,11 @@
                 <input type="hidden" id="edit-item-id">
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Name</label>
+                        <label for="new-name">Name</label>
                         <input type="text" id="new-name" placeholder="e.g. Cold Brew" required>
                     </div>
                     <div class="form-group">
-                        <label>Category</label>
+                        <label for="new-category">Category</label>
                         <select id="new-category" required onchange="toggleCustomCategory(this.value)">
                             <option value="" disabled selected>Select Category</option>
                             <option value="Coffee Selection">Coffee Selection</option>
@@ -261,16 +261,16 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Description</label>
+                    <label for="new-description">Description</label>
                     <textarea id="new-description" placeholder="Describe the flavors..." rows="2"></textarea>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Item Photo (Cloudinary URL)</label>
+                        <label for="new-image-url">Item Photo (Cloudinary URL)</label>
                         <input type="text" id="new-image-url" placeholder="Paste Cloudinary URL here..." class="url-input">
                     </div>
                     <div class="form-group">
-                        <label>Preview</label>
+                        <label for="image-preview">Preview</label>
                         <div id="image-preview" class="image-preview-box">
                             <span>No image URL provided</span>
                         </div>
@@ -288,7 +288,7 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Pricing Type</label>
+                        <label for="price-type-select">Pricing Type</label>
                         <select id="price-type-select">
                             <option value="single">Single Price</option>
                             <option value="multi">Multiple Sizes</option>
@@ -303,7 +303,7 @@
                     </div>
                 </div>
                 <div id="single-price-input" class="price-section">
-                    <label>Base Price (₱)</label>
+                    <label for="new-price">Base Price (₱)</label>
                     <input type="number" id="new-price" placeholder="0.00" step="0.01">
                 </div>
                 <div id="multi-price-input" class="price-section hidden">
