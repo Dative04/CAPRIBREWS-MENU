@@ -35,86 +35,87 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentCategory = 'All';
     let currentItems = [];
     let allOrders = [];
+    let globalAddons = [];
 
     // Default menu data for seeding if table is empty
     window.DEFAULT_MENU_DATA = [
         // Coffee Selection (8oz / 12oz / 16oz)
-        { name: "Capri Black", category: "Coffee Selection", prices: { "8oz": 79, "12oz": 89, "16oz": 99 }, available: true, sort_order: 1 },
-        { name: "Café Latte", category: "Coffee Selection", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 2 },
-        { name: "Cappuccino", category: "Coffee Selection", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 3 },
-        { name: "Caramel Macchiato", category: "Coffee Selection", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 4 },
-        { name: "Salted Caramel", category: "Coffee Selection", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 5 },
-        { name: "White Chocolate", category: "Coffee Selection", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 6 },
-        { name: "Dark Mocha", category: "Coffee Selection", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 7 },
-        { name: "Vanilla Latte", category: "Coffee Selection", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 8 },
-        { name: "Ube Coffee Haze", category: "Coffee Selection", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 9 },
+        { name: "Capri Black", category: "Coffee Selection", item_type: "Beverage", prices: { "8oz": 79, "12oz": 89, "16oz": 99 }, available: true, sort_order: 1 },
+        { name: "Café Latte", category: "Coffee Selection", item_type: "Beverage", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 2 },
+        { name: "Cappuccino", category: "Coffee Selection", item_type: "Beverage", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 3 },
+        { name: "Caramel Macchiato", category: "Coffee Selection", item_type: "Beverage", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 4 },
+        { name: "Salted Caramel", category: "Coffee Selection", item_type: "Beverage", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 5 },
+        { name: "White Chocolate", category: "Coffee Selection", item_type: "Beverage", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 6 },
+        { name: "Dark Mocha", category: "Coffee Selection", item_type: "Beverage", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 7 },
+        { name: "Vanilla Latte", category: "Coffee Selection", item_type: "Beverage", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 8 },
+        { name: "Ube Coffee Haze", category: "Coffee Selection", item_type: "Beverage", prices: { "8oz": 89, "12oz": 99, "16oz": 109 }, available: true, sort_order: 9 },
 
         // Frappe (16oz / 22oz)
-        { name: "Espresso Chips", category: "Frappe", prices: { "16oz": 129, "22oz": 139 }, available: true, sort_order: 10 },
-        { name: "Choco Crunch", category: "Frappe", prices: { "16oz": 139, "22oz": 149 }, available: true, sort_order: 11 },
-        { name: "Double Fudge", category: "Frappe", prices: { "16oz": 139, "22oz": 149 }, available: true, sort_order: 12 },
-        { name: "Strawberry", category: "Frappe", prices: { "16oz": 139, "22oz": 149 }, available: true, sort_order: 13 },
-        { name: "Matcha", category: "Frappe", prices: { "16oz": 149, "22oz": 159 }, available: true, sort_order: 14 },
-        { name: "Matcha Strawberry", category: "Frappe", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 15 },
-        { name: "Choco Strawberry", category: "Frappe", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 16 },
+        { name: "Espresso Chips", category: "Frappe", item_type: "Beverage", prices: { "16oz": 129, "22oz": 139 }, available: true, sort_order: 10 },
+        { name: "Choco Crunch", category: "Frappe", item_type: "Beverage", prices: { "16oz": 139, "22oz": 149 }, available: true, sort_order: 11 },
+        { name: "Double Fudge", category: "Frappe", item_type: "Beverage", prices: { "16oz": 139, "22oz": 149 }, available: true, sort_order: 12 },
+        { name: "Strawberry", category: "Frappe", item_type: "Beverage", prices: { "16oz": 139, "22oz": 149 }, available: true, sort_order: 13 },
+        { name: "Matcha", category: "Frappe", item_type: "Beverage", prices: { "16oz": 149, "22oz": 159 }, available: true, sort_order: 14 },
+        { name: "Matcha Strawberry", category: "Frappe", item_type: "Beverage", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 15 },
+        { name: "Choco Strawberry", category: "Frappe", item_type: "Beverage", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 16 },
 
         // Signature Twists (Single price)
-        { name: "Choco Volcano", category: "Signature Twists", price: 129, available: true, sort_order: 17 },
-        { name: "Milo Oreo Latte", category: "Signature Twists", price: 129, available: true, sort_order: 18 },
-        { name: "Matcha Milk Foam", category: "Signature Twists", price: 139, available: true, sort_order: 19 },
+        { name: "Choco Volcano", category: "Signature Twists", item_type: "Beverage", price: 129, available: true, sort_order: 17 },
+        { name: "Milo Oreo Latte", category: "Signature Twists", item_type: "Beverage", price: 129, available: true, sort_order: 18 },
+        { name: "Matcha Milk Foam", category: "Signature Twists", item_type: "Beverage", price: 139, available: true, sort_order: 19 },
 
         // Soda Blends (16oz / 22oz)
-        { name: "Green Apple", category: "Soda Blends", prices: { "16oz": 39, "22oz": 49 }, available: true, sort_order: 20 },
-        { name: "Kiwi", category: "Soda Blends", prices: { "16oz": 39, "22oz": 49 }, available: true, sort_order: 21 },
-        { name: "Mango", category: "Soda Blends", prices: { "16oz": 39, "22oz": 49 }, available: true, sort_order: 22 },
-        { name: "Strawberry", category: "Soda Blends", prices: { "16oz": 39, "22oz": 49 }, available: true, sort_order: 23 },
-        { name: "Grapes", category: "Soda Blends", prices: { "16oz": 39, "22oz": 49 }, available: true, sort_order: 24 },
-        { name: "Lemon", category: "Soda Blends", prices: { "16oz": 39, "22oz": 49 }, available: true, sort_order: 25 },
+        { name: "Green Apple", category: "Soda Blends", item_type: "Beverage", prices: { "16oz": 39, "22oz": 49 }, available: true, sort_order: 20 },
+        { name: "Kiwi", category: "Soda Blends", item_type: "Beverage", prices: { "16oz": 39, "22oz": 49 }, available: true, sort_order: 21 },
+        { name: "Mango", category: "Soda Blends", item_type: "Beverage", prices: { "16oz": 39, "22oz": 49 }, available: true, sort_order: 22 },
+        { name: "Strawberry", category: "Soda Blends", item_type: "Beverage", prices: { "16oz": 39, "22oz": 49 }, available: true, sort_order: 23 },
+        { name: "Grapes", category: "Soda Blends", item_type: "Beverage", prices: { "16oz": 39, "22oz": 49 }, available: true, sort_order: 24 },
+        { name: "Lemon", category: "Soda Blends", item_type: "Beverage", prices: { "16oz": 39, "22oz": 49 }, available: true, sort_order: 25 },
 
         // Signature Fruit Infusions (Single price)
-        { name: "Cucumber Lemonade", category: "Signature Fruit Infusions", price: 129, available: true, sort_order: 26 },
-        { name: "Yakult Honey Lemonade", category: "Signature Fruit Infusions", price: 129, available: true, sort_order: 27 },
+        { name: "Cucumber Lemonade", category: "Signature Fruit Infusions", item_type: "Beverage", price: 129, available: true, sort_order: 26 },
+        { name: "Yakult Honey Lemonade", category: "Signature Fruit Infusions", item_type: "Beverage", price: 129, available: true, sort_order: 27 },
 
         // Milkshakes (16oz / 22oz)
-        { name: "Mango Graham", category: "Milkshakes", prices: { "16oz": 119, "22oz": 129 }, available: true, sort_order: 28 },
-        { name: "Mango Delights", category: "Milkshakes", prices: { "16oz": 119, "22oz": 129 }, available: true, sort_order: 29 },
-        { name: "Mango Oreo", category: "Milkshakes", prices: { "16oz": 119, "22oz": 129 }, available: true, sort_order: 30 },
-        { name: "Ube Cheesecake", category: "Milkshakes", prices: { "16oz": 119, "22oz": 129 }, available: true, sort_order: 31 },
-        { name: "Chocolate Cookies", category: "Milkshakes", prices: { "16oz": 119, "22oz": 129 }, available: true, sort_order: 32 },
-        { name: "Choco Volcano", category: "Milkshakes", prices: { "16oz": 119, "22oz": 129 }, available: true, sort_order: 33 },
+        { name: "Mango Graham", category: "Milkshakes", item_type: "Beverage", prices: { "16oz": 119, "22oz": 129 }, available: true, sort_order: 28 },
+        { name: "Mango Delights", category: "Milkshakes", item_type: "Beverage", prices: { "16oz": 119, "22oz": 129 }, available: true, sort_order: 29 },
+        { name: "Mango Oreo", category: "Milkshakes", item_type: "Beverage", prices: { "16oz": 119, "22oz": 129 }, available: true, sort_order: 30 },
+        { name: "Ube Cheesecake", category: "Milkshakes", item_type: "Beverage", prices: { "16oz": 119, "22oz": 129 }, available: true, sort_order: 31 },
+        { name: "Chocolate Cookies", category: "Milkshakes", item_type: "Beverage", prices: { "16oz": 119, "22oz": 129 }, available: true, sort_order: 32 },
+        { name: "Choco Volcano", category: "Milkshakes", item_type: "Beverage", prices: { "16oz": 119, "22oz": 129 }, available: true, sort_order: 33 },
 
         // Premium Milkshakes (16oz / 22oz)
-        { name: "Mango Cheesecake", category: "Premium Milkshakes", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 34 },
-        { name: "Espresso Chips", category: "Premium Milkshakes", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 35 },
-        { name: "Cappuccino", category: "Premium Milkshakes", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 36 },
-        { name: "Café Mocha", category: "Premium Milkshakes", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 37 },
-        { name: "Café Caramel", category: "Premium Milkshakes", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 38 },
-        { name: "Café Matcha", category: "Premium Milkshakes", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 39 },
-        { name: "Salted Caramel", category: "Premium Milkshakes", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 40 },
-        { name: "Matcha Strawberry", category: "Premium Milkshakes", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 41 },
-        { name: "Matcha Cloudy", category: "Premium Milkshakes", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 42 },
+        { name: "Mango Cheesecake", category: "Premium Milkshakes", item_type: "Beverage", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 34 },
+        { name: "Espresso Chips", category: "Premium Milkshakes", item_type: "Beverage", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 35 },
+        { name: "Cappuccino", category: "Premium Milkshakes", item_type: "Beverage", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 36 },
+        { name: "Café Mocha", category: "Premium Milkshakes", item_type: "Beverage", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 37 },
+        { name: "Café Caramel", category: "Premium Milkshakes", item_type: "Beverage", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 38 },
+        { name: "Café Matcha", category: "Premium Milkshakes", item_type: "Beverage", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 39 },
+        { name: "Salted Caramel", category: "Premium Milkshakes", item_type: "Beverage", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 40 },
+        { name: "Matcha Strawberry", category: "Premium Milkshakes", item_type: "Beverage", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 41 },
+        { name: "Matcha Cloudy", category: "Premium Milkshakes", item_type: "Beverage", prices: { "16oz": 159, "22oz": 169 }, available: true, sort_order: 42 },
 
         // Savory Bites (Solo / Sharing)
-        { name: "Fries", category: "Savory Bites", prices: { "Solo": 59, "Sharing": 89 }, available: true, sort_order: 43 },
-        { name: "Nachos", category: "Savory Bites", prices: { "Solo": 79, "Sharing": 129 }, available: true, sort_order: 44 },
+        { name: "Fries", category: "Savory Bites", item_type: "Food", prices: { "Solo": 59, "Sharing": 89 }, available: true, sort_order: 43 },
+        { name: "Nachos", category: "Savory Bites", item_type: "Food", prices: { "Solo": 79, "Sharing": 129 }, available: true, sort_order: 44 },
 
         // Club Sandwiches
-        { name: "Ham", category: "Club Sandwiches", price: 129, available: true, sort_order: 45 },
-        { name: "Bacon", category: "Club Sandwiches", price: 129, available: true, sort_order: 46 },
-        { name: "Tuna", category: "Club Sandwiches", price: 129, available: true, sort_order: 47 },
+        { name: "Ham", category: "Club Sandwiches", item_type: "Food", price: 129, available: true, sort_order: 45 },
+        { name: "Bacon", category: "Club Sandwiches", item_type: "Food", price: 129, available: true, sort_order: 46 },
+        { name: "Tuna", category: "Club Sandwiches", item_type: "Food", price: 129, available: true, sort_order: 47 },
 
         // Capri Burger
-        { name: "Classic", category: "Capri Burger", price: 69, available: true, sort_order: 48 },
-        { name: "Country", category: "Capri Burger", price: 99, available: true, sort_order: 49 },
-        { name: "Quarter Pounder", category: "Capri Burger", price: 139, available: true, sort_order: 50 },
+        { name: "Classic", category: "Capri Burger", item_type: "Food", price: 69, available: true, sort_order: 48 },
+        { name: "Country", category: "Capri Burger", item_type: "Food", price: 99, available: true, sort_order: 49 },
+        { name: "Quarter Pounder", category: "Capri Burger", item_type: "Food", price: 139, available: true, sort_order: 50 },
 
         // Takoyaki (4pcs / 12pcs / 16pcs)
-        { name: "Cheese", category: "Takoyaki", prices: { "4pcs": 58, "12pcs": 165, "16pcs": 225 }, available: true, sort_order: 51 },
-        { name: "Ham", category: "Takoyaki", prices: { "4pcs": 58, "12pcs": 165, "16pcs": 225 }, available: true, sort_order: 52 },
-        { name: "Bacon", category: "Takoyaki", prices: { "4pcs": 58, "12pcs": 165, "16pcs": 225 }, available: true, sort_order: 53 },
-        { name: "Ham & Cheese", category: "Takoyaki", prices: { "4pcs": 58, "12pcs": 165, "16pcs": 225 }, available: true, sort_order: 54 },
-        { name: "Crab", category: "Takoyaki", prices: { "4pcs": 58, "12pcs": 165, "16pcs": 225 }, available: true, sort_order: 55 },
-        { name: "Squid", category: "Takoyaki", prices: { "4pcs": 58, "12pcs": 165, "16pcs": 225 }, available: true, sort_order: 56 }
+        { name: "Cheese", category: "Takoyaki", item_type: "Food", prices: { "4pcs": 58, "12pcs": 165, "16pcs": 225 }, available: true, sort_order: 51 },
+        { name: "Ham", category: "Takoyaki", item_type: "Food", prices: { "4pcs": 58, "12pcs": 165, "16pcs": 225 }, available: true, sort_order: 52 },
+        { name: "Bacon", category: "Takoyaki", item_type: "Food", prices: { "4pcs": 58, "12pcs": 165, "16pcs": 225 }, available: true, sort_order: 53 },
+        { name: "Ham & Cheese", category: "Takoyaki", item_type: "Food", prices: { "4pcs": 58, "12pcs": 165, "16pcs": 225 }, available: true, sort_order: 54 },
+        { name: "Crab", category: "Takoyaki", item_type: "Food", prices: { "4pcs": 58, "12pcs": 165, "16pcs": 225 }, available: true, sort_order: 55 },
+        { name: "Squid", category: "Takoyaki", item_type: "Food", prices: { "4pcs": 58, "12pcs": 165, "16pcs": 225 }, available: true, sort_order: 56 }
     ];
 
     // ─── Section Management ───────────────────────────────────────────────────────
@@ -513,6 +514,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const itemData = {
             name:        document.getElementById('new-name').value.trim(),
+            item_type:   document.getElementById('item-type').value,
             category:    category,
             description: document.getElementById('new-description').value.trim() || '',
             image_url:   finalImageURL,
@@ -576,6 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ─── Load Admin Data ──────────────────────────────────────────────────────────
     function loadAdminData() {
+        // Load menu items
         window.supabaseClient
             .from('menu')
             .select('*')
@@ -589,7 +592,133 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateStats(currentItems);
                 filterAdminGrid(); // Initial render with current filters
             });
+
+        // Load global add-ons
+        loadGlobalAddons();
     }
+
+    async function loadGlobalAddons() {
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('global_addons')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            globalAddons = data || [];
+            renderAddonsGrid();
+        } catch (err) {
+            console.error('Load addons error:', err);
+        }
+    }
+
+    function renderAddonsGrid() {
+        const grid = document.getElementById('addons-grid');
+        if (!grid) return;
+
+        grid.innerHTML = '';
+        if (globalAddons.length === 0) {
+            grid.innerHTML = '<div class="empty-state"><p>No global add-ons yet.</p></div>';
+            return;
+        }
+
+        globalAddons.forEach(addon => {
+            const card = document.createElement('div');
+            card.className = 'admin-card addon-card';
+            card.innerHTML = `
+                <div class="card-info">
+                    <h3>${addon.name}</h3>
+                    <p class="card-meta">₱${Number(addon.price).toFixed(0)} · For: <strong>${addon.target_type}</strong></p>
+                </div>
+                <div class="card-actions">
+                    <div class="item-actions">
+                        <button class="edit-btn" onclick="editAddon('${addon.id}')">Edit</button>
+                        <button class="delete-btn" onclick="deleteAddon('${addon.id}')">Delete</button>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    window.openAddonModal = () => {
+        const modal = document.getElementById('addon-modal');
+        const form = document.getElementById('add-global-addon-form');
+        form.reset();
+        document.getElementById('addon-modal-title').textContent = 'New Global Add-on';
+        document.getElementById('edit-addon-id').value = '';
+        modal.classList.remove('hidden');
+    };
+
+    window.closeAddonModal = () => {
+        document.getElementById('addon-modal').classList.add('hidden');
+    };
+
+    window.editAddon = (id) => {
+        const addon = globalAddons.find(a => String(a.id) === String(id));
+        if (!addon) return;
+
+        const modal = document.getElementById('addon-modal');
+        document.getElementById('addon-modal-title').textContent = 'Edit Global Add-on';
+        document.getElementById('edit-addon-id').value = addon.id;
+        document.getElementById('addon-name').value = addon.name;
+        document.getElementById('addon-price').value = addon.price;
+        document.getElementById('addon-target').value = addon.target_type;
+        modal.classList.remove('hidden');
+    };
+
+    document.getElementById('add-global-addon-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const editId = document.getElementById('edit-addon-id').value;
+        const name = document.getElementById('addon-name').value.trim();
+        const price = parseFloat(document.getElementById('addon-price').value);
+        const target = document.getElementById('addon-target').value;
+
+        const addonData = { name, price, target_type: target };
+        const submitBtn = document.getElementById('addon-submit-btn');
+        submitBtn.disabled = true;
+
+        try {
+            let error;
+            if (editId) {
+                const res = await window.supabaseClient.from('global_addons').update(addonData).eq('id', editId);
+                error = res.error;
+            } else {
+                const res = await window.supabaseClient.from('global_addons').insert([addonData]);
+                error = res.error;
+            }
+
+            if (error) throw error;
+            showToast(editId ? 'Add-on updated ✓' : 'Add-on created ✓', 'success');
+            window.closeAddonModal();
+            loadGlobalAddons();
+        } catch (err) {
+            showToast('Error saving add-on', 'error');
+            console.error(err);
+        } finally {
+            submitBtn.disabled = false;
+        }
+    });
+
+    window.deleteAddon = async (id) => {
+        const confirmed = await showConfirm({
+            title: 'Delete Add-on?',
+            message: 'This will remove this global add-on.',
+            icon: '🗑️',
+            confirmLabel: 'Delete',
+            danger: true
+        });
+        if (!confirmed) return;
+
+        try {
+            const { error } = await window.supabaseClient.from('global_addons').delete().eq('id', id);
+            if (error) throw error;
+            showToast('Add-on deleted', 'success');
+            loadGlobalAddons();
+        } catch (err) {
+            showToast('Delete failed', 'error');
+        }
+    };
 
     // ─── Stats ────────────────────────────────────────────────────────────────────
     function updateStats(items) {
@@ -717,6 +846,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('edit-item-id').value = item.id;
 
         document.getElementById('new-name').value = item.name;
+        document.getElementById('item-type').value = item.item_type || 'Beverage';
         document.getElementById('new-category').value = item.category;
         document.getElementById('new-description').value = item.description || '';
         

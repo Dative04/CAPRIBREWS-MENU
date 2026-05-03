@@ -138,6 +138,18 @@
                             <p>Fetching inventory...</p>
                         </div>
                     </div>
+
+                    <!-- Global Add-ons Manager -->
+                    <div class="view-header" style="margin-top: 60px;">
+                        <div class="header-main">
+                            <h2>Manage Global Add-ons</h2>
+                            <p class="section-desc">Add-ons here will automatically appear for all items of the selected type.</p>
+                        </div>
+                        <button class="add-btn" onclick="openAddonModal()">+ New Global Add-on</button>
+                    </div>
+                    <div id="addons-grid" class="admin-item-grid">
+                        <!-- Add-ons injected here -->
+                    </div>
                 </section>
 
                 <!-- Orders Section -->
@@ -241,6 +253,15 @@
                         <input type="text" id="new-name" placeholder="e.g. Cold Brew" required>
                     </div>
                     <div class="form-group">
+                        <label for="item-type">Item Type</label>
+                        <select id="item-type" required>
+                            <option value="Beverage">Beverage</option>
+                            <option value="Food">Food</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
                         <label for="new-category">Category</label>
                         <select id="new-category" required onchange="toggleCustomCategory(this.value)">
                             <option value="" disabled selected>Select Category</option>
@@ -327,6 +348,39 @@
                 <div class="modal-btns">
                     <button type="button" id="close-modal" class="btn-secondary">Cancel</button>
                     <button type="submit" id="submit-btn" class="btn-primary">Create Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Global Add-on Modal -->
+    <div id="addon-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2 id="addon-modal-title">New Global Add-on</h2>
+            <form id="add-global-addon-form">
+                <input type="hidden" id="edit-addon-id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="addon-name">Add-on Name</label>
+                        <input type="text" id="addon-name" placeholder="e.g. Extra Pearl" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="addon-price">Price (₱)</label>
+                        <input type="number" id="addon-price" placeholder="0.00" step="0.01" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="addon-target">Target Type</label>
+                    <select id="addon-target" required>
+                        <option value="Beverage">Beverage Items</option>
+                        <option value="Food">Food Items</option>
+                        <option value="Both">Both</option>
+                    </select>
+                    <p class="field-hint">Choose where this add-on should be available.</p>
+                </div>
+                <div class="modal-btns">
+                    <button type="button" onclick="closeAddonModal()" class="btn-secondary">Cancel</button>
+                    <button type="submit" id="addon-submit-btn" class="btn-primary">Create Add-on</button>
                 </div>
             </form>
         </div>

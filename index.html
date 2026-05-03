@@ -1193,6 +1193,16 @@
          <span class="search-icon">🔍</span>
        </div>
      </div>
+
+     <!-- Menu Type Toggle -->
+     <div class="menu-type-selector">
+       <button class="type-btn active" id="type-btn-beverage" onclick="setMenuType('Beverage')">
+         <span class="type-icon">☕</span> Beverages
+       </button>
+       <button class="type-btn" id="type-btn-food" onclick="setMenuType('Food')">
+         <span class="type-icon">🍕</span> Food
+       </button>
+     </div>
     
     <div class="section-label" id="section-label">All Items</div>
     <div class="menu-grid" id="menu-grid">
@@ -1425,8 +1435,10 @@ const ITEM_EMOJIS = {
 };
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let cart = [];
+let menuItems = [];
 let currentCategory = 'All';
+let currentMenuType = 'Beverage'; // New: Beverage or Food
+let globalAddons = []; // New: Stores global add-ons
 let searchTerm = '';
 let orderType = 'dine-in';
 let menuItems = []; // This will hold the live data from Supabase
@@ -1447,27 +1459,58 @@ async function init() {
 
 async function fetchMenu() {
   try {
-    const { data, error } = await window.supabaseClient
+    // Fetch Menu Items
+    const { data: menuData, error: menuError } = await window.supabaseClient
       .from('menu')
       .select('*')
       .order('sort_order', { ascending: true });
 
-    if (error) throw error;
+    if (menuError) throw menuError;
     
-    if (data && data.length > 0) {
-      menuItems = data;
+    if (menuData && menuData.length > 0) {
+      menuItems = menuData;
     } else {
-      // Fallback to initial data if DB is empty
       menuItems = initialMenuData;
     }
+
+    // Fetch Global Add-ons
+    const { data: addonData, error: addonError } = await window.supabaseClient
+      .from('global_addons')
+      .select('*');
+
+    if (addonError) console.warn('Global addons fetch error:', addonError);
+    else globalAddons = addonData || [];
+
   } catch (err) {
-    console.error('Fetch menu error:', err);
+    console.error('Fetch data error:', err);
     menuItems = initialMenuData;
   }
 }
 
+window.setMenuType = function(type) {
+  currentMenuType = type;
+  currentCategory = 'All'; // Reset category when switching type
+  
+  // Update UI
+  document.getElementById('type-btn-beverage').classList.toggle('active', type === 'Beverage');
+  document.getElementById('type-btn-food').classList.toggle('active', type === 'Food');
+  
+  const label = document.getElementById('section-label');
+  if (label) label.textContent = 'All Items';
+
+  buildCategoryTabs();
+  renderMenu();
+}
+
 function buildCategoryTabs() {
-  const cats = ['All', ...new Set(menuItems.map(i => i.category))];
+  // Filter categories by the current menu type
+  const filteredItemsByType = menuItems.filter(item => {
+    // If item has no item_type, we assume Beverage for legacy reasons or map by category
+    const itemType = item.item_type || (['Savory Bites', 'Club Sandwiches', 'Capri Burger', 'Takoyaki'].includes(item.category) ? 'Food' : 'Beverage');
+    return itemType === currentMenuType;
+  });
+
+  const cats = ['All', ...new Set(filteredItemsByType.map(i => i.category))];
   const container = document.getElementById('sidebar-nav');
   if (!container) return;
   
@@ -1527,6 +1570,10 @@ function renderMenu() {
   const cat = currentCategory;
   
   const filteredItems = menuItems.filter(item => {
+    // Filter by Type (Beverage / Food)
+    const itemType = item.item_type || (['Savory Bites', 'Club Sandwiches', 'Capri Burger', 'Takoyaki'].includes(item.category) ? 'Food' : 'Beverage');
+    if (itemType !== currentMenuType) return false;
+
     const matchesCategory = cat === 'All' || item.category === cat;
     const matchesSearch = item.name.toLowerCase().includes(searchTerm) || 
                           (item.description && item.description.toLowerCase().includes(searchTerm));
@@ -1561,11 +1608,24 @@ function renderMenu() {
 
     const sizeLabelHTML = isBeverage && item.prices ? `<div class="sugar-label">Drink Size</div>` : '';
 
-    const addonsHTML = item.addons && item.addons.length > 0 ? `
+    // Merge item-specific add-ons with global add-ons
+    const itemAddons = item.addons || [];
+    const itemType = item.item_type || (['Savory Bites', 'Club Sandwiches', 'Capri Burger', 'Takoyaki'].includes(item.category) ? 'Food' : 'Beverage');
+    const relevantGlobalAddons = globalAddons.filter(ga => ga.target_type === itemType || ga.target_type === 'Both');
+    
+    // Combine them, avoiding duplicates by name
+    const combinedAddons = [...itemAddons];
+    relevantGlobalAddons.forEach(ga => {
+      if (!combinedAddons.some(a => a.name === ga.name)) {
+        combinedAddons.push({ name: ga.name, price: ga.price });
+      }
+    });
+
+    const addonsHTML = combinedAddons.length > 0 ? `
       <div class="sugar-selector" id="addons-selector-${item.id}">
         <div class="sugar-label">Add-ons (Optional)</div>
         <div class="sugar-options">
-          ${item.addons.map(addon => `
+          ${combinedAddons.map(addon => `
             <div class="sugar-pill" onclick="toggleAddon(${item.id}, '${addon.name}', ${addon.price})">
               ${addon.name} (+₱${addon.price})
             </div>
@@ -1585,7 +1645,7 @@ function renderMenu() {
         </button>`;
 
     const imgHtml = item.image_url 
-      ? `<img src="${optimizeCloudinaryURL(item.image_url)}" class="card-img" alt="${item.name}" loading="lazy">` 
+      ? `<img src="${optimizeCloudinaryURL(item.image_url)}" class="menu-card-img" alt="${item.name}" loading="lazy" onerror="this.src='https://raw.githubusercontent.com/Dative04/CAPRIBREWS-MENU/main/logo.png';this.classList.add('placeholder-fallback')">` 
       : `<img src="https://raw.githubusercontent.com/Dative04/CAPRIBREWS-MENU/main/logo.png" class="placeholder-logo" alt="Capribrews">`;
 
     return `
