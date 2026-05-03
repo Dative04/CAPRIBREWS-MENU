@@ -1432,6 +1432,12 @@ let orderType = 'dine-in';
 let menuItems = []; // This will hold the live data from Supabase
 const MIN_DELIVERY_FEE = 30;
 
+function optimizeCloudinaryURL(url) {
+  if (!url || !url.includes('cloudinary.com')) return url;
+  if (url.includes('/upload/q_auto,f_auto')) return url;
+  return url.replace('/upload/', '/upload/q_auto,f_auto,w_800/');
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
   await fetchMenu();
@@ -1566,7 +1572,7 @@ function renderMenu() {
         </button>`;
 
     const imgHtml = item.image_url 
-      ? `<img src="${item.image_url}" class="card-img" alt="${item.name}" loading="lazy">` 
+      ? `<img src="${optimizeCloudinaryURL(item.image_url)}" class="card-img" alt="${item.name}" loading="lazy">` 
       : `<img src="https://raw.githubusercontent.com/Dative04/CAPRIBREWS-MENU/main/logo.png" class="placeholder-logo" alt="Capribrews">`;
 
     return `

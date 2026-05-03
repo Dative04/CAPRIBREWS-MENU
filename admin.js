@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminGrid           = document.getElementById('admin-grid');
     const refreshOrdersBtn    = document.getElementById('refresh-orders-btn');
     const adminSearch         = document.getElementById('admin-search');
+    const imageURLInput       = document.getElementById('new-image-url');
     const imageFileInput      = document.getElementById('new-image-file');
     const imageBase64Input    = document.getElementById('new-image-base64');
     const imagePreview        = document.getElementById('image-preview');
@@ -309,7 +310,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     logoutBtn?.addEventListener('click', () => window.supabaseClient.auth.signOut());
 
+    // ─── Cloudinary Optimization Helper ──────────────────────────────────────────
+    function optimizeCloudinaryURL(url) {
+        if (!url || !url.includes('cloudinary.com')) return url;
+        
+        // Check if already has optimization parameters
+        if (url.includes('/upload/q_auto,f_auto')) return url;
+
+        // Insert optimization parameters after '/upload/'
+        return url.replace('/upload/', '/upload/q_auto,f_auto,w_800/');
+    }
+
     // ─── Image Upload & Preview ──────────────────────────────────────────────────
+    imageURLInput?.addEventListener('input', (e) => {
+        const url = e.target.value.trim();
+        if (url) {
+            const optimizedUrl = optimizeCloudinaryURL(url);
+            imagePreview.innerHTML = `<img src="${optimizedUrl}" alt="Preview" style="width:100%;height:100%;object-fit:cover;">`;
+            imageBase64Input.value = ''; // Clear file upload if URL is used
+        } else if (!imageBase64Input.value) {
+            imagePreview.innerHTML = '<span>No image selected</span>';
+        }
+    });
+
     imageFileInput?.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -332,6 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             imageBase64Input.value = base64;
+            imageURLInput.value = ''; // Clear URL input if file is uploaded
             imagePreview.innerHTML = `<img src="${base64}" alt="Preview" style="width:100%;height:100%;object-fit:cover;">`;
             showToast('Photo ready to upload ✓', 'success');
         };
@@ -363,6 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('submit-btn').textContent = 'Create Item';
         document.getElementById('edit-item-id').value = '';
         imagePreview.innerHTML = '<span>No image selected</span>';
+        imageURLInput.value = '';
         imageBase64Input.value = '';
         
         // Set default temperature to 'both'
@@ -481,11 +506,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const temp = document.querySelector('input[name="temp"]:checked')?.value || 'both';
         const editId = document.getElementById('edit-item-id').value;
 
+        // Use URL if provided, otherwise use Base64
+        let finalImageURL = imageURLInput.value.trim();
+        if (finalImageURL) {
+            finalImageURL = optimizeCloudinaryURL(finalImageURL);
+        } else {
+            finalImageURL = imageBase64Input.value.trim();
+        }
+
         const itemData = {
             name:        document.getElementById('new-name').value.trim(),
             category:    category,
             description: document.getElementById('new-description').value.trim() || '',
-            image_url:   imageBase64Input.value.trim() || '',
+            image_url:   finalImageURL,
             dietary:     dietary.length ? dietary : null,
             temp:        temp
         };
@@ -691,9 +724,16 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Handle image preview
         if (item.image_url) {
-            imageBase64Input.value = item.image_url;
+            if (item.image_url.startsWith('data:image/')) {
+                imageBase64Input.value = item.image_url;
+                imageURLInput.value = '';
+            } else {
+                imageURLInput.value = item.image_url;
+                imageBase64Input.value = '';
+            }
             imagePreview.innerHTML = `<img src="${item.image_url}" alt="Preview" style="width:100%;height:100%;object-fit:cover;">`;
         } else {
+            imageURLInput.value = '';
             imageBase64Input.value = '';
             imagePreview.innerHTML = '<span>No image selected</span>';
         }

@@ -266,10 +266,11 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Item Photo</label>
+                        <label>Item Photo (Cloudinary URL or Upload)</label>
+                        <input type="text" id="new-image-url" placeholder="Paste Cloudinary URL here..." class="url-input" style="margin-bottom: 8px;">
                         <div class="file-upload-wrapper">
                             <input type="file" id="new-image-file" accept="image/*" class="file-input">
-                            <div class="file-upload-btn">📁 Upload Photo</div>
+                            <div class="file-upload-btn">📁 Or Upload Local Photo</div>
                             <input type="hidden" id="new-image-base64">
                         </div>
                     </div>
