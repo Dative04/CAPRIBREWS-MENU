@@ -1054,40 +1054,13 @@ button {
 
 .hidden { display: none !important; }
 
-/* File Upload Styling */
-.file-upload-wrapper {
-    position: relative;
+.url-input {
     width: 100%;
-    height: 45px;
-}
-
-.file-input {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-    z-index: 2;
-}
-
-.file-upload-btn {
-    position: absolute;
-    inset: 0;
-    background: var(--medium-roast);
+    padding: 11px 14px;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: var(--medium-roast);
     color: var(--text-main);
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: all 0.2s;
-    z-index: 1;
-}
-
-.file-input:hover + .file-upload-btn {
-    background: var(--dark-roast);
-    border-color: var(--accent);
 }
 
 .admin-card img, .placeholder-img {

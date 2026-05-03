@@ -19,8 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const refreshOrdersBtn    = document.getElementById('refresh-orders-btn');
     const adminSearch         = document.getElementById('admin-search');
     const imageURLInput       = document.getElementById('new-image-url');
-    const imageFileInput      = document.getElementById('new-image-file');
-    const imageBase64Input    = document.getElementById('new-image-base64');
     const imagePreview        = document.getElementById('image-preview');
     
     // Custom Confirm Modal
@@ -321,48 +319,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return url.replace('/upload/', '/upload/q_auto,f_auto,w_800/');
     }
 
-    // ─── Image Upload & Preview ──────────────────────────────────────────────────
+    // ─── Image URL & Preview ────────────────────────────────────────────────────
     imageURLInput?.addEventListener('input', (e) => {
         const url = e.target.value.trim();
         if (url) {
             const optimizedUrl = optimizeCloudinaryURL(url);
             imagePreview.innerHTML = `<img src="${optimizedUrl}" alt="Preview" style="width:100%;height:100%;object-fit:cover;">`;
-            imageBase64Input.value = ''; // Clear file upload if URL is used
-        } else if (!imageBase64Input.value) {
-            imagePreview.innerHTML = '<span>No image selected</span>';
+        } else {
+            imagePreview.innerHTML = '<span>No image URL provided</span>';
         }
-    });
-
-    imageFileInput?.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        // Check file size (limit to 1MB for Base64 storage)
-        if (file.size > 1024 * 1024) {
-            showToast('Image too large. Please select a file smaller than 1MB.', 'error');
-            imageFileInput.value = '';
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const base64 = event.target.result;
-            
-            // Validate that it's a real image data URL
-            if (!base64.startsWith('data:image/')) {
-                showToast('Invalid image file.', 'error');
-                return;
-            }
-
-            imageBase64Input.value = base64;
-            imageURLInput.value = ''; // Clear URL input if file is uploaded
-            imagePreview.innerHTML = `<img src="${base64}" alt="Preview" style="width:100%;height:100%;object-fit:cover;">`;
-            showToast('Photo ready to upload ✓', 'success');
-        };
-        reader.onerror = () => {
-            showToast('Error reading file', 'error');
-        };
-        reader.readAsDataURL(file);
     });
 
     // ─── Add Item Modal ───────────────────────────────────────────────────────────
@@ -386,9 +351,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modal-title').textContent = 'New Menu Item';
         document.getElementById('submit-btn').textContent = 'Create Item';
         document.getElementById('edit-item-id').value = '';
-        imagePreview.innerHTML = '<span>No image selected</span>';
+        imagePreview.innerHTML = '<span>No image URL provided</span>';
         imageURLInput.value = '';
-        imageBase64Input.value = '';
         
         // Set default temperature to 'both'
         const tempRadios = document.getElementsByName('temp');
@@ -506,12 +470,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const temp = document.querySelector('input[name="temp"]:checked')?.value || 'both';
         const editId = document.getElementById('edit-item-id').value;
 
-        // Use URL if provided, otherwise use Base64
+        // Use URL provided
         let finalImageURL = imageURLInput.value.trim();
         if (finalImageURL) {
             finalImageURL = optimizeCloudinaryURL(finalImageURL);
-        } else {
-            finalImageURL = imageBase64Input.value.trim();
         }
 
         const itemData = {
@@ -724,18 +686,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Handle image preview
         if (item.image_url) {
-            if (item.image_url.startsWith('data:image/')) {
-                imageBase64Input.value = item.image_url;
-                imageURLInput.value = '';
-            } else {
-                imageURLInput.value = item.image_url;
-                imageBase64Input.value = '';
-            }
+            imageURLInput.value = item.image_url;
             imagePreview.innerHTML = `<img src="${item.image_url}" alt="Preview" style="width:100%;height:100%;object-fit:cover;">`;
         } else {
             imageURLInput.value = '';
-            imageBase64Input.value = '';
-            imagePreview.innerHTML = '<span>No image selected</span>';
+            imagePreview.innerHTML = '<span>No image URL provided</span>';
         }
 
         // Handle temperature
